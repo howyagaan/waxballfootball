@@ -289,14 +289,6 @@ main {
   overflow: hidden;
 }
 
-.newsbar #news-ticker {
-  display: flex;
-  gap: 0;
-  min-width: max-content;
-  will-change: transform;
-  animation: ticker-scroll 24s linear infinite;
-}
-
 .ticker-group {
   display: inline-flex;
   align-items: center;
