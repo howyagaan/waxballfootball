@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Waxball 2026 HQ</title>
+    <meta
+      name="description"
+      content="Waxball 2026 current-season fantasy football dashboard with Sleeper standings, matchups, team rooms, and gameday notes."
+    />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="current">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Waxball home">
+        <span class="brand-mark" id="league-brand-mark">W</span>
+        <span>Waxball</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#standings">Standings</a>
+        <a href="#matchups">Matchups</a>
+        <details class="nav-archives">
+          <summary>Archives</summary>
+          <div>
+            <a href="./archive-2025.html">2025</a>
+            <a href="./archive-2024.html">2024</a>
+          </div>
+        </details>
+      </nav>
+    </header>
+
+    <aside class="newsbar" aria-label="Latest news">
+      <span>League News</span>
+      <div class="ticker-viewport">
+        <div id="news-ticker">Loading Waxball updates...</div>
+      </div>
+    </aside>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-main">
+          <p id="hero-mode-label" class="eyebrow">Midweek mode</p>
+          <h1>Waxball 2026</h1>
+          <p id="hero-copy">
+            Waxball is back for its 3rd season. This site will update automatically
+            throughout the year and act as an archive for previous seasons. Godspeed
+            boys, and happy Waxing.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#standings">League table</a>
+            <a class="button" href="https://sleeper.com/leagues/1312219624808419328/predraft" target="_blank" rel="noreferrer">Open Sleeper</a>
+            <div class="hero-team-control">
+              <label class="hero-team-select" for="team-select">
+                <span>CHOOSE TEAM</span>
+                <select id="team-select" aria-label="Choose a team"></select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <aside class="hero-card" aria-label="League snapshot">
+          <div class="status-row">
+            <span id="status-dot" class="dot"></span>
+            <span id="status-message">Loading Waxball...</span>
+          </div>
+          <div class="snapshot-grid">
+            <div>
+              <span class="metric-label">Season</span>
+              <strong id="season-metric">2026</strong>
+            </div>
+            <div>
+              <span class="metric-label">State</span>
+              <strong id="week-metric">Pre-draft</strong>
+            </div>
+            <div>
+              <span class="metric-label" id="toilet-label">Prevailing 💩 King</span>
+              <strong id="team-metric">--</strong>
+            </div>
+            <div>
+              <span class="metric-label" id="leader-label">Defending Champ</span>
+              <strong id="champion-metric">--</strong>
+            </div>
+            <div>
+              <span class="metric-label">Punishment</span>
+              <strong>Pending...</strong>
+            </div>
+            <div>
+              <span class="metric-label">Reward</span>
+              <strong>Pending...</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section id="standings" class="section-head">
+        <div>
+          <p class="eyebrow">Sleeper live</p>
+          <h2 id="standings-title">League Table</h2>
+        </div>
+      </section>
+
+      <section class="mobile-table-card">
+        <table class="fit-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Team</th>
+              <th>Rec</th>
+              <th>PF</th>
+              <th>PA</th>
+            </tr>
+          </thead>
+          <tbody id="standings-body">
+            <tr>
+              <td colspan="5">Loading Waxball...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="team-panel-section" class="selected-matchup-section" hidden>
+        <div class="section-head compact-head">
+          <div>
+            <p class="eyebrow">Selected team</p>
+            <h2>Current Matchup</h2>
+          </div>
+        </div>
+        <div id="team-panel" class="team-panel league-command-panel">
+          <p class="muted">Select a team to see its matchup and Players to Watch for the current NFL game window.</p>
+        </div>
+      </section>
+
+      <section id="weekly-slate-section" class="grid two-col">
+        <article id="matchups" class="panel feature-panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Weekly slate</p>
+              <h2>Matchups</h2>
+            </div>
+            <select id="week-select" aria-label="Select week"></select>
+          </div>
+          <div id="matchups-list" class="matchup-list">
+            <p class="muted">Loading matchups...</p>
+          </div>
+        </article>
+      </section>
+
+    </main>
+
+    <footer>
+      Waxball HQ <span aria-hidden="true">|</span> Sleeper league data and NFL
+      context refresh while the page is open. <a href="./archive-2025.html">2025 Archive</a>
+      <span aria-hidden="true">|</span> <a href="./archive-2024.html">2024 Archive</a>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Waxball 2026 Articles</title>
+    <meta
+      name="description"
+      content="Waxball 2026 weekly articles with thumbnails, headlines, and links to each published writeup."
+    />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="articles">
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="Waxball home">
+        <span class="brand-mark" id="league-brand-mark">W</span>
+        <span>Waxball</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="./index.html">2026</a>
+        <span class="nav-divider" aria-hidden="true">|</span>
+        <a href="./index.html#standings">Standings</a>
+        <a href="./index.html#matchups">Matchups</a>
+        <a href="./articles-2026.html" aria-current="page">Articles</a>
+        <details class="nav-archives">
+          <summary>Archives</summary>
+          <div>
+            <a href="./archive-2025.html">2025</a>
+            <a href="./archive-2024.html">2024</a>
+          </div>
+        </details>
+      </nav>
+    </header>
+
+    <aside class="newsbar" aria-label="Article updates">
+      <span>Articles</span>
+      <div class="ticker-viewport">
+        <div id="news-ticker">Loading Waxball articles...</div>
+      </div>
+    </aside>
+
+    <main id="top">
+      <section class="hero archive-hero article-hero">
+        <div class="hero-main">
+          <p id="hero-mode-label" class="eyebrow">Articles</p>
+          <h1>2026 Articles</h1>
+          <p>
+            Weekly Waxball writeups will live here through the season. Once an article
+            is published, it gets a thumbnail, headline, and link in this archive.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="./index.html">Back to 2026</a>
+            <a class="button" href="#articles">Article archive</a>
+          </div>
+        </div>
+      </section>
+
+      <section id="articles" class="section-head">
+        <div>
+          <p class="eyebrow">Weekly writeups</p>
+          <h2>Article Archive</h2>
+          <p class="muted">
+            Midweek Mode will feature the newest prior-week article here and on the
+            main page after that writeup has been published.
+          </p>
+        </div>
+      </section>
+
+      <section id="articles-empty" class="article-empty-card">
+        <span class="metric-label">Nothing published yet</span>
+        <strong>Waiting on Week 1</strong>
+        <p>
+          Add each article to the 2026 article list once it goes live. The main page
+          will only promote it during Midweek Mode after the relevant week is complete.
+        </p>
+      </section>
+
+      <section id="articles-grid" class="article-grid" aria-label="2026 Waxball article links"></section>
+    </main>
+
+    <footer>
+      Waxball 2026 Articles <span aria-hidden="true">|</span>
+      <a href="./index.html">Return to current season</a>
+      <span aria-hidden="true">|</span> <a href="./archive-2025.html">2025 Archive</a>
+      <span aria-hidden="true">|</span> <a href="./archive-2024.html">2024 Archive</a>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

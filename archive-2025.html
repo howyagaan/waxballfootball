@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Waxball 2025 Archive</title>
+    <meta
+      name="description"
+      content="Waxball 2025 fantasy football archive with final standings, playoff result, Toilet Bowl result, and team profiles."
+    />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="archive">
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="Waxball home">
+        <span class="brand-mark" id="league-brand-mark">W</span>
+        <span>Waxball</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="./index.html">2026</a>
+        <span class="nav-divider" aria-hidden="true">|</span>
+        <a href="#archive">Standings</a>
+        <a href="#teams">Teams</a>
+        <a href="#notes">Notes</a>
+        <a href="#weekly-archive">Articles</a>
+        <a href="./archive-2024.html">2024</a>
+      </nav>
+    </header>
+
+    <aside class="newsbar" aria-label="Archive note">
+      <span>2025 Archive</span>
+      <div class="ticker-viewport">
+        <div id="news-ticker">Loading 2025 season records...</div>
+      </div>
+    </aside>
+
+    <main id="top">
+      <section class="hero archive-hero">
+        <div class="hero-main">
+          <p class="eyebrow">Completed season</p>
+          <h1>Waxball 2025</h1>
+          <p id="hero-copy">
+            Final standings, the playoff crown, the Toilet Bowl, and simple
+            team-by-team season profiles.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#archive">Final table</a>
+            <a class="button" href="./index.html">Back to 2026</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="archive-showpiece" aria-label="2025 season result">
+        <div class="status-row">
+          <span id="status-dot" class="dot"></span>
+          <span id="status-message">Loading archive...</span>
+        </div>
+        <div class="showpiece-grid">
+          <article class="result-card champion-card" id="champion-card">
+            <span class="metric-label">Playoff champion</span>
+            <strong id="archive-champion">EvianDon</strong>
+            <p>Loading championship matchup...</p>
+          </article>
+          <article class="result-card poop-card" id="poop-card">
+            <span class="metric-label">💩 King</span>
+            <strong id="archive-toilet">Papi Coop</strong>
+            <p>Loading final matchup...</p>
+          </article>
+        </div>
+        <div class="prize-strip" aria-label="2025 prize winners">
+          <article id="runner-up-prize" class="prize-card">
+            <span class="metric-label">2nd Place</span>
+            <strong>BlueBalls</strong>
+            <p>$200</p>
+          </article>
+          <article id="third-place-prize" class="prize-card">
+            <span class="metric-label">3rd Place</span>
+            <strong>justwantmoneyback</strong>
+            <p>$100</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="archive" class="section-head">
+        <div>
+          <p class="eyebrow">Final ledger</p>
+          <h2>Season Standings</h2>
+          <p id="archive-summary" class="muted">Loading final standings...</p>
+        </div>
+      </section>
+
+      <section class="mobile-table-card archive-card">
+        <table class="fit-table archive-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Team</th>
+              <th>Rec</th>
+              <th>PF</th>
+              <th>Finish</th>
+            </tr>
+          </thead>
+          <tbody id="archive-body">
+            <tr><td colspan="5">Loading 2025 archive...</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="teams" class="section-head">
+        <div>
+          <p class="eyebrow">Choose a team</p>
+          <h2>2025 Profiles</h2>
+          <p class="muted">Pick one team to see regular-season finish, playoff or Toilet Bowl exit, and how the draft-day roster changed by season's end.</p>
+        </div>
+      </section>
+      <section class="team-lab archive-team-lab" aria-labelledby="archive-team-title">
+        <div class="team-lab-head">
+          <div>
+            <p class="eyebrow">Choose a team</p>
+            <h2 id="archive-team-title">Season Profile</h2>
+          </div>
+          <div class="selector-row">
+            <label for="team-select">Team</label>
+            <select id="team-select" aria-label="Choose a 2025 team"></select>
+          </div>
+        </div>
+        <div id="team-panel" class="team-panel">
+          <p class="muted">Choose a team to review its 2025 finish, playoff or Toilet Bowl result, drafted roster, and final roster.</p>
+        </div>
+      </section>
+
+      <section id="notes" class="section-head">
+        <div>
+          <p class="eyebrow">From the writeups</p>
+          <h2>2025 Season Notes</h2>
+          <p class="muted">
+            A few end-of-year stats and storylines pulled from the full weekly Waxball archive.
+          </p>
+        </div>
+      </section>
+      <section class="season-notes-grid" aria-label="2025 season notes and fun facts">
+        <article>
+          <span class="metric-label">Best weekly score</span>
+          <strong>179.94</strong>
+          <p>Paul Legallet recorded the highest single-week score of the regular season in Week 6. He also had the third-highest weekly score with 171.58 in Week 4.</p>
+        </article>
+        <article>
+          <span class="metric-label">Lowest weekly score</span>
+          <strong>61.14</strong>
+          <p>Jacob Moskovitz had the lowest single-week score in Week 11, then recovered late, made the playoffs, and finished 3rd overall.</p>
+        </article>
+        <article>
+          <span class="metric-label">Regular-season heartbreak</span>
+          <strong>0.02 pts</strong>
+          <p>Travis Rogers beat Nicholas Hamilton by 0.02 points in Week 3, the closest regular-season matchup of 2025.</p>
+        </article>
+        <article>
+          <span class="metric-label">Biggest blowout</span>
+          <strong>+85.18</strong>
+          <p>Erik Ohno Dagoberg beat Travis Rogers by 85.18 points in Week 10, the largest regular-season margin.</p>
+        </article>
+        <article>
+          <span class="metric-label">Top PF pace</span>
+          <strong>Miles Blue</strong>
+          <p>Miles Blue finished with the league's best points-per-game pace, edging Paul Legallet by 0.25 points per game.</p>
+        </article>
+        <article>
+          <span class="metric-label">First-place curse</span>
+          <strong>2 years</strong>
+          <p>For the second straight season, the regular-season leader failed to win a playoff game. In 2025, Paul Legallet finished 4th.</p>
+        </article>
+        <article>
+          <span class="metric-label">Streak kings</span>
+          <strong>5 games</strong>
+          <p>Milo Manheim and Erik Ohno Dagoberg each had five-game winning streaks. Jacob Moskovitz had the season's longest losing streak, also five games.</p>
+        </article>
+        <article>
+          <span class="metric-label">Late escape</span>
+          <strong>1-5 to safe</strong>
+          <p>Travis Roy Rogers started 1-5 and spent four weeks in last place, but survived the Toilet Bowl by beating Jakob Cooper in Week 17.</p>
+        </article>
+      </section>
+
+      <section id="weekly-archive" class="section-head">
+        <div>
+          <p class="eyebrow">Weekly archive</p>
+          <h2>Read The 2025 Articles</h2>
+          <p class="muted">
+            Every weekly Waxball writeup, preserved in order.
+          </p>
+        </div>
+      </section>
+      <section class="article-archive-card" aria-label="2025 weekly article links">
+        <ol class="article-link-list">
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week1" target="_blank" rel="noreferrer">Week 1 - MISTAHBIGDICK Swings It Around In Week 1</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week2" target="_blank" rel="noreferrer">Week 2 - Jacob Too-Much-skovitz Makes Sure We Can See His Pubes</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week3" target="_blank" rel="noreferrer">Week 3 - HASHTAG #NOKINGSWEEK</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week4" target="_blank" rel="noreferrer">Week 4 - PAUL BLART: POINT COP</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week5" target="_blank" rel="noreferrer">Week 5 - BLUE BALLS COMETH</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week6" target="_blank" rel="noreferrer">Week 6 - WHEN PAUL GOES HIGH, WILL GOES LOW</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week7" target="_blank" rel="noreferrer">Week 7 - IT'S HALFTIME AND MY MOM BROUGHT THE ORANGE SLICES</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week8" target="_blank" rel="noreferrer">Week 8 - TRAVS TO RICHES</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week9" target="_blank" rel="noreferrer">Week 9 - I'M GONNA WIN THE WHOLE THING</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week10" target="_blank" rel="noreferrer">Week 10 - KING LEGALLET AND THE QUEEN MOTHER GO TO WAR</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week11" target="_blank" rel="noreferrer">Week 11 - BREAKING: ZED NOW THE ALPHABET'S SECOND LETTER</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week12" target="_blank" rel="noreferrer">Week 12 - COMMISH SITS ATOP THE PORCELAIN THRONE</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week13" target="_blank" rel="noreferrer">Week 13 - THANKS GIVETH AND THANKS TAKETH AWAY</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week14" target="_blank" rel="noreferrer">Week 14 - PLAYOFF WAXBALL</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week15" target="_blank" rel="noreferrer">Week 15 - I BOUGHT THIS GUN TO SHOOT MYSELF WITH</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week16" target="_blank" rel="noreferrer">Week 16 - CHAMPIONSHIP WAXBALL</a></li>
+          <li><a href="https://www.nicholaswhamilton.com/waxball2025/week17" target="_blank" rel="noreferrer">Week 17 - PAPI POOP AND KING DON</a></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer>
+      Waxball 2025 Archive <span aria-hidden="true">|</span>
+      <a href="./index.html">Return to current season</a>
+      <span aria-hidden="true">|</span> <a href="./archive-2024.html">Go to 2024 Archive</a>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
