@@ -630,6 +630,31 @@ body[data-theme="mnf"] .matchup-card {
   line-height: 0.95;
 }
 
+.team-lab-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: clamp(1.5rem, 5vw, 3rem);
+}
+
+.selector-row {
+  display: grid;
+  gap: 0.35rem;
+  min-width: min(100%, 13rem);
+}
+
+.selector-row label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.selector-row select {
+  width: 100%;
+}
+
 .team-panel {
   display: grid;
   grid-template-columns: minmax(0, 0.65fr) minmax(0, 1.35fr);
@@ -1703,6 +1728,7 @@ footer {
 
   .hero-actions,
   .section-head,
+  .team-lab-head,
   .panel-head,
   .ticker {
     align-items: stretch;
