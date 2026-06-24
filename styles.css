@@ -271,7 +271,7 @@ main {
   backdrop-filter: blur(16px);
 }
 
-.newsbar span {
+.newsbar > span {
   flex: 0 0 auto;
   border-radius: 999px;
   background: var(--teal);
@@ -291,9 +291,18 @@ main {
 
 .newsbar #news-ticker {
   display: flex;
-  gap: 1.2rem;
+  gap: 0;
   min-width: max-content;
-  animation: ticker-scroll 36s linear infinite;
+  will-change: transform;
+  animation: ticker-scroll 24s linear infinite;
+}
+
+.ticker-group {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 1.2rem;
+  padding-right: 1.2rem;
 }
 
 .newsbar strong,
@@ -1041,9 +1050,10 @@ strong {
 
 .static-ticker {
   display: flex;
-  gap: 1.2rem;
+  gap: 0;
   min-width: max-content;
-  animation: ticker-scroll 34s linear infinite;
+  will-change: transform;
+  animation: ticker-scroll 24s linear infinite;
   color: var(--ink);
   font-size: 0.95rem;
   font-weight: 900;

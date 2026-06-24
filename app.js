@@ -620,7 +620,8 @@ function newsTickerItems(current, archive, nfl) {
 }
 
 function duplicateTicker(items) {
-  return [...items, ...items];
+  const group = `<span class="ticker-group">${items.join("")}</span>`;
+  return [group, group];
 }
 
 function articleTickerItems() {
