@@ -41,7 +41,6 @@ const els = {
   statusDot: document.querySelector("#status-dot"),
   heroModeLabel: document.querySelector("#hero-mode-label"),
   heroCopy: document.querySelector("#hero-copy"),
-  newsTicker: document.querySelector("#news-ticker"),
   brandMark: document.querySelector("#league-brand-mark"),
   season: document.querySelector("#season-metric"),
   week: document.querySelector("#week-metric"),
@@ -282,8 +281,6 @@ function renderCurrentPage() {
   if (els.refreshStamp) {
     els.refreshStamp.textContent = `Updated ${formatTime()}`;
   }
-  els.newsTicker.innerHTML = duplicateTicker(newsTickerItems(currentData, archiveData, nflData)).join("");
-
   renderMidweekArticleAction();
   renderStandings(rosters, users);
   renderMatchups(currentData.matchupsByWeek[currentWeek] || [], rosters, users, currentWeek);
@@ -293,7 +290,6 @@ function renderCurrentPage() {
 
 function renderArticlesPage() {
   renderLeagueAvatar(currentData.league);
-  els.newsTicker.innerHTML = duplicateTicker(articleTickerItems()).join("");
   renderArticleArchive();
   setStatus(`Auto-synced ${formatTime()}`, "ready");
 }
@@ -311,11 +307,6 @@ function renderArchivePage() {
   const history = archiveData.history;
   renderLeagueAvatar(currentData.league);
   const archiveToilet = archiveToiletHolder(archiveData);
-  els.newsTicker.innerHTML = duplicateTicker([
-    `<strong>${escapeHtml(history.champion?.team || "Champion")} won 2025.</strong>`,
-    `<strong>${escapeHtml(archiveToilet?.team || "Papi Coop")} is the 2025 💩 King.</strong>`,
-    `<strong>Select a team for regular-season finish, postseason result, and draft-to-final roster changes.</strong>`,
-  ]).join("");
   if (els.archiveChampion) els.archiveChampion.textContent = history.champion?.team || "EvianDon";
   if (els.archiveToilet) els.archiveToilet.textContent = archiveToilet?.team || "Papi Coop";
   renderArchiveShowpiece(archiveData);
@@ -589,54 +580,6 @@ function renderTransactions(data) {
     ? highlights.map((transaction, index) => activityItem(transaction, data.rosters, data.users, index)).join("")
     : `<p class="muted">No completed waiver or trade activity found.</p>`;
   hydrateTransactionDetails(highlights, data);
-}
-
-function newsTickerItems(current, archive, nfl) {
-  const items = [];
-  const league = current.league;
-  for (const change of nfl.scheduleChanges || []) {
-    items.push(`<strong>NFL schedule update: ${escapeHtml(change.label)} moved from ${escapeHtml(change.oldKickoff)} to ${escapeHtml(change.newKickoff)}.</strong>`);
-  }
-  if (isPreseasonMode()) {
-    items.push("<strong>Preseason Mode is live until Tuesday, September 8.</strong>");
-    items.push("<strong>Draft, schedule, and rosters will populate once Sleeper generates them.</strong>");
-    items.push("<strong>Waxball is back for its 3rd season. Happy Waxing.</strong>");
-  }
-  const lastMessageTime = Number(league.last_message_time || 0);
-  if (lastMessageTime) items.push(`<strong>League updated ${relativeDate(lastMessageTime)}.</strong>`);
-  if (league.status === "pre_draft") items.push("<strong>Draft room is open. League View will flip into live mode once the schedule is generated.</strong>");
-  if (archive.history.champion) items.push(`<strong>${escapeHtml(archive.history.champion.team)} enters 2026 as defending champion.</strong>`);
-
-  const nameChanges = teamNameChanges(current, archive).slice(0, 2);
-  for (const change of nameChanges) {
-    items.push(`<strong>${escapeHtml(change.owner)} changed from ${escapeHtml(change.oldName)} to ${escapeHtml(change.newName)}.</strong>`);
-  }
-
-  const movement = movementStats(current.transactions, current.rosters, current.users);
-  if (movement.tradeCount) items.push(`<strong>${movement.tradeCount} completed trade${movement.tradeCount === 1 ? "" : "s"} logged in Sleeper.</strong>`);
-
-  if (!items.length) items.push("<strong>No fresh Waxball feed items yet. Check back after league activity.</strong>");
-  return items;
-}
-
-function duplicateTicker(items) {
-  const group = `<span class="ticker-group">${items.join("")}</span>`;
-  return [group, group];
-}
-
-function articleTickerItems() {
-  const published = publishedArticles2026();
-  if (!published.length) {
-    return [
-      "<strong>2026 articles will appear here once the weekly writeups begin.</strong>",
-      "<strong>Midweek Mode will promote the newest prior-week article after it is published.</strong>",
-    ];
-  }
-  const latest = published[published.length - 1];
-  return [
-    `<strong>Newest article: ${escapeHtml(latest.headline)}.</strong>`,
-    `<strong>${published.length} Waxball 2026 article${published.length === 1 ? "" : "s"} published.</strong>`,
-  ];
 }
 
 function renderArticleArchive() {
