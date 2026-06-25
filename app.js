@@ -6,10 +6,16 @@ const ARCHIVE_2025_DRAFT_ID = "1253094779571421184";
 const AUTO_REFRESH_MS = 120000;
 const WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
 const PAGE = document.body.dataset.page || "current";
-const PRESEASON_END_DATE = new Date(2026, 8, 8);
+const EASTERN_TIME_ZONE = "America/New_York";
+const PRESEASON_END_DATE_KEY = "2026-09-08";
 const NFL_SCHEDULE_START = "20260909";
 const NFL_SCHEDULE_END = "20270110";
 const NFL_SCHEDULE_CACHE_KEY = "waxball-2026-nfl-schedule";
+const QUERY_PARAMS = new URLSearchParams(window.location.search);
+const MODE_PREVIEW = QUERY_PARAMS.get("mode");
+const SEASON_PREVIEW = QUERY_PARAMS.get("season");
+const WEEK_PREVIEW = Number(QUERY_PARAMS.get("week"));
+const DATE_PREVIEW = QUERY_PARAMS.get("date");
 const ARTICLES_2026 = [
   /*
   {
@@ -40,7 +46,9 @@ const els = {
   status: document.querySelector("#status-message"),
   statusDot: document.querySelector("#status-dot"),
   heroModeLabel: document.querySelector("#hero-mode-label"),
+  heroTitle: document.querySelector(".hero h1"),
   heroCopy: document.querySelector("#hero-copy"),
+  sleeperLink: document.querySelector('.hero-actions a[href*="sleeper.com"]'),
   brandMark: document.querySelector("#league-brand-mark"),
   season: document.querySelector("#season-metric"),
   week: document.querySelector("#week-metric"),
@@ -139,8 +147,12 @@ function init() {
 async function loadAll() {
   setStatus("Syncing data...", "loading");
   try {
+    const currentLeagueId = activeCurrentLeagueId();
     const [current, archive, nfl] = await Promise.all([
-      loadSeason(CURRENT_LEAGUE_ID, { includeTransactions: true }),
+      loadSeason(currentLeagueId, {
+        includeTransactions: true,
+        matchupWeeks: isHistoricalCurrentPreview() ? WEEKS : null,
+      }),
       loadSeason(ARCHIVE_2025_LEAGUE_ID, {
         includeTransactions: PAGE === "archive",
         includeDraft: PAGE === "archive",
@@ -152,7 +164,12 @@ async function loadAll() {
     currentData = current;
     archiveData = archive;
     nflData = nfl;
-    currentWeek = currentData.week;
+    if (isHistoricalCurrentPreview()) {
+      currentData.previewMode = "historical-current";
+      currentData.rosters = standingsThroughWeek(currentData.rosters, currentData.matchupsByWeek, previewWeek() - 1);
+      currentData.week = previewWeek();
+    }
+    currentWeek = previewWeek() || currentData.week;
     if (els.weekSelect) els.weekSelect.value = String(currentWeek);
 
     if (PAGE === "archive") renderArchivePage();
@@ -187,6 +204,18 @@ async function loadSeason(leagueId, options = {}) {
 }
 
 async function loadNflContext() {
+  const previewEvents = historicalPreviewNflEvents();
+  if (previewEvents) {
+    return {
+      season: { year: Number(SEASON_PREVIEW) },
+      week: { number: previewWeek() },
+      events: previewEvents,
+      articles: [],
+      scheduleChanges: [],
+      mode: detectFootballMode(previewEvents),
+    };
+  }
+
   const [scoreboard, fullSchedule, news] = await Promise.all([
     fetchExternalJson(`${ESPN_BASE}/scoreboard`).catch(() => null),
     fetchExternalJson(`${ESPN_BASE}/scoreboard?dates=${NFL_SCHEDULE_START}-${NFL_SCHEDULE_END}&limit=400`).catch(() => null),
@@ -258,10 +287,23 @@ function renderCurrentPage() {
   applyModeTheme(nflData.mode);
   renderHeroMode(nflData.mode);
   renderLeagueAvatar(league);
+  if (els.heroTitle) els.heroTitle.textContent = `Waxball ${league.season || "2026"}`;
+  if (els.sleeperLink) {
+    els.sleeperLink.href = sleeperLeagueUrl(league);
+    els.sleeperLink.textContent = "Open Sleeper";
+  }
   els.heroCopy.textContent =
     heroLeagueCopy(league);
   els.season.textContent = league.season || "2026";
-  els.week.textContent = isPreseasonMode()
+  els.week.textContent = isModePreview() && nflData.mode?.key === "tnf"
+    ? `Thursday Week ${currentWeek}`
+    : isModePreview() && nflData.mode?.key === "snf"
+      ? `Sunday Week ${currentWeek}`
+    : isModePreview() && nflData.mode?.key === "mnf"
+      ? `Monday Week ${currentWeek}`
+    : isModePreview()
+      ? `Week ${currentWeek}`
+    : isPreseasonMode()
     ? "Preseason"
     : isMatchupPreviewMode() && nflData.mode?.key === "tnf"
     ? `Thursday Week ${currentWeek}`
@@ -275,9 +317,13 @@ function renderCurrentPage() {
         ? "Pre-draft"
         : `Week ${currentWeek}`;
   els.toiletLabel.textContent = showCurrentLeader ? "Last Place" : "Prevailing 💩 King";
-  els.teamMetric.textContent = showCurrentLeader ? teamName(lastPlaceRoster(rosters), users) : history.biggestLoser?.team || "--";
+  els.teamMetric.textContent = showCurrentLeader
+    ? ownerIdentityName(lastPlaceRoster(rosters), users)
+    : archiveRowManagerName(history.biggestLoser, archiveData) || "--";
   els.leaderLabel.textContent = showCurrentLeader ? "League Leader" : "Defending Champ";
-  els.champion.textContent = showCurrentLeader && leader ? teamName(leader, users) : history.champion?.team || "--";
+  els.champion.textContent = showCurrentLeader && leader
+    ? ownerIdentityName(leader, users)
+    : archiveRowManagerName(history.champion, archiveData) || "--";
   if (els.refreshStamp) {
     els.refreshStamp.textContent = `Updated ${formatTime()}`;
   }
@@ -307,12 +353,12 @@ function renderArchivePage() {
   const history = archiveData.history;
   renderLeagueAvatar(currentData.league);
   const archiveToilet = archiveToiletHolder(archiveData);
-  if (els.archiveChampion) els.archiveChampion.textContent = history.champion?.team || "EvianDon";
-  if (els.archiveToilet) els.archiveToilet.textContent = archiveToilet?.team || "Papi Coop";
+  if (els.archiveChampion) els.archiveChampion.textContent = archiveRowManagerName(history.champion, archiveData) || "Milo Manheim";
+  if (els.archiveToilet) els.archiveToilet.textContent = archiveRowManagerName(archiveToilet, archiveData) || "Jakob Cooper";
   renderArchiveShowpiece(archiveData);
   els.archiveSummary.textContent =
-    `${history.season} finished with ${history.champion?.team || "EvianDon"} winning the playoff bracket and ` +
-    `${archiveToilet?.team || "Papi Coop"} becoming the 💩 King.`;
+    `${history.season} finished with ${archiveRowManagerName(history.champion, archiveData) || "Milo Manheim"} winning the playoff bracket and ` +
+    `${archiveRowManagerName(archiveToilet, archiveData) || "Jakob Cooper"} becoming the 💩 King.`;
 
   renderArchiveTable(archiveData);
   renderTeamSelector(archiveData.rosters, archiveData.users);
@@ -333,8 +379,8 @@ function renderArchiveShowpiece(data) {
         ${avatar(champion.roster, data.users)}
         <div>
           <span class="metric-label">Playoff champion · $900</span>
-          <strong>${escapeHtml(champion.team)}</strong>
-          <span class="username">${escapeHtml(ownerIdentityName(champion.roster, data.users))}</span>
+          <strong>${escapeHtml(ownerIdentityName(champion.roster, data.users))}</strong>
+          <span class="username">${escapeHtml(champion.team)}</span>
         </div>
       </header>
       <p>${escapeHtml(championship.text)}</p>
@@ -350,8 +396,8 @@ function renderArchiveShowpiece(data) {
         ${avatar(poopKing.roster, data.users)}
         <div>
           <span class="metric-label">💩 King · Calendar Spread</span>
-          <strong>${escapeHtml(poopKing.team)}</strong>
-          <span class="username">${escapeHtml(ownerIdentityName(poopKing.roster, data.users))}</span>
+          <strong>${escapeHtml(ownerIdentityName(poopKing.roster, data.users))}</strong>
+          <span class="username">${escapeHtml(poopKing.team)}</span>
         </div>
       </header>
       <p>${escapeHtml(poopFinal.text)}</p>
@@ -371,8 +417,8 @@ function renderPrizeCard(element, row, data, label, prize) {
     ${avatar(row.roster, data.users)}
     <div>
       <span class="metric-label">${escapeHtml(label)}</span>
-      <strong>${escapeHtml(row.team)}</strong>
-      <span class="username">${escapeHtml(ownerIdentityName(row.roster, data.users))}</span>
+      <strong>${escapeHtml(ownerIdentityName(row.roster, data.users))}</strong>
+      <span class="username">${escapeHtml(row.team)}</span>
       <p>${escapeHtml(prize)}</p>
     </div>
   `;
@@ -474,6 +520,9 @@ async function renderSelectedTeam() {
       </article>
     `
     : "";
+  const historicalRosterSnapshot = isHistoricalCurrentPreview()
+    ? historicalRosterSnapshots(matchup, roster, opponentRoster, source.users, playerContext, opponentContext)
+    : "";
 
   els.teamPanel.innerHTML = `
     <div class="matchup-focus-card">
@@ -486,6 +535,7 @@ async function renderSelectedTeam() {
       </div>
       ${matchupVersusShowpiece(roster, opponentRoster, source.users)}
     </div>
+    ${historicalRosterSnapshot}
     ${playersToWatch}
     <button class="button league-view-button" type="button" data-league-view>See All Matchups in League View</button>
   `;
@@ -629,6 +679,9 @@ function formatArticleDate(value) {
 }
 
 function heroLeagueCopy(league) {
+  if (isHistoricalCurrentPreview()) {
+    return `${league.season} preview mode: Thursday Week ${currentWeek}, rebuilt from Sleeper matchups, rosters, avatars, and standings through the prior week.`;
+  }
   if (isPreseasonMode()) {
     return "Waxball is back for its 3rd season. This site will update automatically throughout the year and act as an archive for previous seasons. Godspeed boys, and happy Waxing.";
   }
@@ -660,7 +713,24 @@ function currentSeasonHasResults() {
 }
 
 function isPreseasonMode() {
-  return PAGE === "current" && new Date() < PRESEASON_END_DATE;
+  if (isHistoricalCurrentPreview()) return false;
+  return PAGE === "current" && !isModePreview() && easternDateKey(currentDate()) <= PRESEASON_END_DATE_KEY;
+}
+
+function isModePreview() {
+  return Boolean(previewModeDefinition());
+}
+
+function isHistoricalCurrentPreview() {
+  return PAGE === "current" && SEASON_PREVIEW === "2025" && Number.isInteger(WEEK_PREVIEW) && WEEK_PREVIEW >= 1;
+}
+
+function previewWeek() {
+  return isHistoricalCurrentPreview() ? clampWeek(WEEK_PREVIEW) : 0;
+}
+
+function activeCurrentLeagueId() {
+  return isHistoricalCurrentPreview() ? ARCHIVE_2025_LEAGUE_ID : CURRENT_LEAGUE_ID;
 }
 
 function currentPosition(roster, rosters) {
@@ -706,6 +776,11 @@ function archiveTeamSummary(historyRow, data) {
   const pfRank = statRank(historyRow.roster, data.rosters, "fpts", "desc");
   const paRank = statRank(historyRow.roster, data.rosters, "fpts_against", "asc");
   return `${historyRow.team} ${rankText} at ${recordText(historyRow)}, ranked #${pfRank} in points for and #${paRank} in fewest points against.`;
+}
+
+function archiveRowManagerName(row, data) {
+  if (!row?.roster || !data?.users) return "";
+  return ownerIdentityName(row.roster, data.users);
 }
 
 function recordText(row) {
@@ -867,22 +942,22 @@ function archiveToiletHolder(data) {
 function finalMatchupSummary(game, data, type) {
   const week = playoffWeekForRound(game?.r);
   const matchup = matchupForGame(game, data.matchupsByWeek[week] || []);
-  const t1Name = rosterName(game?.t1, data.rosters, data.users);
-  const t2Name = rosterName(game?.t2, data.rosters, data.users);
+  const t1Name = rosterManagerName(game?.t1, data.rosters, data.users);
+  const t2Name = rosterManagerName(game?.t2, data.rosters, data.users);
   const t1Score = scoreFor(matchup.find((item) => item.roster_id === game?.t1));
   const t2Score = scoreFor(matchup.find((item) => item.roster_id === game?.t2));
 
   if (type === "poop") {
-    const king = rosterName(game?.w, data.rosters, data.users);
-    const survivor = rosterName(game?.l, data.rosters, data.users);
+    const king = rosterManagerName(game?.w, data.rosters, data.users);
+    const survivor = rosterManagerName(game?.l, data.rosters, data.users);
     return {
       text: `${king} became 💩 King after losing the final matchup to ${survivor}.`,
       scores: [`${t1Name} ${formatScore(t1Score)}`, `${t2Name} ${formatScore(t2Score)}`],
     };
   }
 
-  const winner = rosterName(game?.w, data.rosters, data.users);
-  const loser = rosterName(game?.l, data.rosters, data.users);
+  const winner = rosterManagerName(game?.w, data.rosters, data.users);
+  const loser = rosterManagerName(game?.l, data.rosters, data.users);
   return {
     text: `${winner} beat ${loser} in the championship final.`,
     scores: [`${t1Name} ${formatScore(t1Score)}`, `${t2Name} ${formatScore(t2Score)}`],
@@ -987,11 +1062,13 @@ function statRank(roster, rosters, key, direction) {
 }
 
 function detectFootballMode(events) {
+  const preview = previewModeDefinition();
+  if (preview) return preview;
   if (isPreseasonMode()) return modeDefinition("preseason");
-  const today = new Date();
-  const month = today.getMonth();
-  const day = today.getDay();
-  const isThanksgiving = month === 10 && day === 4 && today.getDate() >= 22 && today.getDate() <= 28;
+  const today = easternParts();
+  const month = today.month - 1;
+  const day = today.weekday;
+  const isThanksgiving = month === 10 && day === 4 && today.day >= 22 && today.day <= 28;
   const liveOrToday = events.filter((event) => isToday(event.date) || event.status?.type?.state === "in");
   const isPlayoffs = liveOrToday.some((event) => event.season?.type === 3);
 
@@ -1047,6 +1124,38 @@ function detectFootballMode(events) {
     return modeDefinition("midweek");
   }
   return modeDefinition("snf-preview");
+}
+
+function previewModeDefinition() {
+  if (PAGE !== "current") return null;
+  const allowed = new Set(["midweek", "tnf", "midweekend", "snf", "mnf"]);
+  return allowed.has(MODE_PREVIEW) ? modeDefinition(MODE_PREVIEW) : null;
+}
+
+function historicalPreviewNflEvents() {
+  if (!isHistoricalCurrentPreview()) return null;
+  if (SEASON_PREVIEW === "2025" && previewWeek() === 8) {
+    return [
+      {
+        id: "2025-week8-tnf-min-lac",
+        date: "2025-10-24T00:15:00Z",
+        shortName: "MIN @ LAC",
+        name: "Minnesota Vikings at Los Angeles Chargers",
+        season: { year: 2025, type: 2 },
+        status: { type: { state: "pre", description: "Scheduled", shortDetail: "Thu 8:15 PM ET" } },
+        competitions: [
+          {
+            broadcast: "Prime Video",
+            competitors: [
+              { homeAway: "away", team: { abbreviation: "MIN", displayName: "Minnesota Vikings" } },
+              { homeAway: "home", team: { abbreviation: "LAC", displayName: "Los Angeles Chargers" } },
+            ],
+          },
+        ],
+      },
+    ];
+  }
+  return null;
 }
 
 function modeDefinition(key) {
@@ -1123,6 +1232,12 @@ function renderLeagueAvatar(league) {
   els.brandMark.classList.add("has-image");
 }
 
+function sleeperLeagueUrl(league) {
+  if (!league?.league_id) return "https://sleeper.com/";
+  const suffix = league.status === "pre_draft" ? "/predraft" : "";
+  return `https://sleeper.com/leagues/${league.league_id}${suffix}`;
+}
+
 function setSiteAvatar(src) {
   const icon = document.querySelector('link[rel="icon"]') || document.createElement("link");
   icon.rel = "icon";
@@ -1142,15 +1257,15 @@ function hasCompletedWeek(rosters, league) {
 }
 
 function nextMatchdayGames(events) {
-  const now = new Date();
+  const todayKey = easternDateKey();
   const upcoming = events
-    .filter((event) => event.status?.type?.state === "in" || new Date(event.date) >= startOfDay(now))
+    .filter((event) => event.status?.type?.state === "in" || easternDateKey(event.date) >= todayKey)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
   const source = upcoming.length ? upcoming : events.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
   const first = source[0];
   if (!first) return [];
-  const key = localDateKey(first.date);
-  return source.filter((event) => localDateKey(event.date) === key);
+  const key = easternDateKey(first.date);
+  return source.filter((event) => easternDateKey(event.date) === key);
 }
 
 function mergeEvents(scheduleEvents, weeklyEvents) {
@@ -1275,6 +1390,7 @@ function selectedTeamMatchup(roster, matchups, rosters, users) {
 }
 
 function shouldShowMatchupScores() {
+  if (isHistoricalCurrentPreview() && nflData?.mode?.key === "tnf") return false;
   if (isMatchupPreviewMode()) return ["midweekend", "snf", "mnf"].includes(nflData?.mode?.key);
   return (nflData?.events || []).some((event) => event.status?.type?.state === "post");
 }
@@ -1292,10 +1408,11 @@ function matchupResultText(roster, opponentRoster, users, mineScore, opponentSco
 
 function shouldShowPlayersToWatch() {
   if (isPreseasonMode()) return false;
-  const day = new Date().getDay();
+  if (isModePreview() && ["midweek", "tnf", "midweekend", "snf", "mnf"].includes(nflData?.mode?.key)) return true;
+  const day = easternParts().weekday;
   if (day === 2) return false;
   if (day === 3) {
-    return nextMatchdayGames(nflData?.events || []).some((event) => new Date(event.date).getDay() === 4);
+    return nextMatchdayGames(nflData?.events || []).some((event) => easternParts(event.date).weekday === 4);
   }
   return true;
 }
@@ -1451,6 +1568,59 @@ function thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opp
   `;
 }
 
+function historicalRosterSnapshots(matchup, roster, opponentRoster, users, playerContext, opponentContext) {
+  if (!matchup?.mine) return "";
+  return `
+    <div class="team-panel-grid roster-snapshot-grid">
+      ${historicalRosterBoard("Week 8 roster snapshot", roster, users, playerContext)}
+      ${historicalRosterBoard("Opponent roster snapshot", opponentRoster, users, opponentContext)}
+    </div>
+  `;
+}
+
+function historicalRosterBoard(label, roster, users, context) {
+  if (!roster) {
+    return `
+      <article class="roster-board">
+        <span class="metric-label">${escapeHtml(label)}</span>
+        <p class="muted">No opponent roster is attached yet.</p>
+      </article>
+    `;
+  }
+  return `
+    <article class="roster-board">
+      <header>
+        ${avatar(roster, users)}
+        <div class="team-copy">
+          <span class="metric-label">${escapeHtml(label)}</span>
+          <strong>${escapeHtml(teamName(roster, users))}</strong>
+          <span class="username">${escapeHtml(ownerIdentityName(roster, users))}</span>
+        </div>
+      </header>
+      <span class="roster-subhead">Starters</span>
+      ${contextualPlayerList(context?.starters, "No starters found in this Sleeper matchup snapshot.")}
+      <details open>
+        <summary>Bench</summary>
+        ${contextualPlayerList(context?.bench, "No bench players found in this Sleeper matchup snapshot.")}
+      </details>
+    </article>
+  `;
+}
+
+function contextualPlayerList(players, fallback) {
+  if (!players?.length) return `<p class="muted">${escapeHtml(fallback)}</p>`;
+  return `
+    <ul class="player-list">
+      ${players.map((player) => `
+        <li>
+          <strong>${escapeHtml(player.name)}</strong>
+          <span>${escapeHtml([player.position, player.team || "FA"].filter(Boolean).join(" · "))}</span>
+        </li>
+      `).join("")}
+    </ul>
+  `;
+}
+
 function matchupScoreLine(matchup, roster, opponentRoster, users) {
   const mineScore = scoreFor(matchup?.mine).toFixed(2);
   const opponentScore = scoreFor(matchup?.opponent).toFixed(2);
@@ -1538,7 +1708,7 @@ function matchupCard(pair, rosters, users) {
 
 function matchupTeam(matchup, rosters, users, leads, side = "") {
   const roster = rosters.find((item) => item.roster_id === matchup.roster_id);
-  const scoreLabel = scoreFor(matchup).toFixed(2);
+  const scoreLabel = shouldShowMatchupScores() ? scoreFor(matchup).toFixed(2) : currentPosition(roster, rosters);
   return `
     <button class="matchup-team ${side}" type="button" data-roster-link="${escapeHtml(matchup.roster_id)}" aria-label="Open ${escapeHtml(roster ? teamName(roster, users) : `Roster ${matchup.roster_id}`)} team page">
       ${avatar(roster, users)}
@@ -1548,6 +1718,67 @@ function matchupTeam(matchup, rosters, users, leads, side = "") {
       </div>
     </button>
   `;
+}
+
+function standingsThroughWeek(rosters, matchupsByWeek, throughWeek) {
+  const totals = new Map(
+    rosters.map((roster) => [Number(roster.roster_id), {
+      wins: 0,
+      losses: 0,
+      ties: 0,
+      fpts: 0,
+      fptsAgainst: 0,
+    }]),
+  );
+
+  for (let week = 1; week <= throughWeek; week += 1) {
+    const matchups = matchupsByWeek[week] || [];
+    const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
+    for (const pair of grouped.values()) {
+      const [first, second] = pair;
+      if (!first) continue;
+      const firstTotal = totals.get(Number(first.roster_id));
+      if (!firstTotal) continue;
+      const firstScore = scoreFor(first);
+      firstTotal.fpts += firstScore;
+      if (!second) continue;
+      const secondTotal = totals.get(Number(second.roster_id));
+      const secondScore = scoreFor(second);
+      firstTotal.fptsAgainst += secondScore;
+      if (secondTotal) {
+        secondTotal.fpts += secondScore;
+        secondTotal.fptsAgainst += firstScore;
+      }
+      if (firstScore > secondScore) {
+        firstTotal.wins += 1;
+        if (secondTotal) secondTotal.losses += 1;
+      } else if (firstScore < secondScore) {
+        firstTotal.losses += 1;
+        if (secondTotal) secondTotal.wins += 1;
+      } else {
+        firstTotal.ties += 1;
+        if (secondTotal) secondTotal.ties += 1;
+      }
+    }
+  }
+
+  return rosters.map((roster) => {
+    const total = totals.get(Number(roster.roster_id));
+    if (!total) return roster;
+    return {
+      ...roster,
+      settings: {
+        ...roster.settings,
+        wins: total.wins,
+        losses: total.losses,
+        ties: total.ties,
+        fpts: Math.floor(total.fpts),
+        fpts_decimal: Math.round((total.fpts % 1) * 100),
+        fpts_against: Math.floor(total.fptsAgainst),
+        fpts_against_decimal: Math.round((total.fptsAgainst % 1) * 100),
+      },
+    };
+  });
 }
 
 function buildHistory(league, rosters, users, winnersBracket, losersBracket) {
@@ -1770,6 +2001,11 @@ function rosterName(rosterId, rosters, users) {
   return roster ? teamName(roster, users) : "TBD";
 }
 
+function rosterManagerName(rosterId, rosters, users) {
+  const roster = rosters.find((item) => item.roster_id === rosterId);
+  return roster ? ownerIdentityName(roster, users) : "TBD";
+}
+
 function stat(roster, key) {
   return Number(roster.settings?.[key] || 0);
 }
@@ -1821,16 +2057,16 @@ function clampWeek(week) {
 }
 
 function formatTime() {
-  return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date());
+  return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZone: EASTERN_TIME_ZONE }).format(currentDate());
 }
 
 function formatKickoff(value) {
   if (!value) return "TBD";
-  return new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: EASTERN_TIME_ZONE }).format(new Date(value));
 }
 
 function transactionDate(ms) {
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(ms));
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", timeZone: EASTERN_TIME_ZONE }).format(new Date(ms));
 }
 
 function relativeDate(ms) {
@@ -1843,20 +2079,35 @@ function relativeDate(ms) {
 }
 
 function isToday(value) {
-  const date = new Date(value);
-  const now = new Date();
-  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+  return easternDateKey(value) === easternDateKey();
 }
 
-function startOfDay(value) {
-  const date = new Date(value);
-  date.setHours(0, 0, 0, 0);
-  return date;
+function currentDate() {
+  if (!DATE_PREVIEW || !/^\d{4}-\d{2}-\d{2}$/.test(DATE_PREVIEW)) return new Date();
+  return new Date(`${DATE_PREVIEW}T12:00:00-04:00`);
 }
 
-function localDateKey(value) {
-  const date = new Date(value);
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+function easternParts(value = currentDate()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: EASTERN_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).formatToParts(new Date(value));
+  const get = (type) => parts.find((part) => part.type === type)?.value || "";
+  const weekdays = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return {
+    year: Number(get("year")),
+    month: Number(get("month")),
+    day: Number(get("day")),
+    weekday: weekdays[get("weekday")] ?? 0,
+  };
+}
+
+function easternDateKey(value = currentDate()) {
+  const parts = easternParts(value);
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
 }
 
 function initialsFor(name) {

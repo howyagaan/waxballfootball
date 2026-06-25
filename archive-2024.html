@@ -46,7 +46,7 @@
       <section class="archive-showpiece" aria-label="2024 season result">
         <div class="status-row">
           <span class="dot"></span>
-          <span>ESPN-era archive</span>
+          <span>Completed season</span>
         </div>
         <div class="showpiece-grid">
           <article class="result-card champion-card">
@@ -54,7 +54,7 @@
               <span class="avatar">CE</span>
               <div>
                 <span class="metric-label">Playoff champion · $260</span>
-                <strong>Christian</strong>
+                <strong>Christian Engelhardt</strong>
                 <span class="username">Steeler Virginity</span>
               </div>
             </header>
@@ -65,7 +65,7 @@
               <span class="avatar">JM</span>
               <div>
                 <span class="metric-label">💩 King · Brazilian Wax</span>
-                <strong>Jacob</strong>
+                <strong>Jacob Moskovitz</strong>
                 <span class="username">JacobNoWaxkovitz</span>
               </div>
             </header>
@@ -77,7 +77,7 @@
             <span class="avatar">EO</span>
             <div>
               <span class="metric-label">Runner-up</span>
-              <strong>Erik</strong>
+              <strong>Erik Ohno Dagoberg</strong>
               <span class="username">Erik's Excellent Entourage</span>
               <p>$100</p>
             </div>
@@ -86,7 +86,7 @@
             <span class="avatar"><img alt="" src="./assets/avatars/2024/gaygun.png" /></span>
             <div>
               <span class="metric-label">3rd Place</span>
-              <strong>Travis</strong>
+              <strong>Travis Roy Rogers</strong>
               <span class="username">gaygun</span>
               <p>$40</p>
             </div>
@@ -192,64 +192,27 @@
 
       <section id="teams" class="section-head">
         <div>
-          <p class="eyebrow">Team profiles</p>
-          <h2>2024 Capsules</h2>
+          <p class="eyebrow">Choose a team</p>
+          <h2>2024 Profiles</h2>
           <p class="muted">
-            Simple manager snapshots from the ESPN season. These can grow once we have draft and roster exports.
+            Pick one team to see regular-season finish, postseason result, and the draft/final roster comparison.
           </p>
         </div>
       </section>
-      <section class="season-notes-grid archive-capsules" aria-label="2024 team capsules">
-        <article>
-          <span class="metric-label">Champion</span>
-          <strong>Christian</strong>
-          <p>Steeler Virginity went 8-6 in the regular season, then beat Erik in the championship.</p>
-        </article>
-        <article>
-          <span class="metric-label">Runner-up</span>
-          <strong>Erik</strong>
-          <p>Erik's Excellent Entourage went 9-5, had the longest win streak, and finished 2nd.</p>
-        </article>
-        <article>
-          <span class="metric-label">3rd Place</span>
-          <strong>Travis</strong>
-          <p>gaygun went 9-5 and closed the inaugural season on the podium.</p>
-        </article>
-        <article>
-          <span class="metric-label">Regular-season leader</span>
-          <strong>Sam</strong>
-          <p>DaBigbootylatinas had the league's best regular-season record at 10-4, then lost both playoff matches to finish 4th.</p>
-        </article>
-        <article>
-          <span class="metric-label">Mid-table survivor</span>
-          <strong>Nic</strong>
-          <p>Balls? Say Less. went 7-7 and finished 5th after the postseason.</p>
-        </article>
-        <article>
-          <span class="metric-label">Mid-table survivor</span>
-          <strong>Miles Blue</strong>
-          <p>blueball also went 7-7 and finished 6th.</p>
-        </article>
-        <article>
-          <span class="metric-label">Toilet Bowl survivor</span>
-          <strong>Will</strong>
-          <p>Leaping Jesters went 1-13, but survived the Toilet Bowl and finished 7th.</p>
-        </article>
-        <article>
-          <span class="metric-label">Toilet Bowl survivor</span>
-          <strong>Miles Elliot</strong>
-          <p>Daddy Campbell went 8-6 in the regular season but finished 8th after the Toilet Bowl bracket.</p>
-        </article>
-        <article>
-          <span class="metric-label">Final escape</span>
-          <strong>Jakob</strong>
-          <p>PapiCoop beat Jacob in the final Toilet Bowl matchup and finished 9th.</p>
-        </article>
-        <article>
-          <span class="metric-label">💩 King</span>
-          <strong>Jacob</strong>
-          <p>JacobNoWaxkovitz lost the final Toilet Bowl matchup and finished 10th.</p>
-        </article>
+      <section class="team-lab archive-team-lab" aria-labelledby="archive-team-title">
+        <div class="team-lab-head">
+          <div>
+            <p class="eyebrow">Choose a team</p>
+            <h2 id="archive-team-title">Season Profile</h2>
+          </div>
+          <div class="selector-row">
+            <label for="team-select-2024">Team</label>
+            <select id="team-select-2024" aria-label="Choose a 2024 team"></select>
+          </div>
+        </div>
+        <div id="team-panel-2024" class="team-panel">
+          <p class="muted">Choose a team to review its 2024 finish, postseason result, drafted roster, and final roster.</p>
+        </div>
       </section>
 
       <section id="notes" class="section-head">
@@ -293,6 +256,270 @@
       <a href="./archive-2025.html">Go to 2025 Archive</a>
     </footer>
     <script>
+      const draft2024 = {
+        "Balls? Say Less.": [
+          ["Christian McCaffrey", "RB", "SF"], ["Chris Olave", "WR", "NO"], ["Josh Allen", "QB", "Buf"], ["DeVonta Smith", "WR", "Phi"], ["Rachaad White", "RB", "TB"], ["Zay Flowers", "WR", "Bal"], ["Calvin Ridley", "WR", "Ten"], ["Jaylen Warren", "RB", "Pit"], ["Brock Bowers", "TE", "LV"], ["Devin Singletary", "RB", "NYG"], ["Austin Ekeler", "RB", "Wsh"], ["Jerry Jeudy", "WR", "Cle"], ["Jakobi Meyers", "WR", "LV"], ["Greg Zuerlein", "K", "NYJ"], ["Tua Tagovailoa", "QB", "Mia"], ["Bengals D/ST", "D/ST", "Cin"],
+        ],
+        blueball: [
+          ["CeeDee Lamb", "WR", "Dal"], ["Derrick Henry", "RB", "Bal"], ["Patrick Mahomes", "QB", "KC"], ["James Cook", "RB", "Buf"], ["Malik Nabers", "WR", "NYG"], ["Tank Dell", "WR", "Hou"], ["Jake Ferguson", "TE", "Dal"], ["Christian Kirk", "WR", "Hou"], ["Zamir White", "RB", "LV"], ["Brian Thomas Jr.", "WR", "Jax"], ["DeAndre Hopkins", "WR", "Bal"], ["Jerome Ford", "RB", "Cle"], ["Harrison Butker", "K", "KC"], ["Taysom Hill", "TE", "NO"], ["Jared Goff", "QB", "Det"], ["Chiefs D/ST", "D/ST", "KC"],
+        ],
+        "Leaping Jesters": [
+          ["Tyreek Hill", "WR", "Mia"], ["Davante Adams", "WR", "LAR"], ["Marvin Harrison Jr.", "WR", "Ari"], ["Joe Mixon", "RB", "Hou"], ["Mark Andrews", "TE", "Bal"], ["Jordan Love", "QB", "GB"], ["D'Andre Swift", "RB", "Chi"], ["Keenan Allen", "WR", "Chi"], ["Najee Harris", "RB", "LAC"], ["David Njoku", "TE", "Cle"], ["Caleb Williams", "QB", "Chi"], ["Nick Chubb", "RB", "Cle"], ["Jameson Williams", "WR", "Det"], ["Ravens D/ST", "D/ST", "Bal"], ["Younghoe Koo", "K", "Atl"], ["Joshua Palmer", "WR", "Buf"],
+        ],
+        "Erik's Excellent Entourage": [
+          ["Amon-Ra St. Brown", "WR", "Det"], ["Puka Nacua", "WR", "LAR"], ["Mike Evans", "WR", "TB"], ["Kenneth Walker III", "RB", "Sea"], ["Dalton Kincaid", "TE", "Buf"], ["James Conner", "RB", "Ari"], ["Dak Prescott", "QB", "Dal"], ["Terry McLaurin", "WR", "Wsh"], ["David Montgomery", "RB", "Det"], ["Rome Odunze", "WR", "Chi"], ["Jonathon Brooks", "RB", "Car"], ["Chuba Hubbard", "RB", "Car"], ["Ty Chandler", "RB", "Min"], ["Curtis Samuel", "WR", "Buf"], ["Ka'imi Fairbairn", "K", "Hou"], ["Lions D/ST", "D/ST", "Det"],
+        ],
+        JacobNoWaxkovitz: [
+          ["Breece Hall", "RB", "NYJ"], ["Travis Etienne Jr.", "RB", "Jax"], ["Travis Kelce", "TE", "KC"], ["Stefon Diggs", "WR", "Hou"], ["Lamar Jackson", "QB", "Bal"], ["Raheem Mostert", "RB", "LV"], ["Chris Godwin", "WR", "TB"], ["Jayden Reed", "WR", "GB"], ["Tony Pollard", "RB", "Ten"], ["Mike Williams", "WR", "LAC"], ["J.K. Dobbins", "RB", "LAC"], ["Zach Charbonnet", "RB", "Sea"], ["Darnell Mooney", "WR", "Atl"], ["Cameron Dicker", "K", "LAC"], ["Jets D/ST", "D/ST", "NYJ"], ["Aaron Rodgers", "QB", "FA"],
+        ],
+        gaygun: [
+          ["Bijan Robinson", "RB", "Atl"], ["Isiah Pacheco", "RB", "KC"], ["Nico Collins", "WR", "Hou"], ["Jalen Hurts", "QB", "Phi"], ["Brandon Aiyuk", "WR", "SF"], ["Rashee Rice", "WR", "KC"], ["Tee Higgins", "WR", "Cin"], ["Evan Engram", "TE", "Den"], ["Jaxon Smith-Njigba", "WR", "Sea"], ["Keon Coleman", "WR", "Buf"], ["T.J. Hockenson", "TE", "Min"], ["Chase Brown", "RB", "Cin"], ["Justin Herbert", "QB", "LAC"], ["49ers D/ST", "D/ST", "SF"], ["Evan McPherson", "K", "Cin"], ["Jaleel McLaughlin", "RB", "Den"],
+        ],
+        "Steeler Virginity": [
+          ["Justin Jefferson", "WR", "Min"], ["Saquon Barkley", "RB", "Phi"], ["Michael Pittman Jr.", "WR", "Ind"], ["Josh Jacobs", "RB", "GB"], ["DJ Moore", "WR", "Chi"], ["C.J. Stroud", "QB", "Hou"], ["Kyle Pitts", "TE", "Atl"], ["Brian Robinson Jr.", "RB", "Wsh"], ["Ladd McConkey", "WR", "LAC"], ["Jordan Addison", "WR", "Min"], ["Zack Moss", "RB", "Cin"], ["Jayden Daniels", "QB", "Wsh"], ["Dallas Goedert", "TE", "Phi"], ["Cowboys D/ST", "D/ST", "Dal"], ["Jake Moody", "K", "SF"], ["Romeo Doubs", "WR", "GB"],
+        ],
+        DaBigbootylatinas: [
+          ["Ja'Marr Chase", "WR", "Cin"], ["Kyren Williams", "RB", "LAR"], ["Drake London", "WR", "Atl"], ["Sam LaPorta", "TE", "Det"], ["Jaylen Waddle", "WR", "Mia"], ["Anthony Richardson", "QB", "Ind"], ["Rhamondre Stevenson", "RB", "NE"], ["George Pickens", "WR", "Pit"], ["Tyjae Spears", "RB", "Ten"], ["Brock Purdy", "QB", "SF"], ["Hollywood Brown", "WR", "KC"], ["Gus Edwards", "RB", "FA"], ["Pat Freiermuth", "TE", "Pit"], ["Jake Elliott", "K", "Phi"], ["Browns D/ST", "D/ST", "Cle"], ["Rashid Shaheed", "WR", "NO"],
+        ],
+        "Daddy Campbell": [
+          ["Garrett Wilson", "WR", "NYJ"], ["Jahmyr Gibbs", "RB", "Det"], ["De'Von Achane", "RB", "Mia"], ["Deebo Samuel Sr.", "WR", "Wsh"], ["Trey McBride", "TE", "Ari"], ["Kyler Murray", "QB", "Ari"], ["Amari Cooper", "WR", "Buf"], ["Diontae Johnson", "WR", "Bal"], ["Javonte Williams", "RB", "Dal"], ["Xavier Worthy", "WR", "KC"], ["Khalil Shakir", "WR", "Buf"], ["Dalton Schultz", "TE", "Hou"], ["Blake Corum", "RB", "LAR"], ["Brandon Aubrey", "K", "Dal"], ["Steelers D/ST", "D/ST", "Pit"], ["Kirk Cousins", "QB", "Atl"],
+        ],
+        PapiCoop: [
+          ["Jonathan Taylor", "RB", "Ind"], ["A.J. Brown", "WR", "Phi"], ["Alvin Kamara", "RB", "NO"], ["DK Metcalf", "WR", "Pit"], ["George Kittle", "TE", "SF"], ["Cooper Kupp", "WR", "Sea"], ["Christian Watson", "WR", "GB"], ["Aaron Jones", "RB", "Min"], ["Joe Burrow", "QB", "Cin"], ["Courtland Sutton", "WR", "Den"], ["Ezekiel Elliott", "RB", "FA"], ["Tyler Conklin", "TE", "NYJ"], ["Justin Tucker", "K", "Bal"], ["Adam Thielen", "WR", "Car"], ["Dolphins D/ST", "D/ST", "Mia"], ["Deshaun Watson", "QB", "Cle"],
+        ],
+      };
+
+      const finalRosters2024 = {
+        "Steeler Virginity": [
+          ["Jayden Daniels", "QB", "Wsh"], ["Saquon Barkley", "RB", "Phi"], ["Josh Jacobs", "RB", "GB"], ["DJ Moore", "WR", "Chi"], ["Terry McLaurin", "WR", "Wsh"], ["Mark Andrews", "TE", "Bal"], ["Ladd McConkey", "WR", "LAC"], ["Chiefs D/ST", "D/ST", "KC"], ["Jake Bates", "K", "Det"], ["Brian Robinson Jr.", "RB", "Wsh"], ["Josh Downs", "WR", "Ind"], ["Jaylen Warren", "RB", "Pit"], ["Matthew Stafford", "QB", "LAR"], ["Cade Otton", "TE", "TB"], ["Jake Ferguson", "TE", "Dal"], ["Jerome Ford", "RB", "Cle"], ["Christian McCaffrey", "RB", "SF"],
+        ],
+        "Erik's Excellent Entourage": [
+          ["Josh Allen", "QB", "Buf"], ["Kenneth Walker III", "RB", "Sea"], ["James Conner", "RB", "Ari"], ["Amon-Ra St. Brown", "WR", "Det"], ["Puka Nacua", "WR", "LAR"], ["Brock Bowers", "TE", "LV"], ["Mike Evans", "WR", "TB"], ["Vikings D/ST", "D/ST", "Min"], ["Ka'imi Fairbairn", "K", "Hou"], ["Tyreek Hill", "WR", "Mia"], ["Trey Benson", "RB", "Ari"], ["Keon Coleman", "WR", "Buf"], ["Zach Charbonnet", "RB", "Sea"], ["Cardinals D/ST", "D/ST", "Ari"], ["Tyjae Spears", "RB", "Ten"], ["Kendre Miller", "RB", "NO"],
+        ],
+        gaygun: [
+          ["Jalen Hurts", "QB", "Phi"], ["Bijan Robinson", "RB", "Atl"], ["Rico Dowdle", "RB", "Car"], ["Nico Collins", "WR", "Hou"], ["Tee Higgins", "WR", "Cin"], ["T.J. Hockenson", "TE", "Min"], ["Jordan Addison", "WR", "Min"], ["Bengals D/ST", "D/ST", "Cin"], ["Jake Elliott", "K", "Phi"], ["Isiah Pacheco", "RB", "KC"], ["Evan Engram", "TE", "Den"], ["49ers D/ST", "D/ST", "SF"], ["Tua Tagovailoa", "QB", "Mia"], ["Jaylen Waddle", "WR", "Mia"], ["Jordan Mason", "RB", "Min"], ["Commanders D/ST", "D/ST", "Wsh"],
+        ],
+        DaBigbootylatinas: [
+          ["Anthony Richardson", "QB", "Ind"], ["Kyren Williams", "RB", "LAR"], ["Rhamondre Stevenson", "RB", "NE"], ["Ja'Marr Chase", "WR", "Cin"], ["Drake London", "WR", "Atl"], ["David Njoku", "TE", "Cle"], ["Pat Freiermuth", "TE", "Pit"], ["Cowboys D/ST", "D/ST", "Dal"], ["Cameron Dicker", "K", "LAC"], ["Sam LaPorta", "TE", "Det"], ["George Pickens", "WR", "Pit"], ["Brock Purdy", "QB", "SF"], ["Najee Harris", "RB", "LAC"], ["D'Andre Swift", "RB", "Chi"], ["Kirk Cousins", "QB", "Atl"], ["C.J. Stroud", "QB", "Hou"], ["Chuba Hubbard", "RB", "Car"],
+        ],
+        "Balls? Say Less.": [
+          ["Sam Darnold", "QB", "Sea"], ["Rachaad White", "RB", "TB"], ["Chase Brown", "RB", "Cin"], ["Jaxon Smith-Njigba", "WR", "Sea"], ["Justin Jefferson", "WR", "Min"], ["Stone Smartt", "TE", "NYJ"], ["Quentin Johnston", "WR", "LAC"], ["Falcons D/ST", "D/ST", "Atl"], ["Tyler Bass", "K", "Buf"], ["Jakobi Meyers", "WR", "LV"], ["Patrick Mahomes", "QB", "KC"], ["Jameson Williams", "WR", "Det"], ["Noah Gray", "TE", "KC"], ["Juwan Johnson", "TE", "NO"],
+        ],
+        blueball: [
+          ["Jared Goff", "QB", "Det"], ["Derrick Henry", "RB", "Bal"], ["James Cook", "RB", "Buf"], ["CeeDee Lamb", "WR", "Dal"], ["Malik Nabers", "WR", "NYG"], ["Jonnu Smith", "TE", "Mia"], ["Brian Thomas Jr.", "WR", "Jax"], ["Texans D/ST", "D/ST", "Hou"], ["Chase McLaughlin", "K", "TB"], ["Bo Nix", "QB", "Den"], ["Jerry Jeudy", "WR", "Cle"], ["Bucky Irving", "RB", "TB"], ["Zach Ertz", "TE", "Wsh"], ["Xavier Worthy", "WR", "KC"], ["DeAndre Hopkins", "WR", "Bal"], ["Tank Bigsby", "RB", "Jax"],
+        ],
+        "Leaping Jesters": [
+          ["Baker Mayfield", "QB", "TB"], ["Javonte Williams", "RB", "Det"], ["De'Von Achane", "RB", "Mia"], ["Courtland Sutton", "WR", "LAR"], ["Keenan Allen", "WR", "Den"], ["Tucker Kraft", "TE", "GB"], ["Davante Adams", "RB", "Dal"], ["Broncos D/ST", "D/ST", "Den"], ["Will Reichard", "K", "Min"], ["Jordan Love", "RB", "Cle"], ["Deebo Samuel Sr.", "WR", "Buf"], ["Jordan Love", "QB", "GB"], ["Deebo Samuel Sr.", "WR", "Wsh"], ["Cedric Tillman", "WR", "Cle"], ["Jameis Winston", "QB", "Cle"], ["Seahawks D/ST", "D/ST", "Sea"],
+        ],
+        "Daddy Campbell": [
+          ["Kyler Murray", "QB", "Ari"], ["Jahmyr Gibbs", "RB", "Det"], ["Joe Mixon", "RB", "Hou"], ["Marvin Harrison Jr.", "WR", "Ari"], ["Jauan Jennings", "WR", "SF"], ["Trey McBride", "TE", "Ari"], ["Khalil Shakir", "WR", "Buf"], ["Eagles D/ST", "D/ST", "Phi"], ["Brandon Aubrey", "K", "Dal"], ["Steelers D/ST", "D/ST", "Pit"], ["Tank Dell", "WR", "Hou"], ["Wan'Dale Robinson", "WR", "NYG"], ["Packers D/ST", "D/ST", "GB"], ["Russell Wilson", "QB", "Pit"], ["Zay Flowers", "WR", "Bal"], ["Hunter Henry", "TE", "NE"],
+        ],
+        PapiCoop: [
+          ["Joe Burrow", "QB", "Cin"], ["Jonathan Taylor", "RB", "Ind"], ["Aaron Jones", "RB", "Min"], ["A.J. Brown", "WR", "Phi"], ["Garrett Wilson", "WR", "NYJ"], ["George Kittle", "TE", "SF"], ["Adam Thielen", "WR", "Car"], ["Bills D/ST", "D/ST", "Buf"], ["Jason Sanders", "K", "Mia"], ["Alvin Kamara", "RB", "NO"], ["Cooper Kupp", "WR", "Sea"], ["Justin Herbert", "QB", "LAC"], ["DK Metcalf", "WR", "Pit"], ["Tyrone Tracy Jr.", "RB", "NYG"], ["Gus Edwards", "RB", "FA"], ["Michael Penix Jr.", "QB", "Atl"],
+        ],
+        JacobNoWaxkovitz: [
+          ["Lamar Jackson", "QB", "Bal"], ["Breece Hall", "RB", "NYJ"], ["Tony Pollard", "RB", "Ten"], ["Calvin Ridley", "WR", "Ten"], ["DeVonta Smith", "WR", "Phi"], ["Travis Kelce", "TE", "KC"], ["Rome Odunze", "WR", "Chi"], ["Ravens D/ST", "D/ST", "Bal"], ["Chris Boswell", "K", "Pit"], ["Travis Etienne Jr.", "RB", "Jax"], ["Jayden Reed", "WR", "GB"], ["Darnell Mooney", "WR", "Atl"], ["Jets D/ST", "D/ST", "NYJ"], ["Justice Hill", "RB", "Bal"], ["Geno Smith", "QB", "LV"], ["Isaiah Davis", "RB", "NYJ"], ["J.K. Dobbins", "RB", "LAC"],
+        ],
+      };
+
+      const teams2024 = [
+        {
+          team: "DaBigbootylatinas",
+          manager: "Sam Labovitz",
+          avatar: "SL",
+          regular: "10-4",
+          combined: "10-6",
+          regularFinish: "1st",
+          playoffFinish: "4th",
+          profile: "DaBigbootylatinas had the league's best regular-season record at 10-4, then lost both playoff matches to finish 4th.",
+          drafted: draft2024["DaBigbootylatinas"],
+          finalRoster: finalRosters2024["DaBigbootylatinas"],
+        },
+        {
+          team: "Erik's Excellent Entourage",
+          manager: "Erik Ohno Dagoberg",
+          avatar: "EO",
+          regular: "9-5",
+          combined: "10-6",
+          regularFinish: "2nd",
+          playoffFinish: "Runner-up",
+          profile: "Erik Ohno Dagoberg went 9-5, led the league in points, had the longest win streak, and lost to Christian Engelhardt in the championship.",
+          drafted: draft2024["Erik's Excellent Entourage"],
+          finalRoster: finalRosters2024["Erik's Excellent Entourage"],
+        },
+        {
+          team: "gaygun",
+          manager: "Travis Roy Rogers",
+          avatar: '<img alt="" src="./assets/avatars/2024/gaygun.png" />',
+          regular: "9-5",
+          combined: "10-5",
+          regularFinish: "3rd",
+          playoffFinish: "3rd",
+          profile: "Travis Roy Rogers went 9-5 and finished 3rd, closing the inaugural season on the podium.",
+          drafted: draft2024.gaygun,
+          finalRoster: finalRosters2024.gaygun,
+        },
+        {
+          team: "Steeler Virginity",
+          manager: "Christian Engelhardt",
+          avatar: "CE",
+          regular: "8-6",
+          combined: "10-6",
+          regularFinish: "4th",
+          playoffFinish: "Playoff champion",
+          profile: "Christian Engelhardt went 8-6, then won the first Waxball championship by beating Erik Ohno Dagoberg in the final.",
+          drafted: draft2024["Steeler Virginity"],
+          finalRoster: finalRosters2024["Steeler Virginity"],
+        },
+        {
+          team: "Daddy Campbell",
+          manager: "Miles Elliot",
+          avatar: '<img alt="" src="./assets/avatars/2024/daddy-campbell.webp" />',
+          regular: "8-6",
+          combined: "8-8",
+          regularFinish: "5th",
+          playoffFinish: "8th",
+          profile: "Miles Elliot went 8-6 in the regular season, then slid into the Toilet Bowl bracket and finished 8th.",
+          drafted: draft2024["Daddy Campbell"],
+          finalRoster: finalRosters2024["Daddy Campbell"],
+        },
+        {
+          team: "blueball",
+          manager: "Miles Blue",
+          avatar: '<img alt="" src="./assets/avatars/2024/blueball.webp" />',
+          regular: "7-7",
+          combined: "8-8",
+          regularFinish: "6th",
+          playoffFinish: "6th",
+          profile: "Miles Blue went 7-7 and finished 6th, holding his regular-season position through the postseason.",
+          drafted: draft2024.blueball,
+          finalRoster: finalRosters2024.blueball,
+        },
+        {
+          team: "Balls? Say Less.",
+          manager: "Nicholas Hamilton",
+          avatar: '<img alt="" src="./assets/avatars/2024/balls-say-less.webp" />',
+          regular: "7-7",
+          combined: "8-7",
+          regularFinish: "7th",
+          playoffFinish: "5th",
+          profile: "Nicholas Hamilton went 7-7 and climbed to 5th after the postseason.",
+          drafted: draft2024["Balls? Say Less."],
+          finalRoster: finalRosters2024["Balls? Say Less."],
+        },
+        {
+          team: "PapiCoop",
+          manager: "Jakob Cooper",
+          avatar: '<img alt="" src="./assets/avatars/2024/papicoop.jpg" />',
+          regular: "6-8",
+          combined: "7-8",
+          regularFinish: "8th",
+          playoffFinish: "9th",
+          profile: "Jakob Cooper beat Jacob Moskovitz in the final Toilet Bowl matchup and survived the Brazilian Wax.",
+          drafted: draft2024.PapiCoop,
+          finalRoster: finalRosters2024.PapiCoop,
+        },
+        {
+          team: "JacobNoWaxkovitz",
+          manager: "Jacob Moskovitz",
+          avatar: "JM",
+          regular: "5-9",
+          combined: "5-10",
+          regularFinish: "9th",
+          playoffFinish: "💩 King",
+          profile: "Jacob Moskovitz lost the final Toilet Bowl matchup to Jakob Cooper and became the inaugural 💩 King.",
+          drafted: draft2024.JacobNoWaxkovitz,
+          finalRoster: finalRosters2024.JacobNoWaxkovitz,
+        },
+        {
+          team: "Leaping Jesters",
+          manager: "Will Price",
+          avatar: "WP",
+          regular: "1-13",
+          combined: "3-13",
+          regularFinish: "10th",
+          playoffFinish: "7th",
+          profile: "Will Price went 1-13, then survived the Toilet Bowl and climbed to 7th after the postseason.",
+          drafted: draft2024["Leaping Jesters"],
+          finalRoster: finalRosters2024["Leaping Jesters"],
+        },
+      ];
+
+      function normalizeTeam2024(team) {
+        const map = { Ari: "ARI", Atl: "ATL", Bal: "BAL", Buf: "BUF", Car: "CAR", Chi: "CHI", Cin: "CIN", Cle: "CLE", Dal: "DAL", Den: "DEN", Det: "DET", FA: "FA", GB: "GB", Hou: "HOU", Ind: "IND", Jax: "JAX", KC: "KC", LAC: "LAC", LAR: "LAR", LV: "LV", Mia: "MIA", Min: "MIN", NE: "NE", NO: "NO", NYG: "NYG", NYJ: "NYJ", Phi: "PHI", Pit: "PIT", Sea: "SEA", SF: "SF", TB: "TB", Ten: "TEN", Wsh: "WAS" };
+        return map[team] || team || "";
+      }
+
+      function playerTag2024(player, draftLookup) {
+        const position = player[1] || "";
+        const currentTeam = normalizeTeam2024(player[2]);
+        const drafted = draftLookup?.get(player[0]);
+        const originalTeam = normalizeTeam2024(drafted?.[2]);
+        const teamTag = originalTeam && currentTeam && originalTeam !== currentTeam
+          ? `<span class="old-team">${originalTeam}</span> | ${currentTeam}`
+          : currentTeam;
+        return [position, teamTag].filter(Boolean).join(" · ") || "NFL";
+      }
+
+      function playerList2024(players, fallback, draftLookup = null) {
+        if (!players.length) return `<p class="muted">${fallback}</p>`;
+        return `
+          <ul class="player-list compact-player-list">
+            ${players.map((player) => `<li><strong>${player[0]}</strong><span>${playerTag2024(player, draftLookup)}</span></li>`).join("")}
+          </ul>
+        `;
+      }
+
+      function renderTeam2024(team) {
+        const panel = document.querySelector("#team-panel-2024");
+        if (!panel || !team) return;
+        const draftLookup = new Map(team.drafted.map((player) => [player[0], player]));
+        panel.innerHTML = `
+          <div class="team-panel-main">
+            <header>
+              <span class="avatar">${team.avatar}</span>
+              <div class="team-copy">
+                <h3>${team.team}</h3>
+                <span class="username">${team.manager}</span>
+              </div>
+            </header>
+            <div class="mini-stats archive-mini-stats">
+              <div><span class="metric-label">Regular Season</span><strong>${team.regular}</strong></div>
+              <div><span class="metric-label">With Playoffs</span><strong>${team.combined}</strong></div>
+              <div><span class="metric-label">Regular Finish</span><strong>${team.regularFinish}</strong></div>
+              <div><span class="metric-label">Playoff Finish</span><strong>${team.playoffFinish}</strong></div>
+            </div>
+          </div>
+          <div class="team-panel-grid archive-profile-grid">
+            <article class="wide-card">
+              <span class="metric-label">2024 Season Profile</span>
+              <p class="muted">${team.profile}</p>
+            </article>
+            <article>
+              <span class="metric-label">Drafted Roster</span>
+              ${playerList2024(team.drafted, "Draft roster import is pending from the ESPN PDF export.")}
+            </article>
+            <article>
+              <span class="metric-label">Season-ending Roster</span>
+              ${playerList2024(team.finalRoster, "Season-ending roster import is pending from the ESPN PDF export.", draftLookup)}
+            </article>
+            <article>
+              <span class="metric-label">Stayed From Draft</span>
+              ${playerList2024(team.drafted.filter((player) => team.finalRoster.some((finalPlayer) => finalPlayer[0] === player[0])), "No drafted players stayed on this final roster, or the replacement final roster is still pending.")}
+            </article>
+          </div>
+        `;
+      }
+
+      const selector2024 = document.querySelector("#team-select-2024");
+      if (selector2024) {
+        selector2024.innerHTML = teams2024
+          .map((team, index) => `<option value="${index}">${team.team}</option>`)
+          .join("");
+        selector2024.addEventListener("change", () => renderTeam2024(teams2024[Number(selector2024.value)]));
+        renderTeam2024(teams2024[0]);
+      }
+
       fetch("https://api.sleeper.app/v1/league/1312219624808419328")
         .then((response) => (response.ok ? response.json() : null))
         .then((league) => {

@@ -845,6 +845,20 @@ body[data-theme="mnf"] .matchup-card {
   gap: 0.75rem;
 }
 
+.roster-snapshot-grid {
+  grid-column: 1 / -1;
+}
+
+.roster-subhead {
+  display: block;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  margin-top: 0.85rem;
+  text-transform: uppercase;
+}
+
 .gameday-panel {
   display: grid;
   grid-template-columns: minmax(0, 0.85fr) minmax(280px, 1.15fr);
