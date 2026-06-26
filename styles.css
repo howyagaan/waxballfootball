@@ -326,6 +326,14 @@ body[data-theme="midweek"] .hero {
   color: #031211;
 }
 
+.hero-actions > .button.primary {
+  order: 1;
+}
+
+.hero-actions > .button:not(.primary) {
+  order: 2;
+}
+
 .hero-team-select {
   display: inline-flex;
   align-items: center;
@@ -344,6 +352,7 @@ body[data-theme="midweek"] .hero {
   display: grid;
   justify-items: center;
   gap: 0.25rem;
+  order: 4;
 }
 
 .team-view-status {
@@ -910,31 +919,32 @@ body[data-theme="mnf"] .matchup-card {
 }
 
 .preseason-countdown {
-  min-height: 2.7rem;
+  flex-basis: 100%;
+  order: 3;
   border: 1px solid rgba(24, 230, 199, 0.45);
-  border-radius: 18px;
+  border-radius: 22px;
   background:
     radial-gradient(circle at 20% 0%, rgba(24, 230, 199, 0.2), transparent 35%),
     linear-gradient(135deg, rgba(24, 230, 199, 0.12), var(--panel-2));
-  padding: 0.55rem 0.9rem;
+  padding: clamp(1.1rem, 4vw, 2rem);
   text-align: center;
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow);
 }
 
 .preseason-countdown strong {
   display: block;
-  margin: 0.15rem 0 0;
+  margin: 0.35rem 0;
   color: var(--ink);
-  font-size: clamp(1.25rem, 3vw, 1.85rem);
-  line-height: 1;
-  letter-spacing: -0.03em;
+  font-size: clamp(2.6rem, 10vw, 5.8rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
 }
 
 .preseason-countdown p {
-  margin: 0.15rem 0 0;
+  margin: 0;
   color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 850;
+  font-size: 1rem;
+  font-weight: 750;
 }
 
 .status-row {
