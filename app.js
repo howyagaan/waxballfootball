@@ -7,25 +7,15 @@ const AUTO_REFRESH_MS = 120000;
 const WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
 const PAGE = document.body.dataset.page || "current";
 const EASTERN_TIME_ZONE = "America/New_York";
-const PRESEASON_END_DATE_KEY = "2026-09-08";
+const PRESEASON_END_DATE_KEY = "2026-09-07";
+const FIRST_2026_KICKOFF = "2026-09-09T20:20:00-04:00";
 const NFL_SCHEDULE_START = "20260909";
 const NFL_SCHEDULE_END = "20270110";
 const NFL_SCHEDULE_CACHE_KEY = "waxball-2026-nfl-schedule";
 const QUERY_PARAMS = new URLSearchParams(window.location.search);
-const MODE_PREVIEW = QUERY_PARAMS.get("mode");
 const SEASON_PREVIEW = QUERY_PARAMS.get("season");
 const WEEK_PREVIEW = Number(QUERY_PARAMS.get("week"));
 const DATE_PREVIEW = QUERY_PARAMS.get("date");
-const SHOWCASE_PREVIEW = QUERY_PARAMS.get("showcase");
-const WEEK7_SHOWCASE_DAYS = {
-  "week7-monday": { day: "monday", date: "2025-10-20", mode: "mnf" },
-  "week7-tuesday": { day: "tuesday", date: "2025-10-14", mode: "midweek" },
-  "week7-wednesday": { day: "wednesday", date: "2025-10-15", mode: "midweek" },
-  "week7-thursday": { day: "thursday", date: "2025-10-16", mode: "tnf" },
-  "week7-friday": { day: "friday", date: "2025-10-17", mode: "midweekend" },
-  "week7-saturday": { day: "saturday", date: "2025-10-18", mode: "midweekend" },
-  "week7-sunday": { day: "sunday", date: "2025-10-19", mode: "snf" },
-};
 const ARTICLES_2026 = [
   /*
   {
@@ -66,6 +56,8 @@ const els = {
   toiletLabel: document.querySelector("#toilet-label"),
   leaderLabel: document.querySelector("#leader-label"),
   champion: document.querySelector("#champion-metric"),
+  countdown: document.querySelector("#preseason-countdown"),
+  countdownValue: document.querySelector("#countdown-value"),
   teamSelect: document.querySelector("#team-select"),
   teamViewStatus: document.querySelector("#team-view-status"),
   teamPanel: document.querySelector("#team-panel"),
@@ -161,7 +153,7 @@ async function loadAll() {
     const [current, archive, nfl] = await Promise.all([
       loadSeason(currentLeagueId, {
         includeTransactions: true,
-        matchupWeeks: isHistoricalCurrentPreview() || isWeek7Showcase() ? WEEKS : null,
+        matchupWeeks: PAGE === "current" || isHistoricalCurrentPreview() ? WEEKS : null,
       }),
       loadSeason(ARCHIVE_2025_LEAGUE_ID, {
         includeTransactions: PAGE === "archive",
@@ -174,12 +166,6 @@ async function loadAll() {
     currentData = current;
     archiveData = archive;
     nflData = nfl;
-    if (isWeek7Showcase()) {
-      currentData.previewMode = "week7-showcase";
-      currentData.league = { ...currentData.league, season: "2026", status: "in_season" };
-      currentData.rosters = standingsThroughWeek(currentData.rosters, currentData.matchupsByWeek, 6);
-      currentData.week = 7;
-    }
     if (isHistoricalCurrentPreview()) {
       currentData.previewMode = "historical-current";
       currentData.rosters = standingsThroughWeek(currentData.rosters, currentData.matchupsByWeek, previewWeek() - 1);
@@ -311,9 +297,7 @@ function renderCurrentPage() {
   els.heroCopy.textContent =
     heroLeagueCopy(league);
   els.season.textContent = league.season || "2026";
-  els.week.textContent = isWeek7Showcase()
-    ? `${capitalize(week7Showcase().day)} Week ${currentWeek}`
-    : isModePreview() && nflData.mode?.key === "tnf"
+  els.week.textContent = isModePreview() && nflData.mode?.key === "tnf"
     ? `Thursday Week ${currentWeek}`
     : isModePreview() && nflData.mode?.key === "snf"
       ? `Sunday Week ${currentWeek}`
@@ -345,6 +329,7 @@ function renderCurrentPage() {
   if (els.refreshStamp) {
     els.refreshStamp.textContent = `Updated ${formatTime()}`;
   }
+  renderPreseasonCountdown();
   renderMidweekArticleAction();
   renderStandings(rosters, users);
   renderMatchups(currentData.matchupsByWeek[currentWeek] || [], rosters, users, currentWeek);
@@ -365,6 +350,20 @@ function renderMidweekArticleAction() {
   els.midweekArticleSection.toggleAttribute("hidden", !shouldShow);
   if (!shouldShow) return;
   els.midweekArticleCard.innerHTML = articleCardMarkup(article, { featured: true });
+}
+
+function renderPreseasonCountdown() {
+  if (!els.countdown || !els.countdownValue) return;
+  const now = currentDate();
+  const kickoff = new Date(FIRST_2026_KICKOFF);
+  const show = PAGE === "current" && isPreseasonMode() && now < kickoff;
+  els.countdown.toggleAttribute("hidden", !show);
+  if (!show) return;
+  const diff = Math.max(kickoff - now, 0);
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  els.countdownValue.textContent = `${days}d ${hours}h ${minutes}m`;
 }
 
 function renderArchivePage() {
@@ -474,7 +473,7 @@ function renderMatchups(matchups, rosters, users, week) {
 
   const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
   const timeNote = `<p class="matchup-time-note">All game times are Eastern Time (NY).</p>`;
-  if (isWeek7Showcase() && week7Showcase().day === "tuesday") {
+  if (isTuesdayMode()) {
     const previousWeek = currentData.matchupsByWeek[currentWeek - 1] || [];
     const previousGrouped = groupBy(previousWeek, (matchup) => matchup.matchup_id || matchup.roster_id);
     els.matchups.innerHTML = `
@@ -560,7 +559,7 @@ async function renderSelectedTeam() {
     : "";
 
   els.teamPanel.innerHTML = `
-    ${week7TuesdayLastWeekResult(roster, source.rosters, source.users)}
+    ${tuesdayLastWeekResult(roster, source.rosters, source.users)}
     <div class="matchup-focus-card">
       <div class="matchup-focus-head">
         <div>
@@ -578,8 +577,8 @@ async function renderSelectedTeam() {
   `;
 }
 
-function week7TuesdayLastWeekResult(roster, rosters, users) {
-  if (!isWeek7Showcase() || week7Showcase().day !== "tuesday") return "";
+function tuesdayLastWeekResult(roster, rosters, users) {
+  if (!isTuesdayMode()) return "";
   const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[currentWeek - 1] || [], rosters, users, { forceScores: true });
   if (!matchup?.mine || !matchup?.opponentRoster) return "";
   return `
@@ -729,10 +728,6 @@ function formatArticleDate(value) {
 }
 
 function heroLeagueCopy(league) {
-  if (isWeek7Showcase()) {
-    const day = week7Showcase().day;
-    return `Week 7 ${day} showcase, using 2025 Sleeper matchups, rosters, standings, and scores as stand-ins for the 2026 site.`;
-  }
   if (isHistoricalCurrentPreview()) {
     return `${league.season} preview mode: Thursday Week ${currentWeek}, rebuilt from Sleeper matchups, rosters, avatars, and standings through the prior week.`;
   }
@@ -767,7 +762,7 @@ function currentSeasonHasResults() {
 }
 
 function isPreseasonMode() {
-  if (isHistoricalCurrentPreview() || isWeek7Showcase()) return false;
+  if (isHistoricalCurrentPreview()) return false;
   return PAGE === "current" && !isModePreview() && easternDateKey(currentDate()) <= PRESEASON_END_DATE_KEY;
 }
 
@@ -780,20 +775,11 @@ function isHistoricalCurrentPreview() {
 }
 
 function previewWeek() {
-  if (isWeek7Showcase()) return 7;
   return isHistoricalCurrentPreview() ? clampWeek(WEEK_PREVIEW) : 0;
 }
 
 function activeCurrentLeagueId() {
-  return isHistoricalCurrentPreview() || isWeek7Showcase() ? ARCHIVE_2025_LEAGUE_ID : CURRENT_LEAGUE_ID;
-}
-
-function isWeek7Showcase() {
-  return PAGE === "current" && Boolean(week7Showcase());
-}
-
-function week7Showcase() {
-  return WEEK7_SHOWCASE_DAYS[String(SHOWCASE_PREVIEW || "").toLowerCase()] || null;
+  return isHistoricalCurrentPreview() ? ARCHIVE_2025_LEAGUE_ID : CURRENT_LEAGUE_ID;
 }
 
 function currentPosition(roster, rosters) {
@@ -807,7 +793,7 @@ function teamNameByRosterId(rosterId) {
 }
 
 function isMatchupPreviewMode() {
-  return currentData?.previewMode === "matchups" || currentData?.previewMode === "week7-showcase";
+  return currentData?.previewMode === "matchups";
 }
 
 function lastPlaceRoster(rosters) {
@@ -1190,15 +1176,10 @@ function detectFootballMode(events) {
 }
 
 function previewModeDefinition() {
-  if (PAGE !== "current") return null;
-  const showcase = week7Showcase();
-  if (showcase) return modeDefinition(showcase.mode);
-  const allowed = new Set(["midweek", "tnf", "midweekend", "snf", "mnf"]);
-  return allowed.has(MODE_PREVIEW) ? modeDefinition(MODE_PREVIEW) : null;
+  return null;
 }
 
 function historicalPreviewNflEvents() {
-  if (isWeek7Showcase()) return week7ShowcaseNflEvents(week7Showcase().day);
   if (!isHistoricalCurrentPreview()) return null;
   if (SEASON_PREVIEW === "2025" && previewWeek() === 8) {
     return [
@@ -1222,54 +1203,6 @@ function historicalPreviewNflEvents() {
     ];
   }
   return null;
-}
-
-function week7ShowcaseNflEvents(day) {
-  const wednesdayFinal = ["thursday", "friday", "saturday", "sunday", "monday"].includes(day);
-  const thursdayFinal = ["friday", "saturday", "sunday", "monday"].includes(day);
-  const fridayFinal = ["saturday", "sunday", "monday"].includes(day);
-  const saturdayFinal = ["sunday", "monday"].includes(day);
-  const sundayFinal = day === "monday";
-  return [
-    showcaseNflGame("week7-wed", "2025-10-15T23:30:00Z", "NYG", "PHI", "New York Giants at Philadelphia Eagles", day === "wednesday" ? "in" : wednesdayFinal ? "post" : "pre", "Prime Video"),
-    showcaseNflGame("week7-tnf", "2025-10-16T00:15:00Z", "PIT", "CIN", "Pittsburgh Steelers at Cincinnati Bengals", day === "thursday" ? "in" : thursdayFinal ? "post" : "pre", "Prime Video"),
-    showcaseNflGame("week7-fri", "2025-10-18T00:15:00Z", "TB", "DET", "Tampa Bay Buccaneers at Detroit Lions", day === "friday" ? "in" : fridayFinal ? "post" : "pre", "Peacock"),
-    showcaseNflGame("week7-sat", "2025-10-18T20:30:00Z", "DAL", "DEN", "Dallas Cowboys at Denver Broncos", day === "saturday" ? "in" : saturdayFinal ? "post" : "pre", "NFL Network"),
-    showcaseNflGame("week7-sun-1", "2025-10-19T17:00:00Z", "LAR", "JAX", "Los Angeles Rams at Jacksonville Jaguars", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "FOX"),
-    showcaseNflGame("week7-sun-2", "2025-10-19T17:00:00Z", "NE", "TEN", "New England Patriots at Tennessee Titans", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "CBS"),
-    showcaseNflGame("week7-sun-3", "2025-10-19T17:00:00Z", "MIA", "CLE", "Miami Dolphins at Cleveland Browns", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "CBS"),
-    showcaseNflGame("week7-sun-4", "2025-10-19T20:05:00Z", "GB", "ARI", "Green Bay Packers at Arizona Cardinals", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "FOX"),
-    showcaseNflGame("week7-sun-5", "2025-10-19T20:25:00Z", "IND", "LAC", "Indianapolis Colts at Los Angeles Chargers", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "CBS"),
-    showcaseNflGame("week7-snf", "2025-10-20T00:20:00Z", "ATL", "SF", "Atlanta Falcons at San Francisco 49ers", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "NBC"),
-    showcaseNflGame("week7-mnf", "2025-10-21T00:15:00Z", "HOU", "SEA", "Houston Texans at Seattle Seahawks", day === "monday" ? "in" : "pre", "ESPN"),
-  ];
-}
-
-function showcaseNflGame(id, date, away, home, name, state, broadcast) {
-  const labels = { pre: "Scheduled", in: "Live", post: "Final" };
-  return {
-    id,
-    date,
-    shortName: `${away} @ ${home}`,
-    name,
-    season: { year: 2025, type: 2 },
-    status: {
-      type: {
-        state,
-        description: labels[state] || "Scheduled",
-        shortDetail: state === "post" ? "Final" : state === "in" ? "Live" : formatKickoff(date),
-      },
-    },
-    competitions: [
-      {
-        broadcast,
-        competitors: [
-          { homeAway: "away", team: { abbreviation: away, displayName: away } },
-          { homeAway: "home", team: { abbreviation: home, displayName: home } },
-        ],
-      },
-    ],
-  };
 }
 
 function modeDefinition(key) {
@@ -1333,7 +1266,7 @@ function applyModeTheme(mode) {
 
 function renderHeroMode(mode) {
   if (els.heroModeLabel && mode?.label) {
-    els.heroModeLabel.textContent = isWeek7Showcase() ? capitalize(week7Showcase().day) : mode.label;
+    els.heroModeLabel.textContent = PAGE === "current" && !isPreseasonMode() ? weekdayName() : mode.label;
   }
 }
 
@@ -1371,8 +1304,9 @@ function hasCompletedWeek(rosters, league) {
 }
 
 function nextMatchdayGames(events) {
-  if (isWeek7Showcase()) {
-    return events.filter(showcaseTargetEvent);
+  const targetEvents = targetGameWindowEvents(events);
+  if (targetEvents.length) {
+    return targetEvents;
   }
   const todayKey = easternDateKey();
   const upcoming = events
@@ -1385,19 +1319,36 @@ function nextMatchdayGames(events) {
   return source.filter((event) => easternDateKey(event.date) === key);
 }
 
-function showcaseTargetEvent(event) {
-  const day = week7Showcase()?.day;
-  const eventDay = easternParts(event.date).weekday;
+function targetGameWindowEvents(events) {
+  if (PAGE !== "current" || isPreseasonMode()) return [];
+  const today = easternParts();
+  const todayKey = easternDateKey();
   const windows = {
-    tuesday: [3, 4],
-    wednesday: [3, 4],
-    thursday: [4],
-    friday: [5, 6, 0],
-    saturday: [6, 0],
-    sunday: [0],
-    monday: [1],
+    2: [3, 4],
+    3: [3, 4],
+    4: [4],
+    5: [5, 6, 0],
+    6: [6, 0],
+    0: [0],
+    1: [1],
   };
-  return (windows[day] || []).includes(eventDay);
+  const targetWeekdays = windows[today.weekday] || [];
+  if (!targetWeekdays.length) return [];
+  return (events || [])
+    .filter((event) => {
+      const key = easternDateKey(event.date);
+      const eventDay = easternParts(event.date).weekday;
+      return key >= todayKey && targetWeekdays.includes(eventDay);
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+function isTuesdayMode() {
+  return PAGE === "current" && !isPreseasonMode() && easternParts().weekday === 2;
+}
+
+function weekdayName(value = currentDate()) {
+  return new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: EASTERN_TIME_ZONE }).format(new Date(value));
 }
 
 function mergeEvents(scheduleEvents, weeklyEvents) {
@@ -1523,12 +1474,29 @@ function selectedTeamMatchup(roster, matchups, rosters, users, options = {}) {
 
 function shouldShowMatchupScores() {
   if (isHistoricalCurrentPreview() && nflData?.mode?.key === "tnf") return false;
-  if (isWeek7Showcase()) {
-    const day = week7Showcase().day;
-    return ["thursday", "friday", "saturday", "sunday", "monday"].includes(day);
-  }
+  if (PAGE === "current" && !isPreseasonMode()) return hasCompletedGameInCurrentWeekWindow();
   if (isMatchupPreviewMode()) return ["midweekend", "snf", "mnf"].includes(nflData?.mode?.key);
   return (nflData?.events || []).some((event) => event.status?.type?.state === "post");
+}
+
+function hasCompletedGameInCurrentWeekWindow() {
+  const day = easternParts().weekday;
+  if (day === 2 || day === 3) return false;
+  return (nflData?.events || []).some((event) => {
+    if (event.status?.type?.state !== "post") return false;
+    const date = new Date(event.date);
+    return date >= fantasyWeekWindowStart() && date <= currentDate();
+  });
+}
+
+function fantasyWeekWindowStart() {
+  const now = currentDate();
+  const day = easternParts(now).weekday;
+  const daysSinceTuesday = (day + 5) % 7;
+  const start = new Date(now);
+  start.setDate(start.getDate() - daysSinceTuesday);
+  start.setHours(0, 0, 0, 0);
+  return start;
 }
 
 function matchupResultText(roster, opponentRoster, users, mineScore, opponentScore) {
@@ -1544,13 +1512,7 @@ function matchupResultText(roster, opponentRoster, users, mineScore, opponentSco
 
 function shouldShowPlayersToWatch() {
   if (isPreseasonMode()) return false;
-  if (isModePreview() && ["midweek", "tnf", "midweekend", "snf", "mnf"].includes(nflData?.mode?.key)) return true;
-  const day = easternParts().weekday;
-  if (day === 2) return false;
-  if (day === 3) {
-    return nextMatchdayGames(nflData?.events || []).some((event) => easternParts(event.date).weekday === 4);
-  }
-  return true;
+  return targetGameWindowEvents(nflData?.events || []).length > 0;
 }
 
 function matchupScoreBadge(matchup) {
@@ -2061,14 +2023,18 @@ function sortRosters(rosters) {
 }
 
 function teamCell(roster, users) {
+  const tag = PAGE === "current" ? "button" : "div";
+  const attrs = PAGE === "current"
+    ? `type="button" data-roster-link="${escapeHtml(roster.roster_id)}" aria-label="Open ${escapeHtml(teamName(roster, users))} team page"`
+    : "";
   return `
-    <div class="team-cell">
+    <${tag} class="team-cell" ${attrs}>
       ${avatar(roster, users)}
       <div class="team-copy">
         <strong>${escapeHtml(teamName(roster, users))}</strong>
         <span class="username">${escapeHtml(ownerIdentityName(roster, users))}</span>
       </div>
-    </div>
+    </${tag}>
   `;
 }
 
@@ -2219,8 +2185,6 @@ function isToday(value) {
 }
 
 function currentDate() {
-  const showcase = week7Showcase();
-  if (showcase) return new Date(`${showcase.date}T12:00:00-04:00`);
   if (!DATE_PREVIEW || !/^\d{4}-\d{2}-\d{2}$/.test(DATE_PREVIEW)) return new Date();
   return new Date(`${DATE_PREVIEW}T12:00:00-04:00`);
 }
@@ -2254,8 +2218,4 @@ function initialsFor(name) {
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
-}
-
-function capitalize(value) {
-  return String(value || "").replace(/^\w/, (char) => char.toUpperCase());
 }

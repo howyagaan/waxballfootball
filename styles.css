@@ -909,6 +909,34 @@ body[data-theme="mnf"] .matchup-card {
   padding: 1rem;
 }
 
+.preseason-countdown {
+  margin: 1.2rem auto 0;
+  max-width: var(--max);
+  border: 1px solid rgba(24, 230, 199, 0.45);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(24, 230, 199, 0.2), transparent 35%),
+    linear-gradient(135deg, rgba(24, 230, 199, 0.12), var(--panel-2));
+  padding: clamp(1.1rem, 4vw, 2rem);
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.preseason-countdown strong {
+  display: block;
+  margin: 0.35rem 0;
+  color: var(--ink);
+  font-size: clamp(2.6rem, 10vw, 5.8rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.preseason-countdown p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 750;
+}
+
 .status-row {
   display: flex;
   align-items: center;
@@ -1072,6 +1100,23 @@ strong {
   align-items: center;
   gap: 0.55rem;
   min-width: 0;
+}
+
+button.team-cell {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+button.team-cell:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 4px;
+  border-radius: 10px;
 }
 
 .team-copy {
