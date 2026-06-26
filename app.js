@@ -16,6 +16,16 @@ const MODE_PREVIEW = QUERY_PARAMS.get("mode");
 const SEASON_PREVIEW = QUERY_PARAMS.get("season");
 const WEEK_PREVIEW = Number(QUERY_PARAMS.get("week"));
 const DATE_PREVIEW = QUERY_PARAMS.get("date");
+const SHOWCASE_PREVIEW = QUERY_PARAMS.get("showcase");
+const WEEK7_SHOWCASE_DAYS = {
+  "week7-monday": { day: "monday", date: "2025-10-20", mode: "mnf" },
+  "week7-tuesday": { day: "tuesday", date: "2025-10-14", mode: "midweek" },
+  "week7-wednesday": { day: "wednesday", date: "2025-10-15", mode: "midweek" },
+  "week7-thursday": { day: "thursday", date: "2025-10-16", mode: "tnf" },
+  "week7-friday": { day: "friday", date: "2025-10-17", mode: "midweekend" },
+  "week7-saturday": { day: "saturday", date: "2025-10-18", mode: "midweekend" },
+  "week7-sunday": { day: "sunday", date: "2025-10-19", mode: "snf" },
+};
 const ARTICLES_2026 = [
   /*
   {
@@ -151,7 +161,7 @@ async function loadAll() {
     const [current, archive, nfl] = await Promise.all([
       loadSeason(currentLeagueId, {
         includeTransactions: true,
-        matchupWeeks: isHistoricalCurrentPreview() ? WEEKS : null,
+        matchupWeeks: isHistoricalCurrentPreview() || isWeek7Showcase() ? WEEKS : null,
       }),
       loadSeason(ARCHIVE_2025_LEAGUE_ID, {
         includeTransactions: PAGE === "archive",
@@ -164,6 +174,12 @@ async function loadAll() {
     currentData = current;
     archiveData = archive;
     nflData = nfl;
+    if (isWeek7Showcase()) {
+      currentData.previewMode = "week7-showcase";
+      currentData.league = { ...currentData.league, season: "2026", status: "in_season" };
+      currentData.rosters = standingsThroughWeek(currentData.rosters, currentData.matchupsByWeek, 6);
+      currentData.week = 7;
+    }
     if (isHistoricalCurrentPreview()) {
       currentData.previewMode = "historical-current";
       currentData.rosters = standingsThroughWeek(currentData.rosters, currentData.matchupsByWeek, previewWeek() - 1);
@@ -295,7 +311,9 @@ function renderCurrentPage() {
   els.heroCopy.textContent =
     heroLeagueCopy(league);
   els.season.textContent = league.season || "2026";
-  els.week.textContent = isModePreview() && nflData.mode?.key === "tnf"
+  els.week.textContent = isWeek7Showcase()
+    ? `${capitalize(week7Showcase().day)} Week ${currentWeek}`
+    : isModePreview() && nflData.mode?.key === "tnf"
     ? `Thursday Week ${currentWeek}`
     : isModePreview() && nflData.mode?.key === "snf"
       ? `Sunday Week ${currentWeek}`
@@ -679,6 +697,10 @@ function formatArticleDate(value) {
 }
 
 function heroLeagueCopy(league) {
+  if (isWeek7Showcase()) {
+    const day = week7Showcase().day;
+    return `Week 7 ${day} showcase, using 2025 Sleeper matchups, rosters, standings, and scores as stand-ins for the 2026 site.`;
+  }
   if (isHistoricalCurrentPreview()) {
     return `${league.season} preview mode: Thursday Week ${currentWeek}, rebuilt from Sleeper matchups, rosters, avatars, and standings through the prior week.`;
   }
@@ -713,7 +735,7 @@ function currentSeasonHasResults() {
 }
 
 function isPreseasonMode() {
-  if (isHistoricalCurrentPreview()) return false;
+  if (isHistoricalCurrentPreview() || isWeek7Showcase()) return false;
   return PAGE === "current" && !isModePreview() && easternDateKey(currentDate()) <= PRESEASON_END_DATE_KEY;
 }
 
@@ -726,11 +748,20 @@ function isHistoricalCurrentPreview() {
 }
 
 function previewWeek() {
+  if (isWeek7Showcase()) return 7;
   return isHistoricalCurrentPreview() ? clampWeek(WEEK_PREVIEW) : 0;
 }
 
 function activeCurrentLeagueId() {
-  return isHistoricalCurrentPreview() ? ARCHIVE_2025_LEAGUE_ID : CURRENT_LEAGUE_ID;
+  return isHistoricalCurrentPreview() || isWeek7Showcase() ? ARCHIVE_2025_LEAGUE_ID : CURRENT_LEAGUE_ID;
+}
+
+function isWeek7Showcase() {
+  return PAGE === "current" && Boolean(week7Showcase());
+}
+
+function week7Showcase() {
+  return WEEK7_SHOWCASE_DAYS[String(SHOWCASE_PREVIEW || "").toLowerCase()] || null;
 }
 
 function currentPosition(roster, rosters) {
@@ -744,7 +775,7 @@ function teamNameByRosterId(rosterId) {
 }
 
 function isMatchupPreviewMode() {
-  return currentData?.previewMode === "matchups";
+  return currentData?.previewMode === "matchups" || currentData?.previewMode === "week7-showcase";
 }
 
 function lastPlaceRoster(rosters) {
@@ -1128,11 +1159,14 @@ function detectFootballMode(events) {
 
 function previewModeDefinition() {
   if (PAGE !== "current") return null;
+  const showcase = week7Showcase();
+  if (showcase) return modeDefinition(showcase.mode);
   const allowed = new Set(["midweek", "tnf", "midweekend", "snf", "mnf"]);
   return allowed.has(MODE_PREVIEW) ? modeDefinition(MODE_PREVIEW) : null;
 }
 
 function historicalPreviewNflEvents() {
+  if (isWeek7Showcase()) return week7ShowcaseNflEvents(week7Showcase().day);
   if (!isHistoricalCurrentPreview()) return null;
   if (SEASON_PREVIEW === "2025" && previewWeek() === 8) {
     return [
@@ -1156,6 +1190,48 @@ function historicalPreviewNflEvents() {
     ];
   }
   return null;
+}
+
+function week7ShowcaseNflEvents(day) {
+  const thursdayFinal = ["friday", "saturday", "sunday", "monday"].includes(day);
+  const sundayFinal = day === "monday";
+  return [
+    showcaseNflGame("week7-tnf", "2025-10-16T00:15:00Z", "PIT", "CIN", "Pittsburgh Steelers at Cincinnati Bengals", day === "thursday" ? "in" : thursdayFinal ? "post" : "pre", "Prime Video"),
+    showcaseNflGame("week7-sun-1", "2025-10-19T17:00:00Z", "LAR", "JAX", "Los Angeles Rams at Jacksonville Jaguars", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "FOX"),
+    showcaseNflGame("week7-sun-2", "2025-10-19T17:00:00Z", "NE", "TEN", "New England Patriots at Tennessee Titans", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "CBS"),
+    showcaseNflGame("week7-sun-3", "2025-10-19T17:00:00Z", "MIA", "CLE", "Miami Dolphins at Cleveland Browns", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "CBS"),
+    showcaseNflGame("week7-sun-4", "2025-10-19T20:05:00Z", "GB", "ARI", "Green Bay Packers at Arizona Cardinals", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "FOX"),
+    showcaseNflGame("week7-sun-5", "2025-10-19T20:25:00Z", "IND", "LAC", "Indianapolis Colts at Los Angeles Chargers", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "CBS"),
+    showcaseNflGame("week7-snf", "2025-10-20T00:20:00Z", "ATL", "SF", "Atlanta Falcons at San Francisco 49ers", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "NBC"),
+    showcaseNflGame("week7-mnf", "2025-10-21T00:15:00Z", "HOU", "SEA", "Houston Texans at Seattle Seahawks", day === "monday" ? "in" : "pre", "ESPN"),
+  ];
+}
+
+function showcaseNflGame(id, date, away, home, name, state, broadcast) {
+  const labels = { pre: "Scheduled", in: "Live", post: "Final" };
+  return {
+    id,
+    date,
+    shortName: `${away} @ ${home}`,
+    name,
+    season: { year: 2025, type: 2 },
+    status: {
+      type: {
+        state,
+        description: labels[state] || "Scheduled",
+        shortDetail: state === "post" ? "Final" : state === "in" ? "Live" : formatKickoff(date),
+      },
+    },
+    competitions: [
+      {
+        broadcast,
+        competitors: [
+          { homeAway: "away", team: { abbreviation: away, displayName: away } },
+          { homeAway: "home", team: { abbreviation: home, displayName: home } },
+        ],
+      },
+    ],
+  };
 }
 
 function modeDefinition(key) {
@@ -1219,7 +1295,7 @@ function applyModeTheme(mode) {
 
 function renderHeroMode(mode) {
   if (els.heroModeLabel && mode?.label) {
-    els.heroModeLabel.textContent = mode.label;
+    els.heroModeLabel.textContent = isWeek7Showcase() ? capitalize(week7Showcase().day) : mode.label;
   }
 }
 
@@ -2083,6 +2159,8 @@ function isToday(value) {
 }
 
 function currentDate() {
+  const showcase = week7Showcase();
+  if (showcase) return new Date(`${showcase.date}T12:00:00-04:00`);
   if (!DATE_PREVIEW || !/^\d{4}-\d{2}-\d{2}$/.test(DATE_PREVIEW)) return new Date();
   return new Date(`${DATE_PREVIEW}T12:00:00-04:00`);
 }
@@ -2116,4 +2194,8 @@ function initialsFor(name) {
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
+}
+
+function capitalize(value) {
+  return String(value || "").replace(/^\w/, (char) => char.toUpperCase());
 }
