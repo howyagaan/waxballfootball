@@ -1156,6 +1156,23 @@ select {
   gap: 0.75rem;
 }
 
+.matchup-time-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.matchup-subsection {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.last-week-result-card h3 {
+  margin: 10px 0 0;
+  font-size: clamp(1.35rem, 3vw, 2.1rem);
+}
+
 .matchup-card {
   border: 1px solid var(--line);
   border-radius: 16px;

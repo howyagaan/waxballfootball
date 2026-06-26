@@ -473,7 +473,24 @@ function renderMatchups(matchups, rosters, users, week) {
   }
 
   const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
-  els.matchups.innerHTML = Array.from(grouped.values()).map((pair) => matchupCard(pair, rosters, users)).join("");
+  const timeNote = `<p class="matchup-time-note">All game times are Eastern Time (NY).</p>`;
+  if (isWeek7Showcase() && week7Showcase().day === "tuesday") {
+    const previousWeek = currentData.matchupsByWeek[currentWeek - 1] || [];
+    const previousGrouped = groupBy(previousWeek, (matchup) => matchup.matchup_id || matchup.roster_id);
+    els.matchups.innerHTML = `
+      ${timeNote}
+      <div class="matchup-subsection">
+        <span class="metric-label">Last week recap</span>
+        ${Array.from(previousGrouped.values()).map((pair) => matchupCard(pair, rosters, users, { forceScores: true })).join("")}
+      </div>
+      <div class="matchup-subsection">
+        <span class="metric-label">Week ${week} preview</span>
+        ${Array.from(grouped.values()).map((pair) => matchupCard(pair, rosters, users)).join("")}
+      </div>
+    `;
+    return;
+  }
+  els.matchups.innerHTML = timeNote + Array.from(grouped.values()).map((pair) => matchupCard(pair, rosters, users)).join("");
 }
 
 function renderTeamSelector(rosters, users) {
@@ -543,10 +560,12 @@ async function renderSelectedTeam() {
     : "";
 
   els.teamPanel.innerHTML = `
+    ${week7TuesdayLastWeekResult(roster, source.rosters, source.users)}
     <div class="matchup-focus-card">
       <div class="matchup-focus-head">
         <div>
           <span class="metric-label">Current matchup</span>
+          <p class="matchup-time-note">All game times are Eastern Time (NY).</p>
           ${matchup.detail ? `<p class="muted">${escapeHtml(matchup.detail)}</p>` : ""}
         </div>
         ${matchupScoreBadge(matchup)}
@@ -556,6 +575,19 @@ async function renderSelectedTeam() {
     ${historicalRosterSnapshot}
     ${playersToWatch}
     <button class="button league-view-button" type="button" data-league-view>See All Matchups in League View</button>
+  `;
+}
+
+function week7TuesdayLastWeekResult(roster, rosters, users) {
+  if (!isWeek7Showcase() || week7Showcase().day !== "tuesday") return "";
+  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[currentWeek - 1] || [], rosters, users, { forceScores: true });
+  if (!matchup?.mine || !matchup?.opponentRoster) return "";
+  return `
+    <article class="matchup-focus-card last-week-result-card">
+      <span class="metric-label">Last week result</span>
+      <h3>${escapeHtml(matchupResultText(roster, matchup.opponentRoster, users, scoreFor(matchup.mine), scoreFor(matchup.opponent)))}</h3>
+      ${matchupScoreLine(matchup, roster, matchup.opponentRoster, users)}
+    </article>
   `;
 }
 
@@ -1193,10 +1225,16 @@ function historicalPreviewNflEvents() {
 }
 
 function week7ShowcaseNflEvents(day) {
+  const wednesdayFinal = ["thursday", "friday", "saturday", "sunday", "monday"].includes(day);
   const thursdayFinal = ["friday", "saturday", "sunday", "monday"].includes(day);
+  const fridayFinal = ["saturday", "sunday", "monday"].includes(day);
+  const saturdayFinal = ["sunday", "monday"].includes(day);
   const sundayFinal = day === "monday";
   return [
+    showcaseNflGame("week7-wed", "2025-10-15T23:30:00Z", "NYG", "PHI", "New York Giants at Philadelphia Eagles", day === "wednesday" ? "in" : wednesdayFinal ? "post" : "pre", "Prime Video"),
     showcaseNflGame("week7-tnf", "2025-10-16T00:15:00Z", "PIT", "CIN", "Pittsburgh Steelers at Cincinnati Bengals", day === "thursday" ? "in" : thursdayFinal ? "post" : "pre", "Prime Video"),
+    showcaseNflGame("week7-fri", "2025-10-18T00:15:00Z", "TB", "DET", "Tampa Bay Buccaneers at Detroit Lions", day === "friday" ? "in" : fridayFinal ? "post" : "pre", "Peacock"),
+    showcaseNflGame("week7-sat", "2025-10-18T20:30:00Z", "DAL", "DEN", "Dallas Cowboys at Denver Broncos", day === "saturday" ? "in" : saturdayFinal ? "post" : "pre", "NFL Network"),
     showcaseNflGame("week7-sun-1", "2025-10-19T17:00:00Z", "LAR", "JAX", "Los Angeles Rams at Jacksonville Jaguars", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "FOX"),
     showcaseNflGame("week7-sun-2", "2025-10-19T17:00:00Z", "NE", "TEN", "New England Patriots at Tennessee Titans", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "CBS"),
     showcaseNflGame("week7-sun-3", "2025-10-19T17:00:00Z", "MIA", "CLE", "Miami Dolphins at Cleveland Browns", day === "sunday" ? "in" : sundayFinal ? "post" : "pre", "CBS"),
@@ -1333,6 +1371,9 @@ function hasCompletedWeek(rosters, league) {
 }
 
 function nextMatchdayGames(events) {
+  if (isWeek7Showcase()) {
+    return events.filter(showcaseTargetEvent);
+  }
   const todayKey = easternDateKey();
   const upcoming = events
     .filter((event) => event.status?.type?.state === "in" || easternDateKey(event.date) >= todayKey)
@@ -1342,6 +1383,21 @@ function nextMatchdayGames(events) {
   if (!first) return [];
   const key = easternDateKey(first.date);
   return source.filter((event) => easternDateKey(event.date) === key);
+}
+
+function showcaseTargetEvent(event) {
+  const day = week7Showcase()?.day;
+  const eventDay = easternParts(event.date).weekday;
+  const windows = {
+    tuesday: [3, 4],
+    wednesday: [3, 4],
+    thursday: [4],
+    friday: [5, 6, 0],
+    saturday: [6, 0],
+    sunday: [0],
+    monday: [1],
+  };
+  return (windows[day] || []).includes(eventDay);
 }
 
 function mergeEvents(scheduleEvents, weeklyEvents) {
@@ -1417,7 +1473,7 @@ function watchNoteForGame(event) {
   return "Review snap roles, injury reports, and matchup leverage for fantasy decisions.";
 }
 
-function selectedTeamMatchup(roster, matchups, rosters, users) {
+function selectedTeamMatchup(roster, matchups, rosters, users, options = {}) {
   if (currentData?.league.status === "pre_draft") {
     return {
       title: "Pre-draft",
@@ -1435,7 +1491,7 @@ function selectedTeamMatchup(roster, matchups, rosters, users) {
   const mineScore = scoreFor(mine);
   const opponentScore = scoreFor(opponent);
   const diff = mineScore - opponentScore;
-  const showScores = shouldShowMatchupScores();
+  const showScores = options.forceScores || shouldShowMatchupScores();
   const deltaValue = isMatchupPreviewMode() && !showScores ? "0.00" : Math.abs(diff).toFixed(2);
   const deltaLabel = diff > 0 ? "Ahead by" : diff < 0 ? "Behind by" : "Tied";
   const deltaClass = diff > 0 ? "ahead" : diff < 0 ? "behind" : "neutral";
@@ -1467,6 +1523,10 @@ function selectedTeamMatchup(roster, matchups, rosters, users) {
 
 function shouldShowMatchupScores() {
   if (isHistoricalCurrentPreview() && nflData?.mode?.key === "tnf") return false;
+  if (isWeek7Showcase()) {
+    const day = week7Showcase().day;
+    return ["thursday", "friday", "saturday", "sunday", "monday"].includes(day);
+  }
   if (isMatchupPreviewMode()) return ["midweekend", "snf", "mnf"].includes(nflData?.mode?.key);
   return (nflData?.events || []).some((event) => event.status?.type?.state === "post");
 }
@@ -1767,24 +1827,24 @@ function nflTeamsForEvent(event) {
     .filter(Boolean);
 }
 
-function matchupCard(pair, rosters, users) {
+function matchupCard(pair, rosters, users, options = {}) {
   const [first, second] = pair;
   const firstScore = scoreFor(first);
   const secondScore = second ? scoreFor(second) : 0;
   return `
     <div class="matchup-card">
       <div class="matchup-row">
-        ${matchupTeam(first, rosters, users, firstScore > secondScore)}
+        ${matchupTeam(first, rosters, users, firstScore > secondScore, "", options)}
         <div class="versus">vs</div>
-        ${second ? matchupTeam(second, rosters, users, secondScore > firstScore, "away") : `<div class="matchup-team away"><span class="avatar">--</span><div class="team-copy"><strong>Bye</strong></div></div>`}
+        ${second ? matchupTeam(second, rosters, users, secondScore > firstScore, "away", options) : `<div class="matchup-team away"><span class="avatar">--</span><div class="team-copy"><strong>Bye</strong></div></div>`}
       </div>
     </div>
   `;
 }
 
-function matchupTeam(matchup, rosters, users, leads, side = "") {
+function matchupTeam(matchup, rosters, users, leads, side = "", options = {}) {
   const roster = rosters.find((item) => item.roster_id === matchup.roster_id);
-  const scoreLabel = shouldShowMatchupScores() ? scoreFor(matchup).toFixed(2) : currentPosition(roster, rosters);
+  const scoreLabel = options.forceScores || shouldShowMatchupScores() ? scoreFor(matchup).toFixed(2) : currentPosition(roster, rosters);
   return `
     <button class="matchup-team ${side}" type="button" data-roster-link="${escapeHtml(matchup.roster_id)}" aria-label="Open ${escapeHtml(roster ? teamName(roster, users) : `Roster ${matchup.roster_id}`)} team page">
       ${avatar(roster, users)}
