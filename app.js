@@ -9,9 +9,6 @@ const PAGE = document.body.dataset.page || "current";
 const EASTERN_TIME_ZONE = "America/New_York";
 const PRESEASON_END_DATE_KEY = "2026-09-07";
 const FIRST_2026_KICKOFF = "2026-09-09T20:20:00-04:00";
-const NFL_SCHEDULE_START = "20260909";
-const NFL_SCHEDULE_END = "20270110";
-const NFL_SCHEDULE_CACHE_KEY = "waxball-2026-nfl-schedule";
 const QUERY_PARAMS = new URLSearchParams(window.location.search);
 const SEASON_PREVIEW = QUERY_PARAMS.get("season");
 const WEEK_PREVIEW = Number(QUERY_PARAMS.get("week"));
@@ -213,28 +210,23 @@ async function loadNflContext() {
       week: { number: previewWeek() },
       events: previewEvents,
       articles: [],
-      scheduleChanges: [],
       mode: detectFootballMode(previewEvents),
     };
   }
 
-  const [scoreboard, fullSchedule, news] = await Promise.all([
+  const [scoreboard, news] = await Promise.all([
     fetchExternalJson(`${ESPN_BASE}/scoreboard`).catch(() => null),
-    fetchExternalJson(`${ESPN_BASE}/scoreboard?dates=${NFL_SCHEDULE_START}-${NFL_SCHEDULE_END}&limit=400`).catch(() => null),
     fetchExternalJson(`${ESPN_BASE}/news?limit=8`).catch(() => null),
   ]);
 
   const weeklyEvents = scoreboard?.events || [];
-  const scheduleEvents = fullSchedule?.events?.length ? fullSchedule.events : weeklyEvents;
-  const events = mergeEvents(scheduleEvents, weeklyEvents);
+  const events = weeklyEvents.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
   const articles = news?.articles || [];
-  const scheduleChanges = trackScheduleChanges(events);
   return {
     season: scoreboard?.season,
     week: scoreboard?.week,
     events,
     articles,
-    scheduleChanges,
     mode: detectFootballMode(events),
   };
 }
@@ -1349,51 +1341,6 @@ function isTuesdayMode() {
 
 function weekdayName(value = currentDate()) {
   return new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: EASTERN_TIME_ZONE }).format(new Date(value));
-}
-
-function mergeEvents(scheduleEvents, weeklyEvents) {
-  const merged = new Map();
-  for (const event of [...(scheduleEvents || []), ...(weeklyEvents || [])]) {
-    if (!event?.id) continue;
-    merged.set(event.id, event);
-  }
-  return [...merged.values()].sort((a, b) => new Date(a.date) - new Date(b.date));
-}
-
-function trackScheduleChanges(events) {
-  if (typeof window === "undefined" || !window.localStorage) return [];
-  const snapshot = Object.fromEntries(
-    (events || [])
-      .filter((event) => event?.id && event.date)
-      .map((event) => [event.id, {
-        date: event.date,
-        label: event.shortName || event.name || "NFL game",
-      }]),
-  );
-  if (!Object.keys(snapshot).length) return [];
-
-  const previous = readStoredSchedule();
-  window.localStorage.setItem(NFL_SCHEDULE_CACHE_KEY, JSON.stringify(snapshot));
-  if (!previous) return [];
-
-  return Object.entries(snapshot)
-    .filter(([eventId, event]) => previous[eventId]?.date && previous[eventId].date !== event.date)
-    .map(([eventId, event]) => ({
-      label: event.label,
-      oldKickoff: formatKickoff(previous[eventId].date),
-      newKickoff: formatKickoff(event.date),
-    }))
-    .slice(0, 4);
-}
-
-function readStoredSchedule() {
-  try {
-    const raw = window.localStorage.getItem(NFL_SCHEDULE_CACHE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (error) {
-    console.warn("Unable to read cached NFL schedule.", error);
-    return null;
-  }
 }
 
 function isFantasyRelevantArticle(article) {
