@@ -910,31 +910,31 @@ body[data-theme="mnf"] .matchup-card {
 }
 
 .preseason-countdown {
-  margin: 1.2rem auto 0;
-  max-width: var(--max);
+  min-height: 2.7rem;
   border: 1px solid rgba(24, 230, 199, 0.45);
-  border-radius: 22px;
+  border-radius: 18px;
   background:
     radial-gradient(circle at 20% 0%, rgba(24, 230, 199, 0.2), transparent 35%),
     linear-gradient(135deg, rgba(24, 230, 199, 0.12), var(--panel-2));
-  padding: clamp(1.1rem, 4vw, 2rem);
+  padding: 0.55rem 0.9rem;
   text-align: center;
-  box-shadow: var(--shadow);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18);
 }
 
 .preseason-countdown strong {
   display: block;
-  margin: 0.35rem 0;
+  margin: 0.15rem 0 0;
   color: var(--ink);
-  font-size: clamp(2.6rem, 10vw, 5.8rem);
-  line-height: 0.95;
-  letter-spacing: -0.04em;
+  font-size: clamp(1.25rem, 3vw, 1.85rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 .preseason-countdown p {
-  margin: 0;
+  margin: 0.15rem 0 0;
   color: var(--muted);
-  font-weight: 750;
+  font-size: 0.74rem;
+  font-weight: 850;
 }
 
 .status-row {
@@ -1720,6 +1720,10 @@ footer {
   }
 
   .button {
+    width: 100%;
+  }
+
+  .preseason-countdown {
     width: 100%;
   }
 
