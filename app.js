@@ -1,5 +1,4 @@
 const API_BASE = "https://api.sleeper.app/v1";
-const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/football/nfl";
 const CURRENT_LEAGUE_ID = "1312219624808419328";
 const ARCHIVE_2025_LEAGUE_ID = "1253094778665439232";
 const ARCHIVE_2025_DRAFT_ID = "1253094779571421184";
@@ -214,20 +213,12 @@ async function loadNflContext() {
     };
   }
 
-  const [scoreboard, news] = await Promise.all([
-    fetchExternalJson(`${ESPN_BASE}/scoreboard`).catch(() => null),
-    fetchExternalJson(`${ESPN_BASE}/news?limit=8`).catch(() => null),
-  ]);
-
-  const weeklyEvents = scoreboard?.events || [];
-  const events = weeklyEvents.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
-  const articles = news?.articles || [];
   return {
-    season: scoreboard?.season,
-    week: scoreboard?.week,
-    events,
-    articles,
-    mode: detectFootballMode(events),
+    season: null,
+    week: null,
+    events: [],
+    articles: [],
+    mode: detectFootballMode([]),
   };
 }
 
@@ -252,12 +243,6 @@ async function loadTransactions(leagueId) {
 async function fetchJson(path) {
   const response = await fetch(`${API_BASE}${path}`);
   if (!response.ok) throw new Error(`Sleeper returned ${response.status} for ${path}.`);
-  return response.json();
-}
-
-async function fetchExternalJson(url) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Request failed for ${url}`);
   return response.json();
 }
 
