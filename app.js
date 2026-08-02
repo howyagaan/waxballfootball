@@ -7,6 +7,7 @@ const WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
 const PAGE = document.body.dataset.page || "current";
 const EASTERN_TIME_ZONE = "America/New_York";
 const PRESEASON_END_DATE_KEY = "2026-09-07";
+const DRAFT_DAY = "2026-09-05T18:00:00-04:00";
 const FIRST_2026_KICKOFF = "2026-09-09T20:20:00-04:00";
 const QUERY_PARAMS = new URLSearchParams(window.location.search);
 const SEASON_PREVIEW = QUERY_PARAMS.get("season");
@@ -52,6 +53,8 @@ const els = {
   toiletLabel: document.querySelector("#toilet-label"),
   leaderLabel: document.querySelector("#leader-label"),
   champion: document.querySelector("#champion-metric"),
+  draftCountdown: document.querySelector("#draft-countdown"),
+  draftCountdownValue: document.querySelector("#draft-countdown-value"),
   countdown: document.querySelector("#preseason-countdown"),
   countdownValue: document.querySelector("#countdown-value"),
   teamSelect: document.querySelector("#team-select"),
@@ -330,17 +333,21 @@ function renderMidweekArticleAction() {
 }
 
 function renderPreseasonCountdown() {
-  if (!els.countdown || !els.countdownValue) return;
   const now = currentDate();
-  const kickoff = new Date(FIRST_2026_KICKOFF);
-  const show = PAGE === "current" && isPreseasonMode() && now < kickoff;
-  els.countdown.toggleAttribute("hidden", !show);
+  renderCountdown(els.draftCountdown, els.draftCountdownValue, new Date(DRAFT_DAY), now);
+  renderCountdown(els.countdown, els.countdownValue, new Date(FIRST_2026_KICKOFF), now);
+}
+
+function renderCountdown(element, valueElement, target, now = currentDate()) {
+  if (!element || !valueElement) return;
+  const show = PAGE === "current" && isPreseasonMode() && now < target;
+  element.toggleAttribute("hidden", !show);
   if (!show) return;
-  const diff = Math.max(kickoff - now, 0);
+  const diff = Math.max(target - now, 0);
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
   const minutes = Math.floor((diff % 3600000) / 60000);
-  els.countdownValue.textContent = `${days}d ${hours}h ${minutes}m`;
+  valueElement.textContent = `${days}d ${hours}h ${minutes}m`;
 }
 
 function renderArchivePage() {
