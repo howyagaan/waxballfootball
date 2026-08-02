@@ -302,8 +302,10 @@ body[data-theme="midweek"] .hero {
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-top: 1.2rem;
+  align-items: stretch;
+  gap: 0.8rem;
+  margin-top: 1.35rem;
+  max-width: 42rem;
 }
 
 .button {
@@ -350,8 +352,9 @@ body[data-theme="midweek"] .hero {
 
 .hero-team-control {
   display: grid;
-  justify-items: center;
+  justify-items: start;
   gap: 0.25rem;
+  flex-basis: 100%;
   order: 4;
 }
 
@@ -919,14 +922,14 @@ body[data-theme="mnf"] .matchup-card {
 }
 
 .preseason-countdown {
-  flex-basis: 100%;
+  flex: 1 1 calc(50% - 0.4rem);
   order: 3;
   border: 1px solid rgba(24, 230, 199, 0.45);
-  border-radius: 22px;
+  border-radius: 18px;
   background:
     radial-gradient(circle at 20% 0%, rgba(24, 230, 199, 0.2), transparent 35%),
     linear-gradient(135deg, rgba(24, 230, 199, 0.12), var(--panel-2));
-  padding: clamp(1.1rem, 4vw, 2rem);
+  padding: clamp(1rem, 2vw, 1.35rem);
   text-align: center;
   box-shadow: var(--shadow);
 }
@@ -935,7 +938,7 @@ body[data-theme="mnf"] .matchup-card {
   display: block;
   margin: 0.35rem 0;
   color: var(--ink);
-  font-size: clamp(2.6rem, 10vw, 5.8rem);
+  font-size: clamp(2.45rem, 5.4vw, 4.25rem);
   line-height: 0.95;
   letter-spacing: -0.04em;
 }
@@ -943,7 +946,7 @@ body[data-theme="mnf"] .matchup-card {
 .preseason-countdown p {
   margin: 0;
   color: var(--muted);
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 750;
 }
 
