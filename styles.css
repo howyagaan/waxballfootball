@@ -261,7 +261,7 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
   gap: clamp(1rem, 4vw, 2rem);
-  align-items: center;
+  align-items: start;
   min-height: 520px;
   padding: clamp(2.6rem, 7vw, 5rem) 0 1.25rem;
 }
@@ -302,6 +302,7 @@ body[data-theme="midweek"] .hero {
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 0.65rem;
   margin-top: 1.2rem;
 }
@@ -915,11 +916,13 @@ body[data-theme="mnf"] .matchup-card {
 }
 
 .hero-card {
+  align-self: start;
+  margin-top: clamp(10rem, 22vw, 16.5rem);
   padding: 1rem;
 }
 
 .preseason-countdown {
-  flex-basis: 100%;
+  flex: 0 0 100%;
   order: 3;
   border: 1px solid rgba(24, 230, 199, 0.45);
   border-radius: 22px;
@@ -1718,6 +1721,10 @@ footer {
     min-height: 0;
     padding-top: 1.6rem;
     gap: 0.9rem;
+  }
+
+  .hero-card {
+    margin-top: 0;
   }
 
   .hero-main h1 {
