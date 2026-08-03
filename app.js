@@ -768,7 +768,7 @@ function previewWeek() {
 }
 
 function isPresentationPreview() {
-  return ["tnf", "friday", "snf"].includes(PRESENTATION_PREVIEW);
+  return ["tnf", "friday", "saturday", "snf"].includes(PRESENTATION_PREVIEW);
 }
 
 function activeCurrentLeagueId() {
@@ -1170,7 +1170,7 @@ function detectFootballMode(events) {
 
 function previewModeDefinition() {
   if (PRESENTATION_PREVIEW === "tnf") return modeDefinition("tnf");
-  if (PRESENTATION_PREVIEW === "friday") return modeDefinition("midweekend");
+  if (["friday", "saturday"].includes(PRESENTATION_PREVIEW)) return modeDefinition("midweekend");
   if (PRESENTATION_PREVIEW === "snf") return modeDefinition("snf");
   return null;
 }
@@ -1179,6 +1179,7 @@ function historicalPreviewNflEvents() {
   if (!isHistoricalCurrentPreview()) return null;
   if (PRESENTATION_PREVIEW === "tnf") return presentationTnfEvents();
   if (PRESENTATION_PREVIEW === "friday") return presentationFridayEvents();
+  if (PRESENTATION_PREVIEW === "saturday") return presentationSaturdayEvents();
   if (PRESENTATION_PREVIEW === "snf") return presentationSnfEvents();
   if (SEASON_PREVIEW === "2025" && previewWeek() === 8) {
     return [
@@ -1215,6 +1216,10 @@ function presentationFridayEvents() {
     presentationEvent("2025-week8-fri-recap-min-lac", "2025-10-24T00:15:00Z", "MIN @ LAC", "Minnesota Vikings at Los Angeles Chargers", "MIN", "LAC", "Prime Video", "post"),
     ...presentationSnfEvents(),
   ];
+}
+
+function presentationSaturdayEvents() {
+  return presentationSnfEvents();
 }
 
 function presentationSnfEvents() {
@@ -2186,6 +2191,7 @@ function isToday(value) {
 function currentDate() {
   if (PRESENTATION_PREVIEW === "tnf") return new Date("2025-10-23T12:00:00-04:00");
   if (PRESENTATION_PREVIEW === "friday") return new Date("2025-10-24T12:00:00-04:00");
+  if (PRESENTATION_PREVIEW === "saturday") return new Date("2025-10-25T12:00:00-04:00");
   if (PRESENTATION_PREVIEW === "snf") return new Date("2025-10-26T12:00:00-04:00");
   if (!DATE_PREVIEW || !/^\d{4}-\d{2}-\d{2}$/.test(DATE_PREVIEW)) return new Date();
   return new Date(`${DATE_PREVIEW}T12:00:00-04:00`);
