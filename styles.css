@@ -419,6 +419,28 @@ body[data-theme="snf"] .matchup-card {
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+body[data-presentation="snf"] .hero {
+  align-items: center;
+  min-height: 430px;
+  padding: clamp(2rem, 5vw, 3.25rem) 0 0.75rem;
+}
+
+body[data-presentation="snf"] .hero-main h1 {
+  font-size: clamp(4rem, 9vw, 7rem);
+}
+
+body[data-presentation="snf"] .hero-main p:not(.eyebrow) {
+  max-width: 45rem;
+}
+
+body[data-presentation="snf"] .hero-card {
+  margin-top: 0;
+}
+
+body[data-presentation="snf"] .section-head {
+  margin-top: 1.35rem;
+}
+
 body[data-theme="mnf"] {
   background:
     radial-gradient(circle at 18% -12%, rgba(50, 245, 138, 0.26), transparent 30rem),
@@ -1728,6 +1750,10 @@ footer {
   }
 
   .hero-main h1 {
+    font-size: clamp(3rem, 16vw, 5rem);
+  }
+
+  body[data-presentation="snf"] .hero-main h1 {
     font-size: clamp(3rem, 16vw, 5rem);
   }
 
