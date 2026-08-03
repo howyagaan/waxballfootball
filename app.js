@@ -758,13 +758,17 @@ function isModePreview() {
 function isHistoricalCurrentPreview() {
   return PAGE === "current" && (
     (SEASON_PREVIEW === "2025" && Number.isInteger(WEEK_PREVIEW) && WEEK_PREVIEW >= 1) ||
-    PRESENTATION_PREVIEW === "snf"
+    isPresentationPreview()
   );
 }
 
 function previewWeek() {
-  if (PRESENTATION_PREVIEW === "snf") return 8;
+  if (isPresentationPreview()) return 8;
   return isHistoricalCurrentPreview() ? clampWeek(WEEK_PREVIEW) : 0;
+}
+
+function isPresentationPreview() {
+  return ["tnf", "snf"].includes(PRESENTATION_PREVIEW);
 }
 
 function activeCurrentLeagueId() {
@@ -1165,12 +1169,14 @@ function detectFootballMode(events) {
 }
 
 function previewModeDefinition() {
+  if (PRESENTATION_PREVIEW === "tnf") return modeDefinition("tnf");
   if (PRESENTATION_PREVIEW === "snf") return modeDefinition("snf");
   return null;
 }
 
 function historicalPreviewNflEvents() {
   if (!isHistoricalCurrentPreview()) return null;
+  if (PRESENTATION_PREVIEW === "tnf") return presentationTnfEvents();
   if (PRESENTATION_PREVIEW === "snf") return presentationSnfEvents();
   if (SEASON_PREVIEW === "2025" && previewWeek() === 8) {
     return [
@@ -1194,6 +1200,12 @@ function historicalPreviewNflEvents() {
     ];
   }
   return null;
+}
+
+function presentationTnfEvents() {
+  return [
+    presentationEvent("2025-week8-tnf-min-lac", "2025-10-24T00:15:00Z", "MIN @ LAC", "Minnesota Vikings at Los Angeles Chargers", "MIN", "LAC", "Prime Video"),
+  ];
 }
 
 function presentationSnfEvents() {
@@ -2162,6 +2174,7 @@ function isToday(value) {
 }
 
 function currentDate() {
+  if (PRESENTATION_PREVIEW === "tnf") return new Date("2025-10-23T12:00:00-04:00");
   if (PRESENTATION_PREVIEW === "snf") return new Date("2025-10-26T12:00:00-04:00");
   if (!DATE_PREVIEW || !/^\d{4}-\d{2}-\d{2}$/.test(DATE_PREVIEW)) return new Date();
   return new Date(`${DATE_PREVIEW}T12:00:00-04:00`);
