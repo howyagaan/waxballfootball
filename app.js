@@ -13,6 +13,7 @@ const QUERY_PARAMS = new URLSearchParams(window.location.search);
 const SEASON_PREVIEW = QUERY_PARAMS.get("season");
 const WEEK_PREVIEW = Number(QUERY_PARAMS.get("week"));
 const DATE_PREVIEW = QUERY_PARAMS.get("date");
+const PRESENTATION_PREVIEW = QUERY_PARAMS.get("presentation");
 const ARTICLES_2026 = [
   /*
   {
@@ -208,7 +209,7 @@ async function loadNflContext() {
   const previewEvents = historicalPreviewNflEvents();
   if (previewEvents) {
     return {
-      season: { year: Number(SEASON_PREVIEW) },
+      season: { year: Number(SEASON_PREVIEW) || 2025 },
       week: { number: previewWeek() },
       events: previewEvents,
       articles: [],
@@ -755,10 +756,14 @@ function isModePreview() {
 }
 
 function isHistoricalCurrentPreview() {
-  return PAGE === "current" && SEASON_PREVIEW === "2025" && Number.isInteger(WEEK_PREVIEW) && WEEK_PREVIEW >= 1;
+  return PAGE === "current" && (
+    (SEASON_PREVIEW === "2025" && Number.isInteger(WEEK_PREVIEW) && WEEK_PREVIEW >= 1) ||
+    PRESENTATION_PREVIEW === "snf"
+  );
 }
 
 function previewWeek() {
+  if (PRESENTATION_PREVIEW === "snf") return 8;
   return isHistoricalCurrentPreview() ? clampWeek(WEEK_PREVIEW) : 0;
 }
 
@@ -1160,11 +1165,13 @@ function detectFootballMode(events) {
 }
 
 function previewModeDefinition() {
+  if (PRESENTATION_PREVIEW === "snf") return modeDefinition("snf");
   return null;
 }
 
 function historicalPreviewNflEvents() {
   if (!isHistoricalCurrentPreview()) return null;
+  if (PRESENTATION_PREVIEW === "snf") return presentationSnfEvents();
   if (SEASON_PREVIEW === "2025" && previewWeek() === 8) {
     return [
       {
@@ -1187,6 +1194,37 @@ function historicalPreviewNflEvents() {
     ];
   }
   return null;
+}
+
+function presentationSnfEvents() {
+  return [
+    presentationEvent("2025-week8-sun-early-atl-mia", "2025-10-26T17:00:00Z", "ATL @ MIA", "Atlanta Falcons at Miami Dolphins", "ATL", "MIA", "FOX"),
+    presentationEvent("2025-week8-sun-early-nyj-cin", "2025-10-26T17:00:00Z", "NYJ @ CIN", "New York Jets at Cincinnati Bengals", "NYJ", "CIN", "CBS"),
+    presentationEvent("2025-week8-sun-early-cle-ne", "2025-10-26T17:00:00Z", "CLE @ NE", "Cleveland Browns at New England Patriots", "CLE", "NE", "CBS"),
+    presentationEvent("2025-week8-sun-early-chi-bal", "2025-10-26T17:00:00Z", "CHI @ BAL", "Chicago Bears at Baltimore Ravens", "CHI", "BAL", "CBS"),
+    presentationEvent("2025-week8-sun-late-dal-den", "2025-10-26T20:25:00Z", "DAL @ DEN", "Dallas Cowboys at Denver Broncos", "DAL", "DEN", "FOX"),
+    presentationEvent("2025-week8-sun-late-gb-pit", "2025-10-27T00:20:00Z", "GB @ PIT", "Green Bay Packers at Pittsburgh Steelers", "GB", "PIT", "NBC"),
+  ];
+}
+
+function presentationEvent(id, date, shortName, name, away, home, broadcast) {
+  return {
+    id,
+    date,
+    shortName,
+    name,
+    season: { year: 2025, type: 2 },
+    status: { type: { state: "pre", description: "Scheduled", shortDetail: formatKickoff(date) } },
+    competitions: [
+      {
+        broadcast,
+        competitors: [
+          { homeAway: "away", team: { abbreviation: away, displayName: `${away} Football` } },
+          { homeAway: "home", team: { abbreviation: home, displayName: `${home} Football` } },
+        ],
+      },
+    ],
+  };
 }
 
 function modeDefinition(key) {
@@ -2124,6 +2162,7 @@ function isToday(value) {
 }
 
 function currentDate() {
+  if (PRESENTATION_PREVIEW === "snf") return new Date("2025-10-26T12:00:00-04:00");
   if (!DATE_PREVIEW || !/^\d{4}-\d{2}-\d{2}$/.test(DATE_PREVIEW)) return new Date();
   return new Date(`${DATE_PREVIEW}T12:00:00-04:00`);
 }
