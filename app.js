@@ -13,7 +13,7 @@ const QUERY_PARAMS = new URLSearchParams(window.location.search);
 const SEASON_PREVIEW = QUERY_PARAMS.get("season");
 const WEEK_PREVIEW = Number(QUERY_PARAMS.get("week"));
 const DATE_PREVIEW = QUERY_PARAMS.get("date");
-const PRESENTATION_PREVIEW = QUERY_PARAMS.get("presentation");
+const PRESENTATION_PREVIEW = QUERY_PARAMS.get("presentation") || document.body.dataset.presentation || "";
 const ARTICLES_2026 = [
   /*
   {
