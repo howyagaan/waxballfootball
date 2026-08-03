@@ -420,6 +420,7 @@ body[data-theme="snf"] .matchup-card {
 }
 
 body[data-presentation="tnf"] .hero,
+body[data-presentation="friday"] .hero,
 body[data-presentation="snf"] .hero {
   align-items: center;
   min-height: 430px;
@@ -427,21 +428,25 @@ body[data-presentation="snf"] .hero {
 }
 
 body[data-presentation="tnf"] .hero-main h1,
+body[data-presentation="friday"] .hero-main h1,
 body[data-presentation="snf"] .hero-main h1 {
   font-size: clamp(4rem, 9vw, 7rem);
 }
 
 body[data-presentation="tnf"] .hero-main p:not(.eyebrow),
+body[data-presentation="friday"] .hero-main p:not(.eyebrow),
 body[data-presentation="snf"] .hero-main p:not(.eyebrow) {
   max-width: 45rem;
 }
 
 body[data-presentation="tnf"] .hero-card,
+body[data-presentation="friday"] .hero-card,
 body[data-presentation="snf"] .hero-card {
   margin-top: 0;
 }
 
 body[data-presentation="tnf"] .section-head,
+body[data-presentation="friday"] .section-head,
 body[data-presentation="snf"] .section-head {
   margin-top: 1.35rem;
 }
@@ -1763,6 +1768,7 @@ footer {
   }
 
   body[data-presentation="tnf"] .hero-main h1,
+  body[data-presentation="friday"] .hero-main h1,
   body[data-presentation="snf"] .hero-main h1 {
     font-size: clamp(3rem, 16vw, 5rem);
   }
