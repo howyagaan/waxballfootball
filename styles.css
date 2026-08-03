@@ -70,6 +70,21 @@ body[data-theme="midweekend"] {
   --blue: #34a8ff;
 }
 
+body[data-presentation="saturday"] {
+  --bg: #0b0717;
+  --panel: #151024;
+  --panel-2: #201735;
+  --panel-3: #2b2046;
+  --line: #463968;
+  --teal: #9d7cff;
+  --teal-2: #6d5dfc;
+  --blue: #64d2ff;
+  background:
+    radial-gradient(circle at 18% -12%, rgba(157, 124, 255, 0.32), transparent 30rem),
+    radial-gradient(circle at 100% 8%, rgba(100, 210, 255, 0.18), transparent 26rem),
+    linear-gradient(180deg, rgba(13, 8, 28, 0.97), var(--bg));
+}
+
 body[data-theme="tnf"] {
   --bg: #100b06;
   --panel: #17110c;
