@@ -1432,7 +1432,7 @@ function selectedTeamMatchup(roster, matchups, rosters, users, options = {}) {
   if (currentData?.league.status === "pre_draft") {
     return {
       title: "Pre-draft",
-      detail: "Matchups will populate after the draft and Sleeper schedule generation. For now, use 2025 finish, waiver slot, and roster settings for context.",
+      detail: "Matchups will populate after the draft and Sleeper schedule generation.",
       deltaLabel: "Status",
       deltaValue: "Pending",
       deltaClass: "neutral",
