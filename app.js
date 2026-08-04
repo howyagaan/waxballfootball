@@ -457,12 +457,10 @@ function renderMatchups(matchups, rosters, users, week) {
   }
 
   const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
-  const timeNote = `<p class="matchup-time-note">All game times are Eastern Time (NY).</p>`;
   if (isTuesdayMode()) {
     const previousWeek = currentData.matchupsByWeek[currentWeek - 1] || [];
     const previousGrouped = groupBy(previousWeek, (matchup) => matchup.matchup_id || matchup.roster_id);
     els.matchups.innerHTML = `
-      ${timeNote}
       <div class="matchup-subsection">
         <span class="metric-label">Last week recap</span>
         ${Array.from(previousGrouped.values()).map((pair) => matchupCard(pair, rosters, users, { forceScores: true })).join("")}
@@ -474,7 +472,7 @@ function renderMatchups(matchups, rosters, users, week) {
     `;
     return;
   }
-  els.matchups.innerHTML = timeNote + Array.from(grouped.values()).map((pair) => matchupCard(pair, rosters, users)).join("");
+  els.matchups.innerHTML = Array.from(grouped.values()).map((pair) => matchupCard(pair, rosters, users)).join("");
 }
 
 function renderTeamSelector(rosters, users) {
@@ -549,7 +547,6 @@ async function renderSelectedTeam() {
       <div class="matchup-focus-head">
         <div>
           <span class="metric-label">Current matchup</span>
-          <p class="matchup-time-note">All game times are Eastern Time (NY).</p>
           ${matchup.detail ? `<p class="muted">${escapeHtml(matchup.detail)}</p>` : ""}
         </div>
         ${matchupScoreBadge(matchup)}
@@ -2168,7 +2165,7 @@ function formatTime() {
 
 function formatKickoff(value) {
   if (!value) return "TBD";
-  return new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: EASTERN_TIME_ZONE }).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
 function transactionDate(ms) {
