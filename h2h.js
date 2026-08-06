@@ -195,7 +195,7 @@ function renderEmptyComparison() {
   h2hEls.pointsNote.textContent = "Total points will appear here.";
   h2hEls.margin.textContent = "--";
   h2hEls.marginNote.textContent = "Average margin will appear here.";
-  h2hEls.logNote.textContent = "Select managers to load matchup history.";
+  h2hEls.logNote.textContent = "";
   h2hEls.log.innerHTML = "";
 }
 
@@ -408,7 +408,6 @@ function buildH2HQuirks() {
     quirkGroup("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} average total`, () => [], "record"),
     quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} average total`, () => [], "record"),
     quirkGroup("Most meetings", pairs, "max", (pair) => pair.games.length, (value) => `${value} matchups`, () => [], "record"),
-    quirkGroup("Least meetings", pairs, "min", (pair) => pair.games.length, (value) => `${value} matchup${value === 1 ? "" : "s"}`, () => [], "record"),
     quirkGroup("Most postseason matchups", postseasonPairs, "max", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
     quirkGroup("Least postseason matchups", postseasonPairs, "min", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
   ].filter(Boolean);
