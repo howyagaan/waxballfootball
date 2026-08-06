@@ -1091,8 +1091,10 @@ function finalMatchupSummary(game, data, type) {
 
   const winner = rosterManagerName(game?.w, data.rosters, data.users);
   const loser = rosterManagerName(game?.l, data.rosters, data.users);
+  const margin = Math.abs(t1Score - t2Score);
+  const marginText = Number.isFinite(margin) ? ` by a slim ${margin.toFixed(1)}pt margin` : "";
   return {
-    text: `${winner} beat ${loser} in the championship final.`,
+    text: `${winner} beat ${loser}${marginText} in the championship final.`,
     scores: [`${t1Name} ${formatScore(t1Score)}`, `${t2Name} ${formatScore(t2Score)}`],
   };
 }
