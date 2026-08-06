@@ -1602,11 +1602,6 @@ select {
   overflow-wrap: anywhere;
 }
 
-.leader-copy .leader-meta-tight {
-  font-size: 0.76rem;
-  white-space: nowrap;
-}
-
 .leader-toggle {
   margin-top: 0.6rem;
   width: fit-content;
@@ -2057,6 +2052,7 @@ footer {
 
   .leader-copy .leader-meta-tight {
     font-size: 0.56rem;
+    white-space: nowrap;
   }
 
   .leader-toggle {
