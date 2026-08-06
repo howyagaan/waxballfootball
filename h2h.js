@@ -78,7 +78,7 @@ async function refreshH2HLeagueAvatar() {
 }
 
 function placeholderOption(label) {
-  return `<option value="">${escapeHtml(label)}</option>`;
+  return `<option value="" disabled hidden>${escapeHtml(label)}</option>`;
 }
 
 function option(manager) {
