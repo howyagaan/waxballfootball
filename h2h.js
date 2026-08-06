@@ -49,7 +49,7 @@ function syncComparison() {
 function renderComparison(a, b) {
   const games = H2H_DATA.matchups
     .filter((game) => game.managers.includes(a) && game.managers.includes(b))
-    .sort((left, right) => right.season - left.season || right.week - left.week);
+    .sort((left, right) => left.season - right.season || left.week - right.week);
   const summary = summarizeSeries(a, b, games);
 
   h2hEls.cardA.innerHTML = managerCard(a, summary.aWins, summary.aPoints);
@@ -71,7 +71,7 @@ function renderComparison(a, b) {
   h2hEls.logNote.textContent = games.length
     ? `${games.length} recorded matchup${games.length === 1 ? "" : "s"} from 2024-2025.`
     : "No matchup log available for this pair.";
-  h2hEls.log.innerHTML = games.length ? games.map((game) => matchupLogCard(game, a, b)).join("") : "";
+  h2hEls.log.innerHTML = games.length ? matchupBoardMarkup(games, a, b) : "";
 }
 
 function summarizeSeries(a, b, games) {
@@ -102,12 +102,8 @@ function summarizeSeries(a, b, games) {
 
 function managerCard(manager, wins, points) {
   return `
-    <span class="h2h-initials">${escapeHtml(initialsFor(manager))}</span>
-    <div>
-      <span class="metric-label">Manager</span>
-      <strong>${escapeHtml(manager)}</strong>
-      <p>${wins} win${wins === 1 ? "" : "s"} · ${points.toFixed(2)} pts</p>
-    </div>
+    ${escapeHtml(manager)}
+    <small>${wins} win${wins === 1 ? "" : "s"} · ${points.toFixed(2)} pts</small>
   `;
 }
 
@@ -134,7 +130,7 @@ function quirksMarkup(a, b, games) {
 function quirkCard(label, value, text) {
   return `
     <article>
-      <span class="metric-label">${escapeHtml(label)}</span>
+      <span>${escapeHtml(label)}</span>
       <strong>${escapeHtml(value)}</strong>
       <p>${escapeHtml(text)}</p>
     </article>
@@ -142,7 +138,25 @@ function quirkCard(label, value, text) {
 }
 
 function emptyCard(label, text) {
-  return `<article><span class="metric-label">${escapeHtml(label)}</span><p>${escapeHtml(text)}</p></article>`;
+  return `<article><span>${escapeHtml(label)}</span><p>${escapeHtml(text)}</p></article>`;
+}
+
+function matchupBoardMarkup(games, a, b) {
+  const bySeason = games.reduce((seasons, game) => {
+    const season = String(game.season);
+    if (!seasons.has(season)) seasons.set(season, []);
+    seasons.get(season).push(game);
+    return seasons;
+  }, new Map());
+  return [...bySeason.entries()]
+    .map(([season, seasonGames]) => `
+      <section class="h2h-season-slate">
+        <h3>${escapeHtml(season)}</h3>
+        <div class="h2h-season-line" aria-hidden="true"></div>
+        ${seasonGames.map((game) => matchupLogCard(game, a, b)).join("")}
+      </section>
+    `)
+    .join("");
 }
 
 function matchupLogCard(game, a, b) {
@@ -150,32 +164,26 @@ function matchupLogCard(game, a, b) {
   const bi = game.managers.indexOf(b);
   const aScore = Number(game.scores[ai]);
   const bScore = Number(game.scores[bi]);
-  const winner = aScore === bScore ? "Tie" : aScore > bScore ? a : b;
-  const facts = gameFacts(game);
+  const aResult = aScore === bScore ? "T" : aScore > bScore ? "W" : "L";
+  const bResult = aScore === bScore ? "T" : bScore > aScore ? "W" : "L";
   return `
-    <article class="h2h-log-card">
-      <div class="h2h-log-meta">
-        <span>${escapeHtml(game.season)} · Week ${escapeHtml(game.week)} · ${escapeHtml(game.stage)}</span>
-        <strong>${escapeHtml(winner === "Tie" ? "Tie" : `${winner} won by ${Math.abs(aScore - bScore).toFixed(2)}`)}</strong>
+    <article class="h2h-chalk-row">
+      <span class="h2h-result ${resultClass(aResult)}">${escapeHtml(aResult)}</span>
+      <strong class="h2h-score">${escapeHtml(aScore.toFixed(2))}</strong>
+      <div class="h2h-row-detail">
+        <span>Week ${escapeHtml(game.week)}</span>
+        <small>${escapeHtml(game.stage)}</small>
       </div>
-      <div class="h2h-scoreline">
-        ${scoreTeam(game.managers[ai], game.teams[ai], aScore, aScore >= bScore)}
-        <span class="h2h-score-vs">vs</span>
-        ${scoreTeam(game.managers[bi], game.teams[bi], bScore, bScore >= aScore)}
-      </div>
-      ${facts.length ? `<ul class="h2h-fact-list">${facts.map((fact) => `<li>${escapeHtml(fact)}</li>`).join("")}</ul>` : ""}
+      <strong class="h2h-score">${escapeHtml(bScore.toFixed(2))}</strong>
+      <span class="h2h-result ${resultClass(bResult)}">${escapeHtml(bResult)}</span>
     </article>
   `;
 }
 
-function scoreTeam(manager, team, score, leads) {
-  return `
-    <div class="h2h-score-team ${leads ? "winner" : ""}">
-      <span>${escapeHtml(team)}</span>
-      <strong>${escapeHtml(score.toFixed(2))}</strong>
-      <small>${escapeHtml(manager)}</small>
-    </div>
-  `;
+function resultClass(result) {
+  if (result === "W") return "win";
+  if (result === "L") return "loss";
+  return "tie";
 }
 
 function gameFacts(game) {
