@@ -220,7 +220,7 @@
           <p class="eyebrow">Choose a team</p>
           <h2>2024 Profiles</h2>
           <p class="muted">
-            Pick one team to see regular-season finish, postseason result, and the draft/final roster comparison.
+            Pick one team to see regular-season finish, playoff or Toilet Bowl result, and the draft/final roster comparison.
           </p>
         </div>
       </section>
@@ -236,7 +236,7 @@
           </div>
         </div>
         <div id="team-panel-2024" class="team-panel">
-          <p class="muted">Choose a team to review its 2024 finish, postseason result, drafted roster, and final roster.</p>
+          <p class="muted">Choose a team to review its 2024 finish, playoff or Toilet Bowl result, drafted roster, and final roster.</p>
         </div>
       </section>
 
@@ -416,7 +416,7 @@
           combined: "8-8",
           regularFinish: "6th",
           playoffFinish: "6th",
-          profile: "Miles Blue went 7-7 and finished 6th, holding his regular-season position through the postseason.",
+          profile: "Miles Blue went 7-7 and finished 6th, holding his regular-season position through the playoff and Toilet Bowl finish.",
           drafted: draft2024.blueball,
           finalRoster: finalRosters2024.blueball,
         },
@@ -428,7 +428,7 @@
           combined: "8-7",
           regularFinish: "7th",
           playoffFinish: "5th",
-          profile: "Nicholas Hamilton went 7-7 and climbed to 5th after the postseason.",
+          profile: "Nicholas Hamilton went 7-7 and climbed to 5th after the playoff and Toilet Bowl finish.",
           drafted: draft2024["Balls? Say Less."],
           finalRoster: finalRosters2024["Balls? Say Less."],
         },
@@ -464,7 +464,7 @@
           combined: "3-13",
           regularFinish: "10th",
           playoffFinish: "7th",
-          profile: "Will Price went 1-13, then survived the Toilet Bowl and climbed to 7th after the postseason.",
+          profile: "Will Price went 1-13, then survived the Toilet Bowl and climbed to 7th after the playoff and Toilet Bowl finish.",
           drafted: draft2024["Leaping Jesters"],
           finalRoster: finalRosters2024["Leaping Jesters"],
         },
@@ -475,22 +475,27 @@
         return map[team] || team || "";
       }
 
-      function playerTag2024(player, draftLookup) {
-        const position = player[1] || "";
-        const currentTeam = normalizeTeam2024(player[2]);
-        const drafted = draftLookup?.get(player[0]);
-        const originalTeam = normalizeTeam2024(drafted?.[2]);
-        const teamTag = originalTeam && currentTeam && originalTeam !== currentTeam
-          ? `<span class="old-team">${originalTeam}</span> | ${currentTeam}`
-          : currentTeam;
-        return [position, teamTag].filter(Boolean).join(" · ") || "NFL";
+      function normalizePosition2024(position) {
+        return position === "DEF" ? "D/ST" : position || "";
       }
 
-      function playerList2024(players, fallback, draftLookup = null) {
+      function positionSort2024(position) {
+        return { QB: 1, RB: 2, WR: 3, TE: 4, K: 5, "D/ST": 6, DEF: 6 }[normalizePosition2024(position)] || 9;
+      }
+
+      function playerTag2024(player) {
+        const position = normalizePosition2024(player[1]);
+        const currentTeam = normalizeTeam2024(player[2]);
+        const ir = player[3] === "IR" ? "IR" : "";
+        return [position, currentTeam, ir].filter(Boolean).join(" · ") || "NFL";
+      }
+
+      function playerList2024(players, fallback) {
         if (!players.length) return `<p class="muted">${fallback}</p>`;
+        const sortedPlayers = [...players].sort((a, b) => positionSort2024(a[1]) - positionSort2024(b[1]) || a[0].localeCompare(b[0]));
         return `
           <ul class="player-list compact-player-list">
-            ${players.map((player) => `<li><strong>${player[0]}</strong><span>${playerTag2024(player, draftLookup)}</span></li>`).join("")}
+            ${sortedPlayers.map((player) => `<li><strong>${player[0]}</strong><span>${playerTag2024(player)}</span></li>`).join("")}
           </ul>
         `;
       }
@@ -498,7 +503,6 @@
       function renderTeam2024(team) {
         const panel = document.querySelector("#team-panel-2024");
         if (!panel || !team) return;
-        const draftLookup = new Map(team.drafted.map((player) => [player[0], player]));
         panel.innerHTML = `
           <div class="team-panel-main">
             <header>
@@ -526,7 +530,7 @@
             </article>
             <article>
               <span class="metric-label">Season-ending Roster</span>
-              ${playerList2024(team.finalRoster, "Season-ending roster import is pending from the ESPN PDF export.", draftLookup)}
+              ${playerList2024(team.finalRoster, "Season-ending roster import is pending from the ESPN PDF export.")}
             </article>
             <article>
               <span class="metric-label">Stayed From Draft</span>

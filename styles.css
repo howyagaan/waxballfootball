@@ -1745,13 +1745,6 @@ body[data-page="archive-2024"] .season-notes-grid p {
   color: var(--teal);
 }
 
-.old-team {
-  color: var(--red);
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
-  text-decoration-color: var(--red);
-}
-
 footer {
   padding: 2rem 1rem 3rem;
   color: var(--muted);

@@ -953,7 +953,7 @@ function archiveFinalProfile(roster, data) {
     return `${title} They landed in the Toilet Bowl and were pushed toward danger by ${rosterName(opponentInGame(danger, historyRow.rosterId), data.rosters, data.users)} in ${roundLabel(danger, "poop")}.`;
   }
 
-  return `${title} Their postseason path was not recorded in the bracket feed.`;
+  return `${title} Their playoff or Toilet Bowl path was not recorded in the bracket feed.`;
 }
 
 function draftedPlayersForRoster(roster, picks) {
@@ -963,9 +963,8 @@ function draftedPlayersForRoster(roster, picks) {
     .map((pick) => ({
       id: String(pick.player_id),
       name: `${pick.metadata?.first_name || ""} ${pick.metadata?.last_name || ""}`.trim() || String(pick.player_id),
-      position: pick.metadata?.position || "",
+      position: normalizeRosterPosition(pick.metadata?.position || ""),
       team: pick.metadata?.team || "",
-      originalTeam: pick.metadata?.team || "",
       pick: pick.pick_no,
       round: pick.round,
     }))
@@ -973,15 +972,16 @@ function draftedPlayersForRoster(roster, picks) {
 }
 
 function finalPlayersForRoster(roster, players) {
-  const draftTeams = draftTeamMap(archiveData.draftPicks || []);
-  return (roster.players || [])
+  const reserveIds = new Set((roster.reserve || []).map(String));
+  const playerIds = [...new Set([...(roster.players || []), ...(roster.reserve || [])].map(String))];
+  return playerIds
     .filter((playerId) => playerId && playerId !== "0")
     .map((playerId) => {
       if (/^[A-Z]{2,3}$/.test(String(playerId))) {
-        return { id: String(playerId), name: `${playerId} D/ST`, position: "DEF", team: String(playerId) };
+        return { id: String(playerId), name: `${playerId} D/ST`, position: "D/ST", team: String(playerId), ir: reserveIds.has(String(playerId)) };
       }
       const summary = playerSummary(playerId, players);
-      return summary ? { ...summary, id: String(playerId), originalTeam: draftTeams.get(String(playerId)) || "" } : null;
+      return summary ? { ...summary, position: normalizeRosterPosition(summary.position), id: String(playerId), ir: reserveIds.has(String(playerId)) } : null;
     })
     .filter(Boolean)
     .sort((a, b) => positionSort(a.position) - positionSort(b.position) || a.name.localeCompare(b.name));
@@ -998,14 +998,9 @@ function playerSimpleList(players, fallback) {
 
 function playerTagHtml(player) {
   const tags = [];
-  if (player.position) tags.push(player.position);
-  const currentTeam = player.team || "";
-  const originalTeam = player.originalTeam || "";
-  if (originalTeam && currentTeam && originalTeam !== currentTeam) {
-    tags.push(`<span class="old-team">${escapeHtml(originalTeam)}</span> | ${escapeHtml(currentTeam)}`);
-  } else if (currentTeam) {
-    tags.push(escapeHtml(currentTeam));
-  }
+  if (player.position) tags.push(escapeHtml(player.position));
+  if (player.team) tags.push(escapeHtml(player.team));
+  if (player.ir) tags.push("IR");
   return tags.length ? tags.join(" · ") : "NFL";
 }
 
@@ -1038,7 +1033,7 @@ function playoffFinish(roster, data) {
   const placement = bracket.find((game) => game.p && (game.t1 === historyRow.rosterId || game.t2 === historyRow.rosterId));
   if (placement) {
     const place = finalPlace(historyRow, data);
-    return `${ordinal(place)} postseason`;
+    return ordinal(place);
   }
   return historyRow.rank <= 6 ? "Playoff team" : "Toilet Bowl";
 }
@@ -1160,7 +1155,12 @@ function ordinal(value) {
 }
 
 function positionSort(position) {
-  return { QB: 1, RB: 2, WR: 3, TE: 4, K: 5, DEF: 6 }[position] || 9;
+  return { QB: 1, RB: 2, WR: 3, TE: 4, K: 5, "D/ST": 6, DEF: 6 }[normalizeRosterPosition(position)] || 9;
+}
+
+function normalizeRosterPosition(position) {
+  if (position === "DEF") return "D/ST";
+  return position || "";
 }
 
 function statRank(roster, rosters, key, direction) {
