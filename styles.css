@@ -1684,6 +1684,11 @@ select {
   text-transform: uppercase;
 }
 
+.h2h-team-select option {
+  background: #ffffff;
+  color: #101820;
+}
+
 .h2h-board-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

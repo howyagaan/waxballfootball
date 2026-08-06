@@ -33,6 +33,7 @@ let h2hMatchups = [...(H2H_DATA.matchups || [])];
 let managerStats = buildManagerStats(h2hMatchups);
 let weekStats = buildWeekStats(h2hMatchups);
 let seasonStats = buildSeasonStats(h2hMatchups);
+let h2hManagers = [];
 
 initH2H();
 refreshH2HLeagueAvatar();
@@ -44,10 +45,9 @@ async function initH2H() {
   weekStats = buildWeekStats(h2hMatchups);
   seasonStats = buildSeasonStats(h2hMatchups);
 
-  const managers = [...new Set([...(H2H_DATA.managers || []), ...h2hMatchups.flatMap((game) => game.managers)])].sort();
-  if (!managers.length) return;
-  h2hEls.managerA.innerHTML = placeholderOption("Manager 1") + managers.map((manager) => option(manager)).join("");
-  h2hEls.managerB.innerHTML = placeholderOption("Manager 2") + managers.map((manager) => option(manager)).join("");
+  h2hManagers = [...new Set([...(H2H_DATA.managers || []), ...h2hMatchups.flatMap((game) => game.managers)])].sort();
+  if (!h2hManagers.length) return;
+  populateManagerSelects();
   h2hEls.managerA.addEventListener("change", syncComparison);
   h2hEls.managerB.addEventListener("change", syncComparison);
   syncComparison();
@@ -85,12 +85,26 @@ function option(manager) {
   return `<option value="${escapeHtml(manager)}">${escapeHtml(manager)}</option>`;
 }
 
+function populateManagerSelects() {
+  const aValue = h2hEls.managerA.value;
+  const bValue = h2hEls.managerB.value;
+  h2hEls.managerA.innerHTML = placeholderOption("Manager 1") + h2hManagers
+    .filter((manager) => manager !== bValue)
+    .map((manager) => option(manager))
+    .join("");
+  h2hEls.managerB.innerHTML = placeholderOption("Manager 2") + h2hManagers
+    .filter((manager) => manager !== aValue)
+    .map((manager) => option(manager))
+    .join("");
+  h2hEls.managerA.value = aValue && aValue !== bValue ? aValue : "";
+  h2hEls.managerB.value = bValue && bValue !== aValue ? bValue : "";
+}
+
 function syncComparison() {
   if (h2hEls.managerA.value && h2hEls.managerA.value === h2hEls.managerB.value) {
-    const managers = [...h2hEls.managerB.options].map((optionEl) => optionEl.value);
-    const replacement = managers.find((manager) => manager !== h2hEls.managerA.value);
-    h2hEls.managerB.value = replacement || h2hEls.managerB.value;
+    h2hEls.managerB.value = "";
   }
+  populateManagerSelects();
   renderComparison(h2hEls.managerA.value, h2hEls.managerB.value);
 }
 
