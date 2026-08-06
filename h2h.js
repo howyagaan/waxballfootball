@@ -135,6 +135,7 @@ function selectH2HPair(a, b, gameIds = [], highlightTarget = "") {
     if (gameIds.length) highlightH2HGames(gameIds);
     else if (highlightTarget === "record") highlightH2HRecord();
     else if (highlightTarget === "points") highlightH2HPoints();
+    else if (highlightTarget === "margin") highlightH2HMargin();
   });
 }
 
@@ -150,6 +151,10 @@ function highlightH2HRecord() {
 
 function highlightH2HPoints() {
   highlightH2HStatCard("#h2h-points-card");
+}
+
+function highlightH2HMargin() {
+  highlightH2HStatCard("#h2h-margin-card");
 }
 
 function highlightH2HStatCard(selector) {
@@ -190,7 +195,7 @@ function renderComparison(a, b) {
   h2hEls.seriesNote.textContent = "";
   h2hEls.points.innerHTML = games.length ? pointsMarkup(a, b, summary) : "--";
   h2hEls.pointsNote.textContent = "";
-  h2hEls.margin.innerHTML = games.length ? marginMarkup(a, b, summary, games.length) : "--";
+  h2hEls.margin.innerHTML = games.length ? marginMarkup(summary) : "--";
   h2hEls.marginNote.textContent = "";
 
   h2hEls.logNote.innerHTML = games.length ? matchupSideLabels(a, b) : "No matchup log available for this pair.";
@@ -233,11 +238,8 @@ function pointsMarkup(a, b, summary) {
   `;
 }
 
-function marginMarkup(a, b, summary, gamesPlayed) {
-  const edge = gamesPlayed ? (summary.aPoints - summary.bPoints) / gamesPlayed : 0;
-  if (!edge) return `<span class="h2h-stat-piece neutral">EVEN</span>`;
-  const leader = edge > 0 ? a : b;
-  return `<span class="h2h-stat-piece good">${escapeHtml(firstName(leader).toUpperCase())} +${Math.abs(edge).toFixed(2)} pts</span>`;
+function marginMarkup(summary) {
+  return `<span class="h2h-stat-piece neutral">${summary.averageMargin.toFixed(2)} pts</span>`;
 }
 
 function matchupSideLabels(a, b) {
@@ -412,7 +414,7 @@ function buildH2HQuirks() {
   return [
     quirkGroup("Tightest game", pairs, "min", (pair) => margin(pair.tightest), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.tightest.id], "", null, (pair) => gameSideTones(pair, pair.tightest)),
     quirkGroup("Biggest blowout", pairs, "max", (pair) => margin(pair.biggestMargin), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.biggestMargin.id], "", null, (pair) => gameSideTones(pair, pair.biggestMargin)),
-    quirkGroup("Tightest average margin", withMultiple, "min", (pair) => pair.averageMargin, (value) => `${value.toFixed(2)} pts`, () => [], "record", null, edgeSideTones),
+    quirkGroup("Tightest average margin", withMultiple, "min", (pair) => pair.averageMargin, (value) => `${value.toFixed(2)} pts`, () => [], "margin", null, edgeSideTones),
     quirkGroup("Most one-sided rivalry", withMultiple, "max", (pair) => pair.pointEdgePerGame, (value) => `${value.toFixed(2)}pts`, () => [], "record", null, edgeSideTones),
     quirkGroup("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "points"),
     quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "points"),
