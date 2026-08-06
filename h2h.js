@@ -591,7 +591,8 @@ function opponentScore(game, manager) {
 }
 
 function opponentName(game, manager) {
-  return game.managers.find((candidate) => candidate !== manager) || "";
+  const opponent = game.managers.find((candidate) => candidate !== manager) || "";
+  return shortManagerName(opponent);
 }
 
 function topValues(items, scoreFn, mode) {
@@ -967,12 +968,12 @@ function total(game) {
 }
 
 function firstName(name) {
+  if (name === "Miles Blue") return "Miles B";
+  if (name === "Miles Elliot") return "Miles E";
   return String(name || "").split(/\s+/).filter(Boolean)[0] || "Manager";
 }
 
 function shortManagerName(name) {
-  if (name === "Miles Blue") return "Miles B";
-  if (name === "Miles Elliot") return "Miles E";
   return firstName(name);
 }
 

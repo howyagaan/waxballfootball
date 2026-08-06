@@ -1723,9 +1723,10 @@ select {
 }
 
 .h2h-rival-stats article {
-  min-height: 6.2rem;
+  min-height: 5.25rem;
   align-items: flex-start;
   text-align: left;
+  padding: clamp(0.65rem, 1.6vw, 0.85rem);
 }
 
 .h2h-rival-stats article {
@@ -1808,7 +1809,7 @@ select {
 
 .h2h-rival-verdict p,
 .h2h-rival-stats p {
-  margin: 0.45rem 0 0;
+  margin: 0.32rem 0 0;
   color: var(--muted);
   line-height: 1.32;
 }
