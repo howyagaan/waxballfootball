@@ -1727,6 +1727,10 @@ select {
   margin: 0.85rem 0;
 }
 
+.h2h-rival-stats:empty {
+  display: none;
+}
+
 .h2h-rival-stats article,
 .h2h-board-stats article {
   display: flex;

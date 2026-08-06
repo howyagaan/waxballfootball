@@ -278,7 +278,7 @@ function refreshH2HStatRefs() {
 function renderRivalManager(manager) {
   if (!h2hEls.rivalStats || !h2hEls.rivalVerdict) return;
   if (!manager) {
-    h2hEls.rivalStats.innerHTML = managerFactsEmptyMarkup();
+    h2hEls.rivalStats.innerHTML = "";
     h2hEls.rivalVerdict.innerHTML = "";
     return;
   }
@@ -345,22 +345,6 @@ function managerFacts(manager) {
     fiercest,
     rankedRivals,
   };
-}
-
-function managerFactsEmptyMarkup() {
-  return [
-    "Most matchups",
-    "Tightest game",
-    "Biggest win",
-    "Biggest loss",
-    "Easiest manager",
-    "Toughest manager",
-  ].map((label) => `
-    <article class="h2h-manager-fact">
-      <span>${escapeHtml(label)}</span>
-      <strong>--</strong>
-    </article>
-  `).join("");
 }
 
 function fierceVerdictMarkup(manager, rivalry, rankedRivals = []) {
