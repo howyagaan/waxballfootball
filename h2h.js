@@ -429,6 +429,9 @@ function quirkGroup(title, pairs, mode, scoreFn, valueFn, gameIdsFn, highlightTa
 }
 
 function quirkCard(quirk) {
+  if (quirk.entries.length === 1) {
+    return quirkSingleEntryCard(quirk, quirk.entries[0]);
+  }
   return `
     <article class="h2h-quirk-card">
       <span>${escapeHtml(quirk.title)}</span>
@@ -437,6 +440,17 @@ function quirkCard(quirk) {
         ${quirk.entries.map(quirkEntryButton).join("")}
       </div>
     </article>
+  `;
+}
+
+function quirkSingleEntryCard(quirk, entry) {
+  return `
+    <button class="h2h-quirk-card h2h-quirk-card-button" type="button" data-h2h-quirk-entry data-manager-a="${escapeHtml(entry.managerA)}" data-manager-b="${escapeHtml(entry.managerB)}" data-game-ids="${escapeHtml(entry.gameIds.join(","))}" data-highlight-target="${escapeHtml(entry.highlightTarget)}">
+      <span>${escapeHtml(quirk.title)}</span>
+      <strong>${escapeHtml(quirk.value)}</strong>
+      ${quirkPairMarkup(entry)}
+      ${entry.detail ? `<small>${escapeHtml(entry.detail)}</small>` : ""}
+    </button>
   `;
 }
 
@@ -454,13 +468,19 @@ function quirkEntry(pair, gameIdsFn, highlightTarget = "", detailFn = null, side
 function quirkEntryButton(entry) {
   return `
     <button class="h2h-quirk-entry" type="button" data-h2h-quirk-entry data-manager-a="${escapeHtml(entry.managerA)}" data-manager-b="${escapeHtml(entry.managerB)}" data-game-ids="${escapeHtml(entry.gameIds.join(","))}" data-highlight-target="${escapeHtml(entry.highlightTarget)}">
-      <span class="h2h-quirk-pair">
-        <span class="h2h-quirk-name ${escapeHtml(toneClass(entry.sideTones.a))}">${escapeHtml(shortManagerName(entry.managerA))}</span>
-        <span class="h2h-quirk-vs">vs</span>
-        <span class="h2h-quirk-name ${escapeHtml(toneClass(entry.sideTones.b))}">${escapeHtml(shortManagerName(entry.managerB))}</span>
-      </span>
+      ${quirkPairMarkup(entry)}
       ${entry.detail ? `<small>${escapeHtml(entry.detail)}</small>` : ""}
     </button>
+  `;
+}
+
+function quirkPairMarkup(entry) {
+  return `
+    <span class="h2h-quirk-pair">
+      <span class="h2h-quirk-name ${escapeHtml(toneClass(entry.sideTones.a))}">${escapeHtml(shortManagerName(entry.managerA))}</span>
+      <span class="h2h-quirk-vs">vs</span>
+      <span class="h2h-quirk-name ${escapeHtml(toneClass(entry.sideTones.b))}">${escapeHtml(shortManagerName(entry.managerB))}</span>
+    </span>
   `;
 }
 
