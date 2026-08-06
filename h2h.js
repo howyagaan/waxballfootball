@@ -19,15 +19,12 @@ const H2H_OWNER_REAL_NAMES = {
 const h2hEls = {
   managerA: document.querySelector("#h2h-manager-a"),
   managerB: document.querySelector("#h2h-manager-b"),
-  cardA: document.querySelector("#h2h-card-a"),
-  cardB: document.querySelector("#h2h-card-b"),
   series: document.querySelector("#h2h-series"),
   seriesNote: document.querySelector("#h2h-series-note"),
   points: document.querySelector("#h2h-points"),
   pointsNote: document.querySelector("#h2h-points-note"),
   margin: document.querySelector("#h2h-margin"),
   marginNote: document.querySelector("#h2h-margin-note"),
-  quirks: document.querySelector("#h2h-quirks"),
   log: document.querySelector("#h2h-log"),
   logNote: document.querySelector("#h2h-log-note"),
 };
@@ -48,13 +45,15 @@ async function initH2H() {
 
   const managers = [...new Set([...(H2H_DATA.managers || []), ...h2hMatchups.flatMap((game) => game.managers)])].sort();
   if (!managers.length) return;
-  h2hEls.managerA.innerHTML = managers.map((manager) => option(manager)).join("");
-  h2hEls.managerB.innerHTML = managers.map((manager) => option(manager)).join("");
-  h2hEls.managerA.value = managers.includes("Nicholas Hamilton") ? "Nicholas Hamilton" : managers[0];
-  h2hEls.managerB.value = managers.includes("Miles Blue") ? "Miles Blue" : managers.find((manager) => manager !== h2hEls.managerA.value);
+  h2hEls.managerA.innerHTML = placeholderOption("Manager 1") + managers.map((manager) => option(manager)).join("");
+  h2hEls.managerB.innerHTML = placeholderOption("Manager 2") + managers.map((manager) => option(manager)).join("");
   h2hEls.managerA.addEventListener("change", syncComparison);
   h2hEls.managerB.addEventListener("change", syncComparison);
   syncComparison();
+}
+
+function placeholderOption(label) {
+  return `<option value="">${escapeHtml(label)}</option>`;
 }
 
 function option(manager) {
@@ -62,7 +61,7 @@ function option(manager) {
 }
 
 function syncComparison() {
-  if (h2hEls.managerA.value === h2hEls.managerB.value) {
+  if (h2hEls.managerA.value && h2hEls.managerA.value === h2hEls.managerB.value) {
     const managers = [...h2hEls.managerB.options].map((optionEl) => optionEl.value);
     const replacement = managers.find((manager) => manager !== h2hEls.managerA.value);
     h2hEls.managerB.value = replacement || h2hEls.managerB.value;
@@ -71,17 +70,18 @@ function syncComparison() {
 }
 
 function renderComparison(a, b) {
+  if (!a || !b) {
+    renderEmptyComparison();
+    return;
+  }
+
   const games = h2hMatchups
     .filter((game) => game.managers.includes(a) && game.managers.includes(b))
     .sort((left, right) => right.season - left.season || left.week - right.week);
   const summary = summarizeSeries(a, b, games);
 
-  h2hEls.cardA.innerHTML = managerCard(a, summary.aWins, summary.aPoints);
-  h2hEls.cardB.innerHTML = managerCard(b, summary.bWins, summary.bPoints);
   h2hEls.series.textContent = games.length ? `${summary.aWins}-${summary.bWins}${summary.ties ? `-${summary.ties}` : ""}` : "0-0";
-  h2hEls.seriesNote.textContent = games.length
-    ? `${a}'s wins are listed first. ${games.length} recorded meeting${games.length === 1 ? "" : "s"}.`
-    : "No recorded meetings yet.";
+  h2hEls.seriesNote.textContent = games.length ? `${a} vs ${b}` : "No recorded meetings yet.";
   const pointDiff = Math.abs(summary.aPoints - summary.bPoints);
   const pointLeader = summary.aPoints === summary.bPoints ? "Even" : summary.aPoints > summary.bPoints ? a : b;
   h2hEls.points.textContent = games.length ? `${summary.aPoints.toFixed(2)} - ${summary.bPoints.toFixed(2)}` : "--";
@@ -91,11 +91,21 @@ function renderComparison(a, b) {
   h2hEls.margin.textContent = games.length ? `${summary.averageMargin.toFixed(2)} pts` : "--";
   h2hEls.marginNote.textContent = games.length ? marginFlavor(summary.averageMargin) : "No margins to measure.";
 
-  h2hEls.quirks.innerHTML = games.length ? quirksMarkup(a, b, games, summary) : emptyCard("No history yet", "These two managers have not met in the archive.");
   h2hEls.logNote.textContent = games.length
     ? `${games.length} recorded matchup${games.length === 1 ? "" : "s"} from the Waxball archive.`
     : "No matchup log available for this pair.";
   h2hEls.log.innerHTML = games.length ? matchupBoardMarkup(games, a, b) : "";
+}
+
+function renderEmptyComparison() {
+  h2hEls.series.textContent = "--";
+  h2hEls.seriesNote.textContent = "Select two managers.";
+  h2hEls.points.textContent = "--";
+  h2hEls.pointsNote.textContent = "Total points will appear here.";
+  h2hEls.margin.textContent = "--";
+  h2hEls.marginNote.textContent = "Average margin will appear here.";
+  h2hEls.logNote.textContent = "Select managers to load matchup history.";
+  h2hEls.log.innerHTML = "";
 }
 
 async function loadCompletedSleeperMatchups() {
@@ -207,47 +217,6 @@ function summarizeSeries(a, b, games) {
   });
 }
 
-function managerCard(manager, wins, points) {
-  return `
-    ${escapeHtml(manager)}
-    <small>${wins} win${wins === 1 ? "" : "s"} · ${points.toFixed(2)} pts</small>
-  `;
-}
-
-function quirksMarkup(a, b, games) {
-  const tightest = [...games].sort((left, right) => margin(left) - margin(right))[0];
-  const highest = [...games].sort((left, right) => total(right) - total(left))[0];
-  const blowout = [...games].sort((left, right) => margin(right) - margin(left))[0];
-  const special = games
-    .flatMap((game) => gameFacts(game))
-    .slice(0, 4);
-  const cards = [
-    quirkCard("Tightest matchup", `${margin(tightest).toFixed(2)} pts`, matchupSentence(tightest)),
-    quirkCard("Highest-scoring meeting", `${total(highest).toFixed(2)} pts`, matchupSentence(highest)),
-    quirkCard("Biggest swing", `${margin(blowout).toFixed(2)} pts`, matchupSentence(blowout)),
-  ];
-  if (special.length) {
-    cards.push(quirkCard("Series notes", `${special.length} note${special.length === 1 ? "" : "s"}`, special.join(" ")));
-  } else {
-    cards.push(quirkCard("Series notes", "No league extremes", `${a} and ${b} have avoided league-high or league-low chaos in their meetings.`));
-  }
-  return cards.join("");
-}
-
-function quirkCard(label, value, text) {
-  return `
-    <article>
-      <span>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
-      <p>${escapeHtml(text)}</p>
-    </article>
-  `;
-}
-
-function emptyCard(label, text) {
-  return `<article><span>${escapeHtml(label)}</span><p>${escapeHtml(text)}</p></article>`;
-}
-
 function matchupBoardMarkup(games, a, b) {
   const bySeason = games.reduce((seasons, game) => {
     const season = String(game.season);
@@ -260,31 +229,59 @@ function matchupBoardMarkup(games, a, b) {
       <section class="h2h-season-slate">
         <h3>${escapeHtml(season)}</h3>
         <div class="h2h-season-line" aria-hidden="true"></div>
-        ${seasonGames.map((game) => matchupLogCard(game, a, b)).join("")}
+        ${seasonGames.map((game) => matchupLogCard(game, a, b, games)).join("")}
       </section>
     `)
     .join("");
 }
 
-function matchupLogCard(game, a, b) {
+function matchupLogCard(game, a, b, seriesGames) {
   const ai = game.managers.indexOf(a);
   const bi = game.managers.indexOf(b);
   const aScore = Number(game.scores[ai]);
   const bScore = Number(game.scores[bi]);
   const aResult = aScore === bScore ? "T" : aScore > bScore ? "W" : "L";
   const bResult = aScore === bScore ? "T" : bScore > aScore ? "W" : "L";
+  const badges = gameBadges(game, seriesGames);
   return `
     <article class="h2h-score-row">
-      <span class="h2h-result ${resultClass(aResult)}">${escapeHtml(aResult)}</span>
-      <strong class="h2h-score">${escapeHtml(aScore.toFixed(2))}</strong>
-      <div class="h2h-row-detail">
-        <span>Week ${escapeHtml(game.week)}</span>
-        <small>${escapeHtml(game.stage)}</small>
+      <div class="h2h-score-main">
+        <span class="h2h-result ${resultClass(aResult)}">${escapeHtml(aResult)}</span>
+        <strong class="h2h-score">${escapeHtml(aScore.toFixed(2))}</strong>
+        <div class="h2h-row-detail">
+          <span>Week ${escapeHtml(game.week)}</span>
+          <small>${escapeHtml(game.stage)}</small>
+        </div>
+        <strong class="h2h-score">${escapeHtml(bScore.toFixed(2))}</strong>
+        <span class="h2h-result ${resultClass(bResult)}">${escapeHtml(bResult)}</span>
       </div>
-      <strong class="h2h-score">${escapeHtml(bScore.toFixed(2))}</strong>
-      <span class="h2h-result ${resultClass(bResult)}">${escapeHtml(bResult)}</span>
+      ${badges.length ? `<div class="h2h-badges">${badges.map((badge) => `<span>${escapeHtml(badge)}</span>`).join("")}</div>` : ""}
     </article>
   `;
+}
+
+function gameBadges(game, seriesGames) {
+  const badges = [];
+  const tightest = [...seriesGames].sort((left, right) => margin(left) - margin(right))[0];
+  const highest = [...seriesGames].sort((left, right) => total(right) - total(left))[0];
+  const biggestSwing = [...seriesGames].sort((left, right) => margin(right) - margin(left))[0];
+  if (tightest?.id === game.id) badges.push("Tightest matchup");
+  if (highest?.id === game.id) badges.push("Highest-scoring matchup");
+  if (biggestSwing?.id === game.id && seriesGames.length > 1) badges.push("Biggest swing");
+  badges.push(...stageBadges(game));
+  badges.push(...gameFacts(game));
+  return [...new Set(badges)];
+}
+
+function stageBadges(game) {
+  if (game.stage === "Championship") return ["Championship game"];
+  if (game.stage === "Toilet Bowl final") return ["Toilet Bowl final"];
+  if (game.stage === "Toilet Bowl placement") return ["Toilet Bowl placement"];
+  if (game.stage === "Toilet Bowl") return ["Toilet Bowl"];
+  if (game.stage === "3rd-place game") return ["3rd-place game"];
+  if (game.stage === "5th-place game") return ["5th-place game"];
+  if (game.stage === "Playoffs") return [`Playoff Week ${Math.max(1, Number(game.week) - 14)}`];
+  return [];
 }
 
 function resultClass(result) {
@@ -300,15 +297,13 @@ function gameFacts(game) {
     const managerStat = managerStats.get(manager);
     const weekStat = weekStats.get(`${game.season}-${game.week}`);
     const seasonStat = seasonStats.get(String(game.season));
-    if (managerStat?.high?.score === score && managerStat.high.id === game.id) facts.push(`${manager} posted their archive high score.`);
-    if (managerStat?.low?.score === score && managerStat.low.id === game.id) facts.push(`${manager} posted their archive low score.`);
-    if (weekStat?.high?.score === score && weekStat.high.id === game.id) facts.push(`${manager} had the league high score in Week ${game.week}, ${game.season}.`);
-    if (weekStat?.low?.score === score && weekStat.low.id === game.id) facts.push(`${manager} had the league low score in Week ${game.week}, ${game.season}.`);
-    if (seasonStat?.high?.score === score && seasonStat.high.id === game.id) facts.push(`${manager} hit the league's highest score of ${game.season}.`);
-    if (seasonStat?.low?.score === score && seasonStat.low.id === game.id) facts.push(`${manager} hit the league's lowest score of ${game.season}.`);
+    if (managerStat?.high?.score === score && managerStat.high.id === game.id) facts.push(`${firstName(manager)}'s highest ever score`);
+    if (managerStat?.low?.score === score && managerStat.low.id === game.id) facts.push(`${firstName(manager)}'s lowest ever score`);
+    if (weekStat?.high?.score === score && weekStat.high.id === game.id) facts.push(`League high score, Week ${game.week}`);
+    if (weekStat?.low?.score === score && weekStat.low.id === game.id) facts.push(`League low score, Week ${game.week}`);
+    if (seasonStat?.high?.score === score && seasonStat.high.id === game.id) facts.push(`Highest score of any team in ${game.season}`);
+    if (seasonStat?.low?.score === score && seasonStat.low.id === game.id) facts.push(`Lowest score of any team in ${game.season}`);
   });
-  if (game.stage === "Championship") facts.push("This was a championship matchup.");
-  if (game.stage === "Toilet Bowl final") facts.push("This was a final Toilet Bowl matchup.");
   return [...new Set(facts)];
 }
 
@@ -356,17 +351,6 @@ function buildSeasonStats(games) {
   return stats;
 }
 
-function matchupSentence(game) {
-  const [a, b] = game.managers;
-  const [aScore, bScore] = game.scores.map(Number);
-  const winner = aScore === bScore ? "Nobody" : aScore > bScore ? a : b;
-  const loser = aScore === bScore ? "" : aScore > bScore ? b : a;
-  const score = `${a} ${aScore.toFixed(2)} · ${b} ${bScore.toFixed(2)}`;
-  return winner === "Nobody"
-    ? `${score} in Week ${game.week}, ${game.season}.`
-    : `${winner} beat ${loser}, ${score}, in Week ${game.week}, ${game.season}.`;
-}
-
 function margin(game) {
   return Math.abs(Number(game.scores[0]) - Number(game.scores[1]));
 }
@@ -381,14 +365,8 @@ function marginFlavor(value) {
   return "Someone has usually been holding the belt by halftime.";
 }
 
-function initialsFor(name) {
-  return String(name || "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
+function firstName(name) {
+  return String(name || "").split(/\s+/).filter(Boolean)[0] || "Manager";
 }
 
 function groupBy(items, keyFn) {

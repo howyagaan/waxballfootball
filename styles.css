@@ -1639,31 +1639,25 @@ select {
 
 .h2h-board-top {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(9rem, auto) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
   align-items: stretch;
 }
 
 .h2h-team-select,
-.h2h-center-score,
 .h2h-board-stats article,
-.h2h-season-slate,
-.h2h-fun-facts article {
+.h2h-season-slate {
   border: 1px solid var(--line);
   border-radius: 18px;
   background: rgba(7, 12, 18, 0.48);
 }
 
 .h2h-team-select {
-  display: grid;
-  gap: 0.45rem;
   min-width: 0;
-  padding: clamp(0.8rem, 2vw, 1rem);
+  padding: 0;
 }
 
-.h2h-team-select span,
-.h2h-board-stats span,
-.h2h-fun-facts span {
+.h2h-board-stats span {
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 1000;
@@ -1673,67 +1667,24 @@ select {
 
 .h2h-team-select select {
   width: 100%;
-}
-
-.h2h-team-select strong {
-  display: block;
-  color: var(--ink);
-  font-size: clamp(1.2rem, 3vw, 2rem);
-  line-height: 1;
-  overflow-wrap: anywhere;
-}
-
-.h2h-team-select small {
-  display: block;
-  margin-top: 0.25rem;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.h2h-center-score {
-  display: grid;
-  place-items: center;
-  padding: 0.85rem;
-  text-align: center;
-  background: rgba(0, 206, 190, 0.08);
-}
-
-.h2h-center-score p {
-  margin: 0;
-  color: var(--teal);
-  font-size: 0.7rem;
-  font-weight: 1000;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.h2h-center-score strong {
-  display: block;
-  color: var(--ink);
-  font-size: clamp(2.4rem, 8vw, 4.75rem);
-  line-height: 0.95;
-}
-
-.h2h-center-score span {
-  color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.3;
+  min-height: 100%;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
 }
 
 .h2h-board-stats {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   margin: 0.85rem 0;
 }
 
-.h2h-board-stats article,
-.h2h-fun-facts article {
+.h2h-board-stats article {
   padding: clamp(0.8rem, 2vw, 1rem);
 }
 
-.h2h-board-stats strong,
-.h2h-fun-facts strong {
+.h2h-board-stats strong {
   display: block;
   margin-top: 0.22rem;
   color: var(--ink);
@@ -1741,8 +1692,7 @@ select {
   line-height: 1;
 }
 
-.h2h-board-stats p,
-.h2h-fun-facts p {
+.h2h-board-stats p {
   margin: 0.5rem 0 0;
   color: var(--muted);
   line-height: 1.42;
@@ -1770,16 +1720,19 @@ select {
 }
 
 .h2h-score-row {
-  display: grid;
-  grid-template-columns: 2rem minmax(4.8rem, 1fr) minmax(5.5rem, 0.75fr) minmax(4.8rem, 1fr) 2rem;
-  gap: 0.5rem;
-  align-items: center;
   padding: 0.72rem 0;
   border-top: 1px solid var(--line);
 }
 
 .h2h-score-row:first-of-type {
   border-top: 0;
+}
+
+.h2h-score-main {
+  display: grid;
+  grid-template-columns: 2rem minmax(4.8rem, 1fr) minmax(5.5rem, 0.75fr) minmax(4.8rem, 1fr) 2rem;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .h2h-result {
@@ -1828,20 +1781,23 @@ select {
   font-weight: 900;
 }
 
-.h2h-fun-facts {
-  margin-top: 1rem;
+.h2h-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  margin-top: 0.55rem;
 }
 
-.h2h-fun-facts h2 {
-  margin: 0 0 0.75rem;
-  color: var(--ink);
-  font-size: clamp(1.7rem, 4vw, 2.6rem);
-}
-
-.h2h-notes-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
+.h2h-badges span {
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+  color: var(--teal);
+  background: rgba(0, 206, 190, 0.1);
+  font-size: 0.72rem;
+  font-weight: 1000;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .leaders-expanded .leader-toggle {
@@ -2053,8 +2009,7 @@ footer {
   .watch-columns,
   .matchup-versus-showpiece,
   .featured-article-card a,
-  .article-grid,
-  .h2h-notes-grid {
+  .article-grid {
     grid-template-columns: 1fr;
   }
 
@@ -2230,16 +2185,11 @@ footer {
     grid-template-columns: 1fr;
   }
 
-  .h2h-center-score {
-    order: -1;
-  }
-
-  .h2h-board-stats,
-  .h2h-notes-grid {
+  .h2h-board-stats {
     grid-template-columns: 1fr;
   }
 
-  .h2h-score-row {
+  .h2h-score-main {
     grid-template-columns: 1.5rem minmax(3.8rem, 1fr) minmax(4.2rem, 0.75fr) minmax(3.8rem, 1fr) 1.5rem;
     gap: 0.28rem;
   }
@@ -2306,7 +2256,7 @@ footer {
     text-align: left;
   }
 
-  .h2h-score-row {
+  .h2h-score-main {
     grid-template-columns: 1.35rem minmax(3rem, 1fr) minmax(3.6rem, 0.65fr) minmax(3rem, 1fr) 1.35rem;
   }
 
