@@ -55,6 +55,7 @@ async function initH2H() {
   populateRivalManagerSelect();
   populateManagerSelects();
   h2hEls.rivalManager?.addEventListener("change", syncRivalManager);
+  h2hEls.rivalVerdict?.addEventListener("click", handleRivalVerdictClick);
   h2hEls.managerA.addEventListener("change", syncComparison);
   h2hEls.managerB.addEventListener("change", syncComparison);
   h2hEls.quirks?.addEventListener("click", handleQuirkClick);
@@ -140,6 +141,15 @@ function handleQuirkClick(event) {
   const highlightTarget = entry.dataset.highlightTarget || "";
   if (!managerA || !managerB) return;
   selectH2HPair(managerA, managerB, gameIds, highlightTarget);
+}
+
+function handleRivalVerdictClick(event) {
+  const entry = event.target.closest("[data-h2h-rival-entry]");
+  if (!entry) return;
+  const managerA = entry.dataset.managerA;
+  const managerB = entry.dataset.managerB;
+  if (!managerA || !managerB) return;
+  selectH2HPair(managerA, managerB);
 }
 
 function selectH2HPair(a, b, gameIds = [], highlightTarget = "") {
@@ -272,9 +282,9 @@ function renderRivalManager(manager) {
     h2hEls.rivalVerdict.innerHTML = "";
     return;
   }
-  const { facts, fiercest } = managerFacts(manager);
+  const { facts, fiercest, rankedRivals } = managerFacts(manager);
   h2hEls.rivalStats.innerHTML = facts.map(managerFactCard).join("");
-  h2hEls.rivalVerdict.innerHTML = fiercest ? fierceVerdictMarkup(manager, fiercest) : "";
+  h2hEls.rivalVerdict.innerHTML = fiercest ? fierceVerdictMarkup(manager, fiercest, rankedRivals) : "";
 }
 
 function managerFactCard(fact) {
@@ -294,7 +304,8 @@ function managerFacts(manager) {
   const tightestGame = lowestBy(games, margin);
   const biggestWin = highestBy(games.filter((game) => managerScore(game, manager) > opponentScore(game, manager)), (game) => margin(game));
   const biggestLoss = highestBy(games.filter((game) => managerScore(game, manager) < opponentScore(game, manager)), (game) => margin(game));
-  const fiercest = selectedFiercestRivalry(manager);
+  const rankedRivals = selectedFiercestRivalries(manager, 3);
+  const fiercest = rankedRivals[0] || null;
   const easiest = topValues(rivalries.filter((rivalry) => rivalry.pointEdgePerGame > 0), (rivalry) => rivalry.pointEdgePerGame, "max");
   const toughest = topValues(rivalries.filter((rivalry) => rivalry.pointEdgePerGame < 0), (rivalry) => Math.abs(rivalry.pointEdgePerGame), "max");
 
@@ -332,6 +343,7 @@ function managerFacts(manager) {
     },
   ],
     fiercest,
+    rankedRivals,
   };
 }
 
@@ -351,16 +363,29 @@ function managerFactsEmptyMarkup() {
   `).join("");
 }
 
-function fierceVerdictMarkup(manager, rivalry) {
+function fierceVerdictMarkup(manager, rivalry, rankedRivals = []) {
   const score = rivalryScoreOutOf100(rivalry);
   const facts = fierceVerdictFacts(manager, rivalry);
+  const nextRivals = rankedRivals.slice(1, 3);
   return `
+    <span class="h2h-rival-heading">Fiercest rival</span>
+    <strong>${escapeHtml(shortManagerName(rivalry.opponent))}</strong>
     <div class="h2h-rival-score">
       <span>Rivalry score</span>
       <strong>${score}/100</strong>
     </div>
-    <span>Fiercest rival</span>
-    <strong>${escapeHtml(shortManagerName(rivalry.opponent))}</strong>
+    <button class="h2h-see-history" type="button" data-h2h-rival-entry data-manager-a="${escapeHtml(manager)}" data-manager-b="${escapeHtml(rivalry.opponent)}">See history</button>
+    ${nextRivals.length ? `
+      <div class="h2h-next-rivals" aria-label="Next fiercest rivals">
+        ${nextRivals.map((nextRival, index) => `
+          <button type="button" data-h2h-rival-entry data-manager-a="${escapeHtml(manager)}" data-manager-b="${escapeHtml(nextRival.opponent)}">
+            <span>#${index + 2}</span>
+            <strong>${escapeHtml(shortManagerName(nextRival.opponent))}</strong>
+            <em>${rivalryScoreOutOf100(nextRival)}/100</em>
+          </button>
+        `).join("")}
+      </div>
+    ` : ""}
     <div class="h2h-rival-fact-list">
       ${facts.map((fact) => `
         <div class="h2h-rival-fact-row">
@@ -589,8 +614,12 @@ function managerRivalries(manager) {
 }
 
 function selectedFiercestRivalry(manager) {
+  return selectedFiercestRivalries(manager, 1)[0] || null;
+}
+
+function selectedFiercestRivalries(manager, limit = 3) {
   const pairs = pairSummaries().filter((pair) => pair.managers.includes(manager));
-  if (!pairs.length) return null;
+  if (!pairs.length) return [];
   const topByManager = new Map(h2hManagers.map((candidate) => {
     const candidatePairs = pairsForManager(candidate);
     const topPair = highestBy(candidatePairs, fiercestRivalScore);
@@ -600,8 +629,11 @@ function selectedFiercestRivalry(manager) {
     const opponent = pair.managers.find((candidate) => candidate !== manager);
     return opponent && topByManager.get(opponent) === pair.key;
   });
-  const pair = highestBy(inbound.length ? inbound : pairs, fiercestRivalScore);
-  return pair ? rivalryFromPair(manager, pair) : null;
+  const preferred = [...inbound].sort((left, right) => fiercestRivalScore(right) - fiercestRivalScore(left));
+  const remaining = pairs
+    .filter((pair) => !preferred.some((preferredPair) => preferredPair.key === pair.key))
+    .sort((left, right) => fiercestRivalScore(right) - fiercestRivalScore(left));
+  return [...preferred, ...remaining].slice(0, limit).map((pair) => rivalryFromPair(manager, pair));
 }
 
 function pairsForManager(manager) {

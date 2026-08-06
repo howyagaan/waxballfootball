@@ -1823,6 +1823,74 @@ select {
   line-height: 0.95;
 }
 
+.h2h-rival-heading {
+  display: block;
+  color: #ffcf5a;
+  font-size: clamp(0.95rem, 3vw, 1.35rem);
+  font-weight: 1000;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.h2h-see-history {
+  width: fit-content;
+  margin-top: 0.85rem;
+  border: 1px solid rgba(0, 206, 190, 0.34);
+  border-radius: 999px;
+  background: var(--teal);
+  color: #041211;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  padding: 0.55rem 0.85rem;
+  text-transform: uppercase;
+}
+
+.h2h-next-rivals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.h2h-next-rivals button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: center;
+  border: 1px solid rgba(0, 206, 190, 0.2);
+  border-radius: 999px;
+  background: rgba(0, 206, 190, 0.08);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+}
+
+.h2h-next-rivals span,
+.h2h-next-rivals em {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.h2h-rival-verdict .h2h-next-rivals strong {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--teal);
+  font-size: 0.9rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .h2h-rival-fact-list {
   display: grid;
   gap: 0.55rem;
