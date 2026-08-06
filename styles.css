@@ -1823,6 +1823,36 @@ select {
   line-height: 0.95;
 }
 
+.h2h-rival-fact-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.h2h-rival-fact-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.45fr) minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  border-top: 1px solid rgba(152, 166, 179, 0.2);
+  padding-top: 0.55rem;
+}
+
+.h2h-rival-fact-row span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.h2h-rival-verdict .h2h-rival-fact-row strong {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(0.95rem, 2vw, 1.18rem);
+  line-height: 1.18;
+}
+
 .h2h-rival-verdict p,
 .h2h-rival-stats p {
   margin: 0.32rem 0 0;
@@ -2629,6 +2659,11 @@ footer {
 
   .h2h-score-main {
     grid-template-columns: 1.35rem minmax(3rem, 1fr) minmax(3.6rem, 0.65fr) minmax(3rem, 1fr) 1.35rem;
+  }
+
+  .h2h-rival-fact-row {
+    grid-template-columns: 1fr;
+    gap: 0.18rem;
   }
 
   .h2h-quirk-grid {
