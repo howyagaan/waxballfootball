@@ -17,6 +17,9 @@ const H2H_OWNER_REAL_NAMES = {
 };
 
 const h2hEls = {
+  rivalManager: document.querySelector("#h2h-rival-manager"),
+  rivalStats: document.querySelector("#h2h-rival-stats"),
+  rivalVerdict: document.querySelector("#h2h-rival-verdict"),
   managerA: document.querySelector("#h2h-manager-a"),
   managerB: document.querySelector("#h2h-manager-b"),
   stats: document.querySelector("#h2h-board-stats"),
@@ -49,11 +52,14 @@ async function initH2H() {
 
   h2hManagers = [...new Set([...(H2H_DATA.managers || []), ...h2hMatchups.flatMap((game) => game.managers)])].sort();
   if (!h2hManagers.length) return;
+  populateRivalManagerSelect();
   populateManagerSelects();
+  h2hEls.rivalManager?.addEventListener("change", syncRivalManager);
   h2hEls.managerA.addEventListener("change", syncComparison);
   h2hEls.managerB.addEventListener("change", syncComparison);
   h2hEls.quirks?.addEventListener("click", handleQuirkClick);
   syncComparison();
+  syncRivalManager();
   renderH2HQuirks();
 }
 
@@ -102,6 +108,19 @@ function populateManagerSelects() {
     .join("");
   h2hEls.managerA.value = aValue && aValue !== bValue ? aValue : "";
   h2hEls.managerB.value = bValue && bValue !== aValue ? bValue : "";
+}
+
+function populateRivalManagerSelect() {
+  if (!h2hEls.rivalManager) return;
+  const value = h2hEls.rivalManager.value;
+  h2hEls.rivalManager.innerHTML = placeholderOption("Manager") + h2hManagers
+    .map((manager) => option(manager))
+    .join("");
+  h2hEls.rivalManager.value = value || "";
+}
+
+function syncRivalManager() {
+  renderRivalManager(h2hEls.rivalManager?.value || "");
 }
 
 function syncComparison() {
@@ -182,11 +201,6 @@ function highlightH2HGame(gameId) {
 }
 
 function renderComparison(a, b) {
-  const selectedManager = a || b;
-  if (selectedManager && (!a || !b)) {
-    renderManagerFacts(selectedManager);
-    return;
-  }
   if (!a || !b) {
     renderEmptyComparison();
     return;
@@ -222,7 +236,6 @@ function renderEmptyComparison() {
 }
 
 function renderComparisonStatsShell() {
-  h2hEls.stats.classList.remove("is-manager-facts");
   h2hEls.stats.innerHTML = `
     <article id="h2h-record-card">
       <span>Record</span>
@@ -252,12 +265,16 @@ function refreshH2HStatRefs() {
   h2hEls.marginNote = document.querySelector("#h2h-margin-note");
 }
 
-function renderManagerFacts(manager) {
-  const facts = managerFacts(manager);
-  h2hEls.stats.classList.add("is-manager-facts");
-  h2hEls.stats.innerHTML = facts.map(managerFactCard).join("");
-  h2hEls.logNote.innerHTML = "";
-  h2hEls.log.innerHTML = "";
+function renderRivalManager(manager) {
+  if (!h2hEls.rivalStats || !h2hEls.rivalVerdict) return;
+  if (!manager) {
+    h2hEls.rivalStats.innerHTML = managerFactsEmptyMarkup();
+    h2hEls.rivalVerdict.innerHTML = "";
+    return;
+  }
+  const { facts, fiercest } = managerFacts(manager);
+  h2hEls.rivalStats.innerHTML = facts.map(managerFactCard).join("");
+  h2hEls.rivalVerdict.innerHTML = fiercest ? fierceVerdictMarkup(manager, fiercest) : "";
 }
 
 function managerFactCard(fact) {
@@ -277,11 +294,12 @@ function managerFacts(manager) {
   const tightestGame = lowestBy(games, margin);
   const biggestWin = highestBy(games.filter((game) => managerScore(game, manager) > opponentScore(game, manager)), (game) => margin(game));
   const biggestLoss = highestBy(games.filter((game) => managerScore(game, manager) < opponentScore(game, manager)), (game) => margin(game));
-  const fiercest = topValues(rivalries.filter((rivalry) => rivalry.games.length >= 2), fiercestRivalScore, "min");
+  const fiercest = highestBy(rivalries, fiercestRivalScore);
   const easiest = topValues(rivalries.filter((rivalry) => rivalry.pointEdgePerGame > 0), (rivalry) => rivalry.pointEdgePerGame, "max");
   const toughest = topValues(rivalries.filter((rivalry) => rivalry.pointEdgePerGame < 0), (rivalry) => Math.abs(rivalry.pointEdgePerGame), "max");
 
-  return [
+  return {
+    facts: [
     {
       label: "Most matchups",
       value: rivalryNames(mostMatchups) || "None yet",
@@ -303,11 +321,6 @@ function managerFacts(manager) {
       note: biggestLoss ? `-${margin(biggestLoss).toFixed(2)} pts | Week ${biggestLoss.week}, ${biggestLoss.season}` : "",
     },
     {
-      label: "Fiercest rival",
-      value: rivalryNames(fiercest) || "None yet",
-      note: fiercest.length ? `${fiercest[0].averageMargin.toFixed(2)} pts avg. | ${rivalryRecord(fiercest[0])}` : "",
-    },
-    {
       label: "Easiest manager",
       value: rivalryNames(easiest) || "None yet",
       note: easiest.length ? `+${easiest[0].pointEdgePerGame.toFixed(2)} pts avg.` : "",
@@ -317,7 +330,44 @@ function managerFacts(manager) {
       value: rivalryNames(toughest) || "None yet",
       note: toughest.length ? `${toughest[0].pointEdgePerGame.toFixed(2)} pts avg.` : "",
     },
-  ];
+  ],
+    fiercest,
+  };
+}
+
+function managerFactsEmptyMarkup() {
+  return [
+    "Most matchups",
+    "Tightest game",
+    "Biggest win",
+    "Biggest loss",
+    "Easiest manager",
+    "Toughest manager",
+  ].map((label) => `
+    <article class="h2h-manager-fact">
+      <span>${escapeHtml(label)}</span>
+      <strong>--</strong>
+    </article>
+  `).join("");
+}
+
+function fierceVerdictMarkup(manager, rivalry) {
+  return `
+    <span>Fiercest rival</span>
+    <strong>${escapeHtml(shortManagerName(rivalry.opponent))}</strong>
+    <p>${escapeHtml(fierceVerdictNote(manager, rivalry))}</p>
+  `;
+}
+
+function fierceVerdictNote(manager, rivalry) {
+  const record = rivalryRecord(rivalry);
+  const edge = rivalry.pointEdgePerGame;
+  const edgeText = Math.abs(edge) < 0.005
+    ? "an even scoring split"
+    : edge > 0
+      ? `${firstName(manager)} ahead by ${edge.toFixed(2)} pts avg.`
+      : `${firstName(rivalry.opponent)} ahead by ${Math.abs(edge).toFixed(2)} pts avg.`;
+  return `${rivalry.games.length} meetings, ${record} record, ${rivalry.averageMargin.toFixed(2)} pts avg. margin, ${edgeText}.`;
 }
 
 function recordMarkup(a, b, summary) {
@@ -519,8 +569,13 @@ function fiercestRivalScore(rivalry) {
   const { aWins, bWins, ties } = rivalry.summary;
   const gamesPlayed = rivalry.games.length;
   const recordGap = Math.abs(aWins - bWins) / gamesPlayed;
-  const tieWeight = ties ? 0.92 : 1;
-  return (rivalry.averageMargin * tieWeight) + (recordGap * 10);
+  const recordBalance = 1 - recordGap;
+  const closeness = 70 / (rivalry.averageMargin + 3);
+  const meetings = gamesPlayed * 6;
+  const postseason = rivalry.games.filter((game) => game.stage !== "Regular season").length * 10;
+  const scoringJuice = rivalry.games.reduce((sum, game) => sum + total(game), 0) / gamesPlayed / 20;
+  const tiesBonus = ties * 3;
+  return closeness + meetings + postseason + (recordBalance * 18) + scoringJuice + tiesBonus;
 }
 
 function matchupBoardMarkup(games, a, b) {

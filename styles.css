@@ -1650,6 +1650,14 @@ select {
   align-items: stretch;
 }
 
+.h2h-rival-board {
+  margin-bottom: clamp(1rem, 3vw, 1.4rem);
+}
+
+.h2h-rival-top {
+  grid-template-columns: minmax(0, 22rem);
+}
+
 .h2h-team-select,
 .h2h-board-stats article,
 .h2h-season-slate {
@@ -1696,10 +1704,14 @@ select {
   margin: 0.85rem 0;
 }
 
-.h2h-board-stats.is-manager-facts {
+.h2h-rival-stats {
+  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 0.85rem 0;
 }
 
+.h2h-rival-stats article,
 .h2h-board-stats article {
   display: flex;
   min-height: clamp(5.8rem, 13vw, 7rem);
@@ -1710,10 +1722,25 @@ select {
   text-align: center;
 }
 
-.h2h-board-stats.is-manager-facts article {
+.h2h-rival-stats article {
   min-height: 6.2rem;
   align-items: flex-start;
   text-align: left;
+}
+
+.h2h-rival-stats article {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(7, 12, 18, 0.48);
+}
+
+.h2h-rival-stats article > span,
+.h2h-rival-verdict > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .h2h-board-stats strong {
@@ -1725,11 +1752,40 @@ select {
   line-height: 1;
 }
 
-.h2h-board-stats.is-manager-facts strong {
+.h2h-rival-stats strong {
+  display: block;
   margin-top: 0.35rem;
   color: var(--teal);
   font-size: clamp(1.05rem, 2.4vw, 1.45rem);
   line-height: 1.05;
+}
+
+.h2h-rival-verdict {
+  border: 1px solid rgba(0, 206, 190, 0.38);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(0, 206, 190, 0.16), transparent 30%),
+    rgba(0, 206, 190, 0.08);
+  padding: clamp(1rem, 3vw, 1.25rem);
+}
+
+.h2h-rival-verdict:empty {
+  display: none;
+}
+
+.h2h-rival-verdict strong {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--teal);
+  font-size: clamp(2rem, 7vw, 4.2rem);
+  line-height: 0.95;
+}
+
+.h2h-rival-verdict p,
+.h2h-rival-stats p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  line-height: 1.32;
 }
 
 .h2h-record-line {
