@@ -1767,6 +1767,9 @@ select {
   gap: 0.75rem;
   margin-top: 0.35rem;
   color: var(--ink);
+  font-size: clamp(1rem, 3vw, 1.45rem);
+  font-weight: 1000;
+  letter-spacing: 0.12em;
 }
 
 .h2h-log {
