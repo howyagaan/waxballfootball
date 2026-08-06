@@ -234,13 +234,7 @@ function renderComparison(a, b) {
 }
 
 function renderEmptyComparison() {
-  renderComparisonStatsShell();
-  h2hEls.series.textContent = "--";
-  h2hEls.seriesNote.textContent = "Select two managers.";
-  h2hEls.points.textContent = "--";
-  h2hEls.pointsNote.textContent = "Total points will appear here.";
-  h2hEls.margin.textContent = "--";
-  h2hEls.marginNote.textContent = "Average margin will appear here.";
+  h2hEls.stats.innerHTML = "";
   h2hEls.logNote.textContent = "";
   h2hEls.log.innerHTML = "";
 }
