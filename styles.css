@@ -1627,6 +1627,22 @@ select {
   background:
     radial-gradient(circle at 10% 10%, rgba(0, 206, 190, 0.15), transparent 34%),
     linear-gradient(135deg, rgba(8, 18, 24, 0.96), rgba(18, 24, 32, 0.94));
+  text-align: center;
+}
+
+.h2h-hero .hero-main {
+  display: grid;
+  justify-items: center;
+}
+
+.h2h-hero .hero-main h1 {
+  max-width: none;
+  background: linear-gradient(135deg, #ff5f8f 0%, #ffcf5a 48%, var(--teal) 100%);
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 42px rgba(255, 95, 143, 0.14);
 }
 
 .h2h-board {

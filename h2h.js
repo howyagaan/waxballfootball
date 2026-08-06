@@ -390,12 +390,12 @@ function fierceVerdictNote(manager, rivalry) {
     : "";
   const edgeText = Math.abs(edge) < 0.005
     ? "Neither side owns the scoring edge, which is exactly the problem."
-    : `${firstName(winner)} has scored ${edgeAmount.toFixed(2)} pts more per game, so ${firstName(loser)} has receipts to answer for.`;
+    : `${rivalryStoryName(winner)} has scored ${edgeAmount.toFixed(2)} pts more per game, so ${rivalryStoryName(loser)} has receipts to answer for.`;
   const rivalryState = managerWins === opponentWins
     ? "Nobody has solved it yet."
     : managerWins > opponentWins
-      ? `${firstName(manager)} owns the record, but there is enough scar tissue here to keep it spicy.`
-      : `${firstName(opponent)} owns the record, which makes this one personal from ${firstName(manager)}'s side.`;
+      ? `${rivalryStoryName(manager)} owns the record, but there is enough scar tissue here to keep it spicy.`
+      : `${rivalryStoryName(opponent)} owns the record, which makes this one personal from ${rivalryStoryName(manager)}'s side.`;
   const blowoutText = biggestMargin && margin(biggestMargin) >= 35
     ? `It has not all been delicate either: ${gameWinner(biggestMargin)} put ${margin(biggestMargin).toFixed(2)} pts between them in ${gameTitle(biggestMargin)}.`
     : "";
@@ -411,22 +411,22 @@ function rivalryOpener(manager, opponent, rivalry, postseasonCount) {
   const managerWins = rivalry.summary.aWins;
   const opponentWins = rivalry.summary.bWins;
   if (postseasonCount >= 2) {
-    return `${firstName(manager)} and ${firstName(opponent)} keep finding each other when the season gets dangerous.`;
+    return `${rivalryStoryName(manager)} and ${rivalryStoryName(opponent)} keep finding each other when the season gets dangerous.`;
   }
   if (postseasonCount === 1) {
-    return `${firstName(manager)} and ${firstName(opponent)} have a regular-season history with one bracket game giving it a sharper edge.`;
+    return `${rivalryStoryName(manager)} and ${rivalryStoryName(opponent)} have a regular-season history with one bracket game giving it a sharper edge.`;
   }
   if (gamesPlayed >= 5 && Math.abs(managerWins - opponentWins) <= 1) {
-    return `${firstName(manager)} and ${firstName(opponent)} have turned volume into actual tension.`;
+    return `${rivalryStoryName(manager)} and ${rivalryStoryName(opponent)} have turned volume into actual tension.`;
   }
   if (averageMargin <= 8) {
-    return `${firstName(manager)} and ${firstName(opponent)} mostly trade stress, not comfortable wins.`;
+    return `${rivalryStoryName(manager)} and ${rivalryStoryName(opponent)} mostly trade stress, not comfortable wins.`;
   }
   if (Math.abs(managerWins - opponentWins) >= 3) {
     const leader = managerWins > opponentWins ? manager : opponent;
-    return `${firstName(leader)} has made this matchup feel less like a debate and more like a standing problem.`;
+    return `${rivalryStoryName(leader)} has made this matchup feel less like a debate and more like a standing problem.`;
   }
-  return `${firstName(manager)} and ${firstName(opponent)} have enough shared damage to make this the matchup circled first.`;
+  return `${rivalryStoryName(manager)} and ${rivalryStoryName(opponent)} have enough shared damage to make this the matchup circled first.`;
 }
 
 function gameTitle(game) {
@@ -435,14 +435,14 @@ function gameTitle(game) {
 }
 
 function gameScoreline(game) {
-  const left = `${firstName(game.managers[0])} ${Number(game.scores[0]).toFixed(2)}`;
-  const right = `${firstName(game.managers[1])} ${Number(game.scores[1]).toFixed(2)}`;
+  const left = `${rivalryStoryName(game.managers[0])} ${Number(game.scores[0]).toFixed(2)}`;
+  const right = `${rivalryStoryName(game.managers[1])} ${Number(game.scores[1]).toFixed(2)}`;
   return `${left} vs ${right}`;
 }
 
 function gameWinner(game) {
   const winnerIndex = Number(game.scores[0]) >= Number(game.scores[1]) ? 0 : 1;
-  return firstName(game.managers[winnerIndex]);
+  return rivalryStoryName(game.managers[winnerIndex]);
 }
 
 function stakeGameSentence(game) {
@@ -450,7 +450,7 @@ function stakeGameSentence(game) {
   const sentenceTitle = title.charAt(0).toUpperCase() + title.slice(1);
   const winner = gameWinner(game);
   const loserIndex = Number(game.scores[0]) >= Number(game.scores[1]) ? 1 : 0;
-  const loser = firstName(game.managers[loserIndex]);
+  const loser = rivalryStoryName(game.managers[loserIndex]);
   const marginText = margin(game).toFixed(2);
   if (title.toLowerCase().includes("toilet bowl final")) {
     return `The loudest chapter is ${title}, where ${winner} pushed ${loser} toward the wrong kind of immortality by ${marginText} pts.`;
@@ -1054,6 +1054,12 @@ function firstName(name) {
 }
 
 function shortManagerName(name) {
+  return firstName(name);
+}
+
+function rivalryStoryName(name) {
+  if (name === "Miles Blue") return "Blue";
+  if (name === "Miles Elliot") return "Miles E";
   return firstName(name);
 }
 
