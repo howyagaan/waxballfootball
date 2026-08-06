@@ -294,7 +294,7 @@ function managerFacts(manager) {
   const tightestGame = lowestBy(games, margin);
   const biggestWin = highestBy(games.filter((game) => managerScore(game, manager) > opponentScore(game, manager)), (game) => margin(game));
   const biggestLoss = highestBy(games.filter((game) => managerScore(game, manager) < opponentScore(game, manager)), (game) => margin(game));
-  const fiercest = highestBy(rivalries, fiercestRivalScore);
+  const fiercest = selectedFiercestRivalry(manager);
   const easiest = topValues(rivalries.filter((rivalry) => rivalry.pointEdgePerGame > 0), (rivalry) => rivalry.pointEdgePerGame, "max");
   const toughest = topValues(rivalries.filter((rivalry) => rivalry.pointEdgePerGame < 0), (rivalry) => Math.abs(rivalry.pointEdgePerGame), "max");
 
@@ -369,6 +369,8 @@ function fierceVerdictNote(manager, rivalry) {
   const edge = rivalry.pointEdgePerGame;
   const gamesPlayed = rivalry.games.length;
   const postseasonCount = rivalry.games.filter((game) => game.stage !== "Regular season").length;
+  const biggestStake = highestBy(rivalry.games, gameStakeWeight);
+  const stakeLabel = biggestStake && gameStakeWeight(biggestStake) ? stageBadges(biggestStake)[0] || biggestStake.stage : "";
   const meetingsText = `${gamesPlayed} meeting${gamesPlayed === 1 ? "" : "s"}`;
   const postseasonText = postseasonCount
     ? `, ${postseasonCount} of them with postseason stakes`
@@ -378,7 +380,8 @@ function fierceVerdictNote(manager, rivalry) {
     : edge > 0
       ? `${firstName(manager)} has the scoring edge by ${edge.toFixed(2)} pts a game`
       : `${firstName(rivalry.opponent)} has the scoring edge by ${Math.abs(edge).toFixed(2)} pts a game`;
-  return `This is the matchup with the most actual heat: ${meetingsText}${postseasonText}, a ${record} record, an average margin of ${rivalry.averageMargin.toFixed(2)} pts, and ${edgeText}.`;
+  const stakeText = stakeLabel ? ` The biggest swing came in a ${stakeLabel.toLowerCase()}, which gives it extra weight.` : "";
+  return `This one has the best mix of history, tension, and stakes: ${meetingsText}${postseasonText}, a ${record} record, an average margin of ${rivalry.averageMargin.toFixed(2)} pts, and ${edgeText}.${stakeText}`;
 }
 
 function recordMarkup(a, b, summary) {
@@ -546,6 +549,39 @@ function managerRivalries(manager) {
     .filter(Boolean);
 }
 
+function selectedFiercestRivalry(manager) {
+  const pairs = pairSummaries().filter((pair) => pair.managers.includes(manager));
+  if (!pairs.length) return null;
+  const topByManager = new Map(h2hManagers.map((candidate) => {
+    const candidatePairs = pairsForManager(candidate);
+    const topPair = highestBy(candidatePairs, fiercestRivalScore);
+    return [candidate, topPair?.key || ""];
+  }));
+  const inbound = pairs.filter((pair) => {
+    const opponent = pair.managers.find((candidate) => candidate !== manager);
+    return opponent && topByManager.get(opponent) === pair.key;
+  });
+  const pair = highestBy(inbound.length ? inbound : pairs, fiercestRivalScore);
+  return pair ? rivalryFromPair(manager, pair) : null;
+}
+
+function pairsForManager(manager) {
+  return pairSummaries().filter((pair) => pair.managers.includes(manager));
+}
+
+function rivalryFromPair(manager, pair) {
+  const opponent = pair.managers.find((candidate) => candidate !== manager);
+  const summary = summarizeSeries(manager, opponent, pair.games);
+  return {
+    manager,
+    opponent,
+    games: pair.games,
+    summary,
+    averageMargin: summary.averageMargin,
+    pointEdgePerGame: (summary.aPoints - summary.bPoints) / pair.games.length,
+  };
+}
+
 function managerScore(game, manager) {
   return Number(game.scores[game.managers.indexOf(manager)] || 0);
 }
@@ -581,16 +617,33 @@ function fiercestRivalScore(rivalry) {
   const gamesPlayed = rivalry.games.length;
   const recordGap = Math.abs(aWins - bWins) / gamesPlayed;
   const recordBalance = 1 - recordGap;
-  const closeness = 70 / (rivalry.averageMargin + 3);
-  const meetings = gamesPlayed * 6;
-  const postseason = rivalry.games.filter((game) => game.stage !== "Regular season").length * 10;
+  const closeness = 86 / (rivalry.averageMargin + 4);
+  const meetings = gamesPlayed * 5.5;
+  const stakes = rivalry.games.reduce((sum, game) => sum + gameStakeWeight(game), 0);
   const scoringJuice = rivalry.games.reduce((sum, game) => sum + total(game), 0) / gamesPlayed / 20;
   const tiesBonus = ties * 3;
-  return closeness + meetings + postseason + (recordBalance * 18) + scoringJuice + tiesBonus;
+  return closeness + meetings + stakes + (recordBalance * 20) + scoringJuice + tiesBonus;
 }
 
 function rivalryScoreOutOf100(rivalry) {
   return Math.max(1, Math.min(100, Math.round(fiercestRivalScore(rivalry))));
+}
+
+function gameStakeWeight(game) {
+  const finalBadge = finalWeekPlacementBadge(game);
+  if (finalBadge === "Championship game") return 34;
+  if (finalBadge === "Toilet Bowl final") return 32;
+  if (finalBadge === "3rd-place game") return 22;
+  if (finalBadge === "5th-place game") return 16;
+  if (finalBadge === "7th-place game") return 13;
+  if (game.stage === "Championship") return 34;
+  if (game.stage === "Toilet Bowl final") return 32;
+  if (game.stage === "3rd-place game") return 22;
+  if (game.stage === "5th-place game") return 16;
+  if (game.stage === "Playoffs") return 20;
+  if (game.stage === "Toilet Bowl") return 18;
+  if (game.stage === "Toilet Bowl placement") return 12;
+  return 0;
 }
 
 function matchupBoardMarkup(games, a, b) {
@@ -762,14 +815,17 @@ function pairSummaries() {
     const sortedGames = [...games].sort((left, right) => right.season - left.season || left.week - right.week);
     const totals = sortedGames.map(total);
     const margins = sortedGames.map(margin);
+    const summary = summarizeSeries(managers[0], managers[1], sortedGames);
     const points = managers.map((manager) => sortedGames.reduce((sum, game) => {
       const index = game.managers.indexOf(manager);
       return sum + Number(game.scores[index] || 0);
     }, 0));
     const edge = Math.abs(points[0] - points[1]) / sortedGames.length;
     return {
+      key,
       managers,
       games: sortedGames,
+      summary,
       latest: sortedGames[0],
       tightest: lowestBy(sortedGames, margin),
       highestTotal: highestBy(sortedGames, total),
