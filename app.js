@@ -738,7 +738,11 @@ function archivePprLeaderItem(leader, data) {
 }
 
 function leaderMetaClass(meta) {
-  return meta.includes("Christian Engelhardt") ? "leader-meta-tight" : "";
+  return ["Christian Engelhardt", "Erik Ohno Dagoberg", "Nicholas Hamilton"].some((manager) =>
+    meta.includes(manager)
+  )
+    ? "leader-meta-tight"
+    : "";
 }
 
 function draftPickPlayer(pick) {
