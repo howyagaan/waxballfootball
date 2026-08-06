@@ -1879,6 +1879,8 @@ select {
   font-size: 0.72rem;
   font-weight: 1000;
   letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-align: center;
   text-transform: uppercase;
 }
 
