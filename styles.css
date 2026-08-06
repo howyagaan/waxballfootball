@@ -1965,6 +1965,32 @@ select {
   text-transform: uppercase;
 }
 
+.h2h-quirk-entry .h2h-quirk-pair {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.22rem;
+  justify-content: center;
+}
+
+.h2h-quirk-entry .h2h-quirk-name,
+.h2h-quirk-entry .h2h-quirk-vs {
+  display: inline;
+}
+
+.h2h-quirk-entry .h2h-quirk-name.is-good {
+  color: #27e47b;
+}
+
+.h2h-quirk-entry .h2h-quirk-name.is-bad {
+  color: #ff5d78;
+}
+
+.h2h-quirk-entry .h2h-quirk-name.is-neutral,
+.h2h-quirk-entry .h2h-quirk-vs {
+  color: var(--muted);
+}
+
 .h2h-quirk-entry small {
   color: var(--muted);
   font-size: 0.6rem;

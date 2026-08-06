@@ -401,19 +401,19 @@ function buildH2HQuirks() {
   const withMultiple = pairs.filter((pair) => pair.games.length >= 2);
   const postseasonPairs = pairs.filter((pair) => pair.specialGames.length);
   return [
-    quirkGroup("Tightest game", pairs, "min", (pair) => margin(pair.tightest), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.tightest.id]),
-    quirkGroup("Biggest blowout", pairs, "max", (pair) => margin(pair.biggestMargin), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.biggestMargin.id]),
-    quirkGroup("Tightest average margin", withMultiple, "min", (pair) => pair.averageMargin, (value) => `${value.toFixed(2)} pts`, () => [], "record"),
-    quirkGroup("Most one-sided rivalry", withMultiple, "max", (pair) => pair.pointEdgePerGame, (value) => `${value.toFixed(2)}pts`, () => [], "record", (pair) => `${pair.edgeLeaderShort} edge`),
-    quirkGroup("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} average total`, () => [], "record"),
-    quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} average total`, () => [], "record"),
+    quirkGroup("Tightest game", pairs, "min", (pair) => margin(pair.tightest), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.tightest.id], "", null, (pair) => gameSideTones(pair, pair.tightest)),
+    quirkGroup("Biggest blowout", pairs, "max", (pair) => margin(pair.biggestMargin), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.biggestMargin.id], "", null, (pair) => gameSideTones(pair, pair.biggestMargin)),
+    quirkGroup("Tightest average margin", withMultiple, "min", (pair) => pair.averageMargin, (value) => `${value.toFixed(2)} pts`, () => [], "record", null, edgeSideTones),
+    quirkGroup("Most one-sided rivalry", withMultiple, "max", (pair) => pair.pointEdgePerGame, (value) => `${value.toFixed(2)}pts`, () => [], "record", null, edgeSideTones),
+    quirkGroup("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "record", null, () => ({ a: "good", b: "good" })),
+    quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "record", null, () => ({ a: "bad", b: "bad" })),
     quirkGroup("Most meetings", pairs, "max", (pair) => pair.games.length, (value) => `${value} matchups`, () => [], "record"),
     quirkGroup("Most postseason matchups", postseasonPairs, "max", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
     quirkGroup("Least postseason matchups", postseasonPairs, "min", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
   ].filter(Boolean);
 }
 
-function quirkGroup(title, pairs, mode, scoreFn, valueFn, gameIdsFn, highlightTarget = "", detailFn = null) {
+function quirkGroup(title, pairs, mode, scoreFn, valueFn, gameIdsFn, highlightTarget = "", detailFn = null, sideToneFn = null) {
   if (!pairs.length) return null;
   const scorer = mode === "min" ? lowestBy : highestBy;
   const winner = scorer(pairs, scoreFn);
@@ -421,7 +421,7 @@ function quirkGroup(title, pairs, mode, scoreFn, valueFn, gameIdsFn, highlightTa
   const winningScore = scoreFn(winner);
   const entries = pairs
     .filter((pair) => scoresMatch(scoreFn(pair), winningScore))
-    .map((pair) => quirkEntry(pair, gameIdsFn, highlightTarget, detailFn));
+    .map((pair) => quirkEntry(pair, gameIdsFn, highlightTarget, detailFn, sideToneFn));
   return {
     title,
     value: valueFn(winningScore),
@@ -441,23 +441,46 @@ function quirkCard(quirk) {
   `;
 }
 
-function quirkEntry(pair, gameIdsFn, highlightTarget = "", detailFn = null) {
+function quirkEntry(pair, gameIdsFn, highlightTarget = "", detailFn = null, sideToneFn = null) {
   return {
     managerA: pair.managers[0],
     managerB: pair.managers[1],
     gameIds: gameIdsFn(pair),
     highlightTarget,
     detail: detailFn ? detailFn(pair) : "",
+    sideTones: sideToneFn ? sideToneFn(pair) : { a: "neutral", b: "neutral" },
   };
 }
 
 function quirkEntryButton(entry) {
   return `
     <button class="h2h-quirk-entry" type="button" data-h2h-quirk-entry data-manager-a="${escapeHtml(entry.managerA)}" data-manager-b="${escapeHtml(entry.managerB)}" data-game-ids="${escapeHtml(entry.gameIds.join(","))}" data-highlight-target="${escapeHtml(entry.highlightTarget)}">
-      <span>${escapeHtml(shortManagerName(entry.managerA))} vs ${escapeHtml(shortManagerName(entry.managerB))}</span>
+      <span class="h2h-quirk-pair">
+        <span class="h2h-quirk-name ${escapeHtml(toneClass(entry.sideTones.a))}">${escapeHtml(shortManagerName(entry.managerA))}</span>
+        <span class="h2h-quirk-vs">vs</span>
+        <span class="h2h-quirk-name ${escapeHtml(toneClass(entry.sideTones.b))}">${escapeHtml(shortManagerName(entry.managerB))}</span>
+      </span>
       ${entry.detail ? `<small>${escapeHtml(entry.detail)}</small>` : ""}
     </button>
   `;
+}
+
+function toneClass(tone) {
+  if (tone === "good") return "is-good";
+  if (tone === "bad") return "is-bad";
+  return "is-neutral";
+}
+
+function gameSideTones(pair, game) {
+  const pairGameIndexes = pair.managers.map((manager) => game.managers.indexOf(manager));
+  const scores = pairGameIndexes.map((index) => Number(game.scores[index] || 0));
+  if (scores[0] === scores[1]) return { a: "neutral", b: "neutral" };
+  return scores[0] > scores[1] ? { a: "good", b: "bad" } : { a: "bad", b: "good" };
+}
+
+function edgeSideTones(pair) {
+  if (Math.abs(pair.points[0] - pair.points[1]) < 0.005) return { a: "neutral", b: "neutral" };
+  return pair.points[0] > pair.points[1] ? { a: "good", b: "bad" } : { a: "bad", b: "good" };
 }
 
 function pairSummaries() {
@@ -483,6 +506,7 @@ function pairSummaries() {
       averageMargin: margins.reduce((sum, value) => sum + value, 0) / margins.length,
       averageTotal: totals.reduce((sum, value) => sum + value, 0) / totals.length,
       pointEdgePerGame: edge,
+      points,
       edgeLeaderFirst: firstName(points[0] >= points[1] ? managers[0] : managers[1]),
       edgeLeaderShort: shortManagerName(points[0] >= points[1] ? managers[0] : managers[1]),
     };
