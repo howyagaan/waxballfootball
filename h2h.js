@@ -105,20 +105,14 @@ function renderComparison(a, b) {
     .sort((left, right) => right.season - left.season || left.week - right.week);
   const summary = summarizeSeries(a, b, games);
 
-  h2hEls.series.textContent = games.length ? `${summary.aWins}-${summary.bWins}${summary.ties ? `-${summary.ties}` : ""}` : "0-0";
-  h2hEls.seriesNote.textContent = games.length ? `${a} vs ${b}` : "No recorded meetings yet.";
-  const pointDiff = Math.abs(summary.aPoints - summary.bPoints);
-  const pointLeader = summary.aPoints === summary.bPoints ? "Even" : summary.aPoints > summary.bPoints ? a : b;
-  h2hEls.points.textContent = games.length ? `${summary.aPoints.toFixed(2)} - ${summary.bPoints.toFixed(2)}` : "--";
-  h2hEls.pointsNote.textContent = games.length
-    ? `${pointLeader}${pointLeader === "Even" ? "" : ` leads by ${pointDiff.toFixed(2)} total points`}.`
-    : "Pick a pair with meetings.";
+  h2hEls.series.innerHTML = games.length ? recordMarkup(a, b, summary) : "0-0";
+  h2hEls.seriesNote.textContent = "";
+  h2hEls.points.innerHTML = games.length ? pointsMarkup(a, b, summary) : "--";
+  h2hEls.pointsNote.textContent = "";
   h2hEls.margin.textContent = games.length ? `${summary.averageMargin.toFixed(2)} pts` : "--";
-  h2hEls.marginNote.textContent = games.length ? marginFlavor(summary.averageMargin) : "No margins to measure.";
+  h2hEls.marginNote.textContent = "";
 
-  h2hEls.logNote.textContent = games.length
-    ? `${games.length} recorded matchup${games.length === 1 ? "" : "s"} from the Waxball archive.`
-    : "No matchup log available for this pair.";
+  h2hEls.logNote.innerHTML = games.length ? matchupSideLabels(a, b) : "No matchup log available for this pair.";
   h2hEls.log.innerHTML = games.length ? matchupBoardMarkup(games, a, b) : "";
 }
 
@@ -131,6 +125,30 @@ function renderEmptyComparison() {
   h2hEls.marginNote.textContent = "Average margin will appear here.";
   h2hEls.logNote.textContent = "Select managers to load matchup history.";
   h2hEls.log.innerHTML = "";
+}
+
+function recordMarkup(a, b, summary) {
+  const aClass = summary.aWins === summary.bWins ? "neutral" : summary.aWins > summary.bWins ? "good" : "bad";
+  const bClass = summary.aWins === summary.bWins ? "neutral" : summary.bWins > summary.aWins ? "good" : "bad";
+  const tieText = summary.ties ? `<span class="h2h-stat-neutral">-${summary.ties}</span>` : "";
+  return `
+    <span class="h2h-stat-piece ${aClass}">${escapeHtml(firstName(a).toUpperCase())} ${summary.aWins}</span><span class="h2h-stat-neutral">-</span><span class="h2h-stat-piece ${bClass}">${summary.bWins} ${escapeHtml(firstName(b).toUpperCase())}</span>${tieText}
+  `;
+}
+
+function pointsMarkup(a, b, summary) {
+  const aClass = summary.aPoints === summary.bPoints ? "neutral" : summary.aPoints > summary.bPoints ? "good" : "bad";
+  const bClass = summary.aPoints === summary.bPoints ? "neutral" : summary.bPoints > summary.aPoints ? "good" : "bad";
+  return `
+    <span class="h2h-stat-piece ${aClass}">${escapeHtml(firstName(a).toUpperCase())} ${summary.aPoints.toFixed(2)}</span><span class="h2h-stat-neutral"> - </span><span class="h2h-stat-piece ${bClass}">${summary.bPoints.toFixed(2)} ${escapeHtml(firstName(b).toUpperCase())}</span>
+  `;
+}
+
+function matchupSideLabels(a, b) {
+  return `
+    <span>${escapeHtml(firstName(a).toUpperCase())}</span>
+    <span>${escapeHtml(firstName(b).toUpperCase())}</span>
+  `;
 }
 
 async function loadCompletedSleeperMatchups() {
@@ -292,7 +310,7 @@ function gameBadges(game, seriesGames) {
   const biggestSwing = [...seriesGames].sort((left, right) => margin(right) - margin(left))[0];
   if (tightest?.id === game.id) badges.push("Tightest matchup");
   if (highest?.id === game.id) badges.push("Highest-scoring matchup");
-  if (biggestSwing?.id === game.id && seriesGames.length > 1) badges.push("Biggest swing");
+  if (biggestSwing?.id === game.id && seriesGames.length > 1) badges.push("Biggest point difference");
   badges.push(...stageBadges(game));
   badges.push(...gameFacts(game));
   return [...new Set(badges)];
@@ -322,12 +340,13 @@ function gameFacts(game) {
     const managerStat = managerStats.get(manager);
     const weekStat = weekStats.get(`${game.season}-${game.week}`);
     const seasonStat = seasonStats.get(String(game.season));
-    if (managerStat?.high?.score === score && managerStat.high.id === game.id) facts.push(`${firstName(manager)}'s highest ever score`);
-    if (managerStat?.low?.score === score && managerStat.low.id === game.id) facts.push(`${firstName(manager)}'s lowest ever score`);
-    if (weekStat?.high?.score === score && weekStat.high.id === game.id) facts.push(`League high score, Week ${game.week}`);
-    if (weekStat?.low?.score === score && weekStat.low.id === game.id) facts.push(`League low score, Week ${game.week}`);
-    if (seasonStat?.high?.score === score && seasonStat.high.id === game.id) facts.push(`Highest score of any team in ${game.season}`);
-    if (seasonStat?.low?.score === score && seasonStat.low.id === game.id) facts.push(`Lowest score of any team in ${game.season}`);
+    const name = firstName(manager);
+    if (managerStat?.high?.score === score && managerStat.high.id === game.id) facts.push(`${name} - Highest ever score`);
+    if (managerStat?.low?.score === score && managerStat.low.id === game.id) facts.push(`${name} - Lowest ever score`);
+    if (weekStat?.high?.score === score && weekStat.high.id === game.id) facts.push(`${name} - League high score, Week ${game.week} ${game.season}`);
+    if (weekStat?.low?.score === score && weekStat.low.id === game.id) facts.push(`${name} - League low score, Week ${game.week} ${game.season}`);
+    if (seasonStat?.high?.score === score && seasonStat.high.id === game.id) facts.push(`${name} - Highest score of any team in ${game.season}`);
+    if (seasonStat?.low?.score === score && seasonStat.low.id === game.id) facts.push(`${name} - Lowest score of any team in ${game.season}`);
   });
   return [...new Set(facts)];
 }
@@ -382,12 +401,6 @@ function margin(game) {
 
 function total(game) {
   return Number(game.scores[0]) + Number(game.scores[1]);
-}
-
-function marginFlavor(value) {
-  if (value < 5) return "A knife-fight series.";
-  if (value < 15) return "Usually competitive, rarely comfortable.";
-  return "Someone has usually been holding the belt by halftime.";
 }
 
 function firstName(name) {

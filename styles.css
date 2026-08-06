@@ -1633,8 +1633,14 @@ select {
   border: 1px solid var(--line);
   border-radius: 22px;
   padding: clamp(0.85rem, 3vw, 1.25rem);
-  background: rgba(18, 24, 32, 0.92);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(0, 206, 190, 0.12), transparent 28%),
+    rgba(18, 24, 32, 0.92);
   box-shadow: var(--shadow);
+}
+
+.h2h-compare-title {
+  margin: 0 0 0.75rem;
 }
 
 .h2h-board-top {
@@ -1655,6 +1661,7 @@ select {
 .h2h-team-select {
   min-width: 0;
   padding: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 206, 190, 0.08);
 }
 
 .h2h-board-stats span {
@@ -1671,6 +1678,10 @@ select {
   border: 0;
   border-radius: 18px;
   background: transparent;
+  color: var(--ink);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 1000;
+  text-transform: uppercase;
 }
 
 .h2h-board-stats {
@@ -1682,20 +1693,49 @@ select {
 
 .h2h-board-stats article {
   padding: clamp(0.8rem, 2vw, 1rem);
+  min-height: 8.3rem;
 }
 
 .h2h-board-stats strong {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.16em;
   margin-top: 0.22rem;
   color: var(--ink);
-  font-size: clamp(1.35rem, 3.2vw, 2.1rem);
+  font-size: clamp(1.35rem, 3vw, 2rem);
   line-height: 1;
+}
+
+.h2h-stat-piece.good {
+  color: #18d66b;
+}
+
+.h2h-stat-piece.bad {
+  color: #ff5c72;
+}
+
+.h2h-stat-piece.neutral,
+.h2h-stat-neutral {
+  color: var(--ink);
 }
 
 .h2h-board-stats p {
   margin: 0.5rem 0 0;
   color: var(--muted);
   line-height: 1.42;
+}
+
+.h2h-board-stats p:empty {
+  display: none;
+}
+
+.h2h-score-history .metric-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+  color: var(--ink);
 }
 
 .h2h-log {
@@ -1706,6 +1746,9 @@ select {
 
 .h2h-season-slate {
   padding: clamp(0.75rem, 2.5vw, 1rem);
+  background:
+    linear-gradient(90deg, rgba(0, 206, 190, 0.07), transparent 45%, rgba(255, 92, 114, 0.06)),
+    rgba(7, 12, 18, 0.48);
 }
 
 .h2h-season-slate h3 {
