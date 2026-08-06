@@ -348,12 +348,22 @@ function gameBadges(game, seriesGames) {
 function stageBadges(game) {
   if (game.stage === "Championship") return ["Championship game"];
   if (game.stage === "Toilet Bowl final") return ["Toilet Bowl final"];
-  if (game.stage === "Toilet Bowl placement") return ["Toilet Bowl placement"];
-  if (game.stage === "Toilet Bowl") return ["Toilet Bowl"];
+  if (game.stage === "Toilet Bowl placement") return [toiletPlacementBadge(game)];
+  if (game.stage === "Toilet Bowl") return [`Toilet Bowl Week ${toiletBowlWeek(game)}`];
   if (game.stage === "3rd-place game") return ["3rd-place game"];
   if (game.stage === "5th-place game") return ["5th-place game"];
   if (game.stage === "Playoffs") return [`Playoff Week ${Math.max(1, Number(game.week) - 14)}`];
   return [];
+}
+
+function toiletPlacementBadge(game) {
+  if (Number(game.season) === 2025 && Number(game.week) === 16) return "7th-place game";
+  if (Number(game.season) === 2025 && Number(game.week) === 17) return "9th-place game";
+  return `Toilet Bowl Week ${toiletBowlWeek(game)}`;
+}
+
+function toiletBowlWeek(game) {
+  return Math.max(1, Number(game.week) - 14);
 }
 
 function resultClass(result) {
