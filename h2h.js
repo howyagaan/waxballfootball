@@ -112,12 +112,12 @@ function syncComparison() {
 }
 
 function handleQuirkClick(event) {
-  const card = event.target.closest("[data-h2h-quirk]");
-  if (!card) return;
-  const managerA = card.dataset.managerA;
-  const managerB = card.dataset.managerB;
-  const gameIds = card.dataset.gameIds ? card.dataset.gameIds.split(",").filter(Boolean) : [];
-  const highlightTarget = card.dataset.highlightTarget || "";
+  const entry = event.target.closest("[data-h2h-quirk-entry]");
+  if (!entry) return;
+  const managerA = entry.dataset.managerA;
+  const managerB = entry.dataset.managerB;
+  const gameIds = entry.dataset.gameIds ? entry.dataset.gameIds.split(",").filter(Boolean) : [];
+  const highlightTarget = entry.dataset.highlightTarget || "";
   if (!managerA || !managerB) return;
   selectH2HPair(managerA, managerB, gameIds, highlightTarget);
 }
@@ -400,54 +400,63 @@ function buildH2HQuirks() {
   const pairs = pairSummaries();
   const withMultiple = pairs.filter((pair) => pair.games.length >= 2);
   const postseasonPairs = pairs.filter((pair) => pair.specialGames.length);
-  const quirks = [
-    ...quirksFromPairs("Tightest game", pairs, "min", (pair) => margin(pair.tightest), (pair) => `${margin(pair.tightest).toFixed(2)} pts`, (pair) => [pair.tightest.id]),
-    ...quirksFromPairs("Biggest blowout", pairs, "max", (pair) => margin(pair.biggestMargin), (pair) => `${margin(pair.biggestMargin).toFixed(2)} pts`, (pair) => [pair.biggestMargin.id]),
-    ...quirksFromPairs("Tightest average margin", withMultiple, "min", (pair) => pair.averageMargin, (pair) => `${pair.averageMargin.toFixed(2)} pts`, () => [], "record"),
-    ...quirksFromPairs("Most one sided rivalry", withMultiple, "max", (pair) => pair.pointEdgePerGame, (pair) => `${pair.edgeLeaderShort} +${pair.pointEdgePerGame.toFixed(2)}pts`, () => [], "record"),
-    ...quirksFromPairs("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (pair) => `${pair.averageTotal.toFixed(2)} average total`, () => [], "record"),
-    ...quirksFromPairs("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (pair) => `${pair.averageTotal.toFixed(2)} average total`, () => [], "record"),
-    ...quirksFromPairs("Most meetings", pairs, "max", (pair) => pair.games.length, (pair) => `${pair.games.length} matchups`, () => [], "record"),
-    ...quirksFromPairs("Least meetings", pairs, "min", (pair) => pair.games.length, (pair) => `${pair.games.length} matchup${pair.games.length === 1 ? "" : "s"}`, () => [], "record"),
-    ...quirksFromPairs("Most postseason matchups", postseasonPairs, "max", (pair) => pair.specialGames.length, (pair) => `${pair.specialGames.length}`, (pair) => pair.specialGames.map((game) => game.id)),
+  return [
+    quirkGroup("Tightest game", pairs, "min", (pair) => margin(pair.tightest), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.tightest.id]),
+    quirkGroup("Biggest blowout", pairs, "max", (pair) => margin(pair.biggestMargin), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.biggestMargin.id]),
+    quirkGroup("Tightest average margin", withMultiple, "min", (pair) => pair.averageMargin, (value) => `${value.toFixed(2)} pts`, () => [], "record"),
+    quirkGroup("Most one-sided rivalry", withMultiple, "max", (pair) => pair.pointEdgePerGame, (value) => `${value.toFixed(2)}pts`, () => [], "record", (pair) => `${pair.edgeLeaderShort} edge`),
+    quirkGroup("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} average total`, () => [], "record"),
+    quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} average total`, () => [], "record"),
+    quirkGroup("Most meetings", pairs, "max", (pair) => pair.games.length, (value) => `${value} matchups`, () => [], "record"),
+    quirkGroup("Least meetings", pairs, "min", (pair) => pair.games.length, (value) => `${value} matchup${value === 1 ? "" : "s"}`, () => [], "record"),
+    quirkGroup("Most postseason matchups", postseasonPairs, "max", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
+    quirkGroup("Least postseason matchups", postseasonPairs, "min", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
   ].filter(Boolean);
-  const seen = new Set();
-  return quirks.filter((quirk) => {
-    const key = `${quirk.title}-${quirk.managerA}-${quirk.managerB}-${quirk.gameIds.join("|")}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
 }
 
-function quirksFromPairs(title, pairs, mode, scoreFn, valueFn, gameIdsFn, highlightTarget = "") {
-  if (!pairs.length) return [];
+function quirkGroup(title, pairs, mode, scoreFn, valueFn, gameIdsFn, highlightTarget = "", detailFn = null) {
+  if (!pairs.length) return null;
   const scorer = mode === "min" ? lowestBy : highestBy;
   const winner = scorer(pairs, scoreFn);
-  if (!winner) return [];
+  if (!winner) return null;
   const winningScore = scoreFn(winner);
-  return pairs
+  const entries = pairs
     .filter((pair) => scoresMatch(scoreFn(pair), winningScore))
-    .map((pair) => quirkFromPair(title, pair, valueFn, gameIdsFn, highlightTarget));
-}
-
-function quirkFromPair(title, pair, valueFn, gameIdsFn, highlightTarget = "") {
+    .map((pair) => quirkEntry(pair, gameIdsFn, highlightTarget, detailFn));
   return {
     title,
-    value: valueFn(pair),
-    managerA: pair.managers[0],
-    managerB: pair.managers[1],
-    gameIds: gameIdsFn(pair),
-    highlightTarget,
+    value: valueFn(winningScore),
+    entries,
   };
 }
 
 function quirkCard(quirk) {
   return `
-    <button class="h2h-quirk-card" type="button" data-h2h-quirk data-manager-a="${escapeHtml(quirk.managerA)}" data-manager-b="${escapeHtml(quirk.managerB)}" data-game-ids="${escapeHtml(quirk.gameIds.join(","))}" data-highlight-target="${escapeHtml(quirk.highlightTarget)}">
+    <article class="h2h-quirk-card">
       <span>${escapeHtml(quirk.title)}</span>
       <strong>${escapeHtml(quirk.value)}</strong>
-      <small>${escapeHtml(shortManagerName(quirk.managerA))} vs ${escapeHtml(shortManagerName(quirk.managerB))}</small>
+      <div class="h2h-quirk-options">
+        ${quirk.entries.map(quirkEntryButton).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function quirkEntry(pair, gameIdsFn, highlightTarget = "", detailFn = null) {
+  return {
+    managerA: pair.managers[0],
+    managerB: pair.managers[1],
+    gameIds: gameIdsFn(pair),
+    highlightTarget,
+    detail: detailFn ? detailFn(pair) : "",
+  };
+}
+
+function quirkEntryButton(entry) {
+  return `
+    <button class="h2h-quirk-entry" type="button" data-h2h-quirk-entry data-manager-a="${escapeHtml(entry.managerA)}" data-manager-b="${escapeHtml(entry.managerB)}" data-game-ids="${escapeHtml(entry.gameIds.join(","))}" data-highlight-target="${escapeHtml(entry.highlightTarget)}">
+      <span>${escapeHtml(shortManagerName(entry.managerA))} vs ${escapeHtml(shortManagerName(entry.managerB))}</span>
+      ${entry.detail ? `<small>${escapeHtml(entry.detail)}</small>` : ""}
     </button>
   `;
 }
