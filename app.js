@@ -712,11 +712,12 @@ function toggleArchiveLeaders(expanded) {
 function archiveDraftLeaderItem(pick, data) {
   const player = draftPickPlayer(pick);
   const manager = draftManagerByRosterId(pick.roster_id, data);
+  const meta = `${player.position} · ${player.team} · Drafted by ${manager}`;
   return `
     <li>
       <div class="leader-copy">
         <strong>${escapeHtml(player.name)}</strong>
-        <span>${escapeHtml(player.position)} · ${escapeHtml(player.team)} · Drafted by ${escapeHtml(manager)}</span>
+        <span class="${leaderMetaClass(meta)}">${escapeHtml(meta)}</span>
       </div>
     </li>
   `;
@@ -725,14 +726,19 @@ function archiveDraftLeaderItem(pick, data) {
 function archivePprLeaderItem(leader, data) {
   const pick = draftPickForPlayer(leader.name, data.draftPicks || []);
   const manager = pick ? draftManagerByRosterId(pick.roster_id, data) : "Undrafted in Waxball";
+  const meta = `${leader.position} · ${leader.team} · ${pick ? "Drafted by " : ""}${manager}`;
   return `
     <li>
       <div class="leader-copy">
         <strong>${escapeHtml(leader.name)}</strong>
-        <span>${escapeHtml(leader.position)} · ${escapeHtml(leader.team)} · ${pick ? "Drafted by " : ""}${escapeHtml(manager)}</span>
+        <span class="${leaderMetaClass(meta)}">${escapeHtml(meta)}</span>
       </div>
     </li>
   `;
+}
+
+function leaderMetaClass(meta) {
+  return meta.includes("Christian Engelhardt") ? "leader-meta-tight" : "";
 }
 
 function draftPickPlayer(pick) {

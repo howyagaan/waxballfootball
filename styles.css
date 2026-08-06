@@ -1565,6 +1565,10 @@ select {
   margin-top: 0.55rem;
 }
 
+.leader-list-extra[hidden] {
+  display: none;
+}
+
 .leader-list li {
   display: grid;
   grid-template-columns: 2rem minmax(0, 1fr);
@@ -1596,6 +1600,11 @@ select {
   font-size: 0.84rem;
   line-height: 1.3;
   overflow-wrap: anywhere;
+}
+
+.leader-copy .leader-meta-tight {
+  font-size: 0.76rem;
+  white-space: nowrap;
 }
 
 .leader-toggle {
@@ -2044,6 +2053,10 @@ footer {
   .leader-copy span {
     font-size: 0.66rem;
     line-height: 1.22;
+  }
+
+  .leader-copy .leader-meta-tight {
+    font-size: 0.56rem;
   }
 
   .leader-toggle {
