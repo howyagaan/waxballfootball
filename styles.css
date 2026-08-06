@@ -1794,11 +1794,22 @@ select {
   display: none;
 }
 
+.h2h-rival-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.h2h-rival-name-block {
+  min-width: 0;
+}
+
 .h2h-rival-score {
   display: inline-grid;
   gap: 0.15rem;
-  margin-bottom: 0.9rem;
-  padding: 0.6rem 0.85rem;
+  justify-self: end;
+  padding: 0.55rem 0.75rem;
   border: 1px solid rgba(0, 206, 190, 0.28);
   border-radius: 999px;
   background: rgba(0, 206, 190, 0.1);
@@ -1815,15 +1826,16 @@ select {
 .h2h-rival-verdict .h2h-rival-score strong {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.25rem, 4vw, 1.85rem);
+  font-size: clamp(1.05rem, 4vw, 1.45rem);
   line-height: 1;
 }
 
-.h2h-rival-verdict strong {
+.h2h-rival-verdict > strong,
+.h2h-rival-name-block strong {
   display: block;
   margin-top: 0.25rem;
   color: var(--teal);
-  font-size: clamp(2rem, 7vw, 4.2rem);
+  font-size: clamp(2rem, 7vw, 3.65rem);
   line-height: 0.95;
 }
 
@@ -1837,8 +1849,8 @@ select {
 }
 
 .h2h-see-history {
-  width: fit-content;
-  margin-top: 0.85rem;
+  grid-column: 2;
+  width: 100%;
   border: 1px solid rgba(0, 206, 190, 0.34);
   border-radius: 999px;
   background: var(--teal);
@@ -1848,7 +1860,7 @@ select {
   font-size: 0.78rem;
   font-weight: 1000;
   letter-spacing: 0.08em;
-  padding: 0.55rem 0.85rem;
+  padding: 0.6rem 0.9rem;
   text-transform: uppercase;
 }
 
@@ -2736,6 +2748,21 @@ footer {
   .h2h-rival-fact-row {
     grid-template-columns: 1fr;
     gap: 0.18rem;
+  }
+
+  .h2h-rival-summary,
+  .h2h-next-rivals {
+    grid-template-columns: 1fr;
+  }
+
+  .h2h-rival-score,
+  .h2h-see-history {
+    justify-self: start;
+    width: fit-content;
+  }
+
+  .h2h-see-history {
+    grid-column: auto;
   }
 
   .h2h-quirk-grid {

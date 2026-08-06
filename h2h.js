@@ -352,13 +352,17 @@ function fierceVerdictMarkup(manager, rivalry, rankedRivals = []) {
   const facts = fierceVerdictFacts(manager, rivalry);
   const nextRivals = rankedRivals.slice(1, 3);
   return `
-    <span class="h2h-rival-heading">Fiercest rival</span>
-    <strong>${escapeHtml(shortManagerName(rivalry.opponent))}</strong>
-    <div class="h2h-rival-score">
-      <span>Rivalry score</span>
-      <strong>${score}/100</strong>
+    <div class="h2h-rival-summary">
+      <div class="h2h-rival-name-block">
+        <span class="h2h-rival-heading">Fiercest rival</span>
+        <strong>${escapeHtml(shortManagerName(rivalry.opponent))}</strong>
+      </div>
+      <div class="h2h-rival-score">
+        <span>Rivalry score</span>
+        <strong>${score}/100</strong>
+      </div>
+      <button class="h2h-see-history" type="button" data-h2h-rival-entry data-manager-a="${escapeHtml(manager)}" data-manager-b="${escapeHtml(rivalry.opponent)}">See history</button>
     </div>
-    <button class="h2h-see-history" type="button" data-h2h-rival-entry data-manager-a="${escapeHtml(manager)}" data-manager-b="${escapeHtml(rivalry.opponent)}">See history</button>
     ${nextRivals.length ? `
       <div class="h2h-next-rivals" aria-label="Next fiercest rivals">
         ${nextRivals.map((nextRival, index) => `
