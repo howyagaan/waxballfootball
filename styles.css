@@ -1664,7 +1664,7 @@ select {
   box-shadow: inset 0 0 0 1px rgba(0, 206, 190, 0.08);
 }
 
-.h2h-board-stats span {
+.h2h-board-stats article > span {
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 1000;
@@ -1692,19 +1692,42 @@ select {
 }
 
 .h2h-board-stats article {
+  display: flex;
+  min-height: 7.6rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: clamp(0.8rem, 2vw, 1rem);
-  min-height: 8.3rem;
+  text-align: center;
 }
 
 .h2h-board-stats strong {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.16em;
+  display: block;
+  width: 100%;
   margin-top: 0.22rem;
   color: var(--ink);
   font-size: clamp(1.35rem, 3vw, 2rem);
   line-height: 1;
+}
+
+.h2h-record-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.22em;
+}
+
+.h2h-points-stack {
+  display: grid;
+  justify-items: center;
+  gap: 0.38rem;
+}
+
+.h2h-points-divider {
+  width: min(12rem, 70%);
+  height: 2px;
+  border-radius: 999px;
+  background: var(--line);
 }
 
 .h2h-stat-piece.good {
@@ -1718,6 +1741,14 @@ select {
 .h2h-stat-piece.neutral,
 .h2h-stat-neutral {
   color: var(--ink);
+}
+
+.h2h-stat-piece,
+.h2h-stat-neutral {
+  font-size: inherit;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .h2h-board-stats p {

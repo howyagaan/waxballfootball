@@ -132,7 +132,11 @@ function recordMarkup(a, b, summary) {
   const bClass = summary.aWins === summary.bWins ? "neutral" : summary.bWins > summary.aWins ? "good" : "bad";
   const tieText = summary.ties ? `<span class="h2h-stat-neutral">-${summary.ties}</span>` : "";
   return `
-    <span class="h2h-stat-piece ${aClass}">${escapeHtml(firstName(a).toUpperCase())} ${summary.aWins}</span><span class="h2h-stat-neutral">-</span><span class="h2h-stat-piece ${bClass}">${summary.bWins} ${escapeHtml(firstName(b).toUpperCase())}</span>${tieText}
+    <span class="h2h-record-line">
+      <span class="h2h-stat-piece ${aClass}">${escapeHtml(firstName(a).toUpperCase())} ${summary.aWins}</span>
+      <span class="h2h-stat-neutral">-</span>
+      <span class="h2h-stat-piece ${bClass}">${summary.bWins} ${escapeHtml(firstName(b).toUpperCase())}</span>${tieText}
+    </span>
   `;
 }
 
@@ -140,7 +144,11 @@ function pointsMarkup(a, b, summary) {
   const aClass = summary.aPoints === summary.bPoints ? "neutral" : summary.aPoints > summary.bPoints ? "good" : "bad";
   const bClass = summary.aPoints === summary.bPoints ? "neutral" : summary.bPoints > summary.aPoints ? "good" : "bad";
   return `
-    <span class="h2h-stat-piece ${aClass}">${escapeHtml(firstName(a).toUpperCase())} ${summary.aPoints.toFixed(2)}</span><span class="h2h-stat-neutral"> - </span><span class="h2h-stat-piece ${bClass}">${summary.bPoints.toFixed(2)} ${escapeHtml(firstName(b).toUpperCase())}</span>
+    <span class="h2h-points-stack">
+      <span class="h2h-stat-piece ${aClass}">${escapeHtml(firstName(a).toUpperCase())} ${summary.aPoints.toFixed(2)}</span>
+      <span class="h2h-points-divider" aria-hidden="true"></span>
+      <span class="h2h-stat-piece ${bClass}">${summary.bPoints.toFixed(2)} ${escapeHtml(firstName(b).toUpperCase())}</span>
+    </span>
   `;
 }
 
