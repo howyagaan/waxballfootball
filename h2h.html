@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Waxball H2H</title>
+    <meta
+      name="description"
+      content="Waxball head-to-head records across the 2024 and 2025 fantasy football archives."
+    />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="h2h">
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="Waxball home">
+        <span class="brand-mark has-image" id="league-brand-mark"><img alt="" src="./favicon.svg" /></span>
+        <span>Waxball</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="./index.html">2026</a>
+        <span class="nav-divider" aria-hidden="true">|</span>
+        <a href="#compare">Compare</a>
+        <a href="#quirks">Quirks</a>
+        <a href="#matchup-log">Log</a>
+        <a href="./archive-2025.html">2025</a>
+        <a href="./archive-2024.html">2024</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero archive-hero h2h-hero">
+        <div class="hero-main">
+          <p class="eyebrow">Manager records</p>
+          <h1>Waxball H2H</h1>
+          <p>
+            Pick two managers and see every recorded matchup between them across
+            the ESPN and Sleeper archive years.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#compare">Compare managers</a>
+            <a class="button" href="./index.html">Back to 2026</a>
+          </div>
+        </div>
+      </section>
+
+      <section id="compare" class="section-head">
+        <div>
+          <p class="eyebrow">Choose two</p>
+          <h2>Head-to-Head</h2>
+          <p class="muted">Records include regular season, playoff, placement, and Toilet Bowl matchups.</p>
+        </div>
+      </section>
+
+      <section class="h2h-control-card">
+        <label>
+          <span class="metric-label">Manager 1</span>
+          <select id="h2h-manager-a" aria-label="Choose first manager"></select>
+        </label>
+        <label>
+          <span class="metric-label">Manager 2</span>
+          <select id="h2h-manager-b" aria-label="Choose second manager"></select>
+        </label>
+      </section>
+
+      <section class="h2h-showdown" aria-live="polite">
+        <article class="h2h-manager-card" id="h2h-card-a"></article>
+        <div class="h2h-vs">vs</div>
+        <article class="h2h-manager-card" id="h2h-card-b"></article>
+      </section>
+
+      <section class="h2h-summary-grid" aria-label="Head-to-head summary">
+        <article>
+          <span class="metric-label">Series</span>
+          <strong id="h2h-series">--</strong>
+          <p id="h2h-series-note">Choose two managers.</p>
+        </article>
+        <article>
+          <span class="metric-label">Points</span>
+          <strong id="h2h-points">--</strong>
+          <p id="h2h-points-note">Combined scoring edge.</p>
+        </article>
+        <article>
+          <span class="metric-label">Average margin</span>
+          <strong id="h2h-margin">--</strong>
+          <p id="h2h-margin-note">How sweaty the series has been.</p>
+        </article>
+      </section>
+
+      <section id="quirks" class="section-head">
+        <div>
+          <p class="eyebrow">Quirks</p>
+          <h2>Series Notes</h2>
+        </div>
+      </section>
+
+      <section id="h2h-quirks" class="season-notes-grid h2h-notes-grid"></section>
+
+      <section id="matchup-log" class="section-head">
+        <div>
+          <p class="eyebrow">Every meeting</p>
+          <h2>Matchup Log</h2>
+          <p id="h2h-log-note" class="muted">Sorted from newest to oldest.</p>
+        </div>
+      </section>
+
+      <section id="h2h-log" class="h2h-log"></section>
+    </main>
+
+    <script src="./assets/data/h2h-data.js"></script>
+    <script src="./h2h.js"></script>
+  </body>
+</html>
