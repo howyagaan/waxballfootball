@@ -219,7 +219,7 @@ function pointsMarkup(a, b, summary) {
     <span class="h2h-points-stack">
       <span class="h2h-stat-piece ${aClass}">${escapeHtml(firstName(a).toUpperCase())} ${summary.aPoints.toFixed(2)}</span>
       <span class="h2h-points-divider" aria-hidden="true"></span>
-      <span class="h2h-stat-piece ${bClass}">${summary.bPoints.toFixed(2)} ${escapeHtml(firstName(b).toUpperCase())}</span>
+      <span class="h2h-stat-piece ${bClass}">${escapeHtml(firstName(b).toUpperCase())} ${summary.bPoints.toFixed(2)}</span>
     </span>
   `;
 }
