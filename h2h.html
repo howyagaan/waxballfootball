@@ -11,7 +11,7 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-page="h2h" class="h2h-page">
+  <body data-page="h2h">
     <header class="topbar">
       <a class="brand" href="./index.html" aria-label="Waxball home">
         <span class="brand-mark has-image" id="league-brand-mark"><img alt="" src="./favicon.svg" /></span>
@@ -20,19 +20,41 @@
       <nav aria-label="Primary navigation">
         <a href="./index.html">2026</a>
         <span class="nav-divider" aria-hidden="true">|</span>
-        <a href="#compare">Compare</a>
-        <a href="#quirks">Quirks</a>
-        <a href="#matchup-log">Log</a>
+        <a href="#compare">H2H</a>
+        <a href="#quirks">Fun Facts</a>
         <a href="./archive-2025.html">2025</a>
         <a href="./archive-2024.html">2024</a>
       </nav>
     </header>
 
-    <main id="top" class="h2h-main">
+    <main id="top">
+      <section class="hero archive-hero h2h-hero">
+        <div class="hero-main">
+          <p class="eyebrow">Manager records</p>
+          <h1>Waxball H2H</h1>
+          <p>
+            Select two managers to see the scoreline, matchup history, and the
+            fun little notes between them.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#compare">Compare managers</a>
+            <a class="button" href="./index.html">Back to 2026</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-head">
+        <div>
+          <p class="eyebrow">Choose two</p>
+          <h2>Head-to-Head</h2>
+          <p class="muted">2025 appears first, then 2024. Completed 2026 Sleeper weeks will be added automatically once they are final.</p>
+        </div>
+      </section>
+
       <section id="compare" class="h2h-board" aria-live="polite">
         <div class="h2h-board-top">
           <label class="h2h-team-select">
-            <span>Team</span>
+            <span>Manager 1</span>
             <select id="h2h-manager-a" aria-label="Choose first manager"></select>
             <strong id="h2h-card-a">Manager</strong>
           </label>
@@ -44,13 +66,11 @@
           </div>
 
           <label class="h2h-team-select">
-            <span>Team</span>
+            <span>Manager 2</span>
             <select id="h2h-manager-b" aria-label="Choose second manager"></select>
             <strong id="h2h-card-b">Manager</strong>
           </label>
         </div>
-
-        <div class="h2h-board-line" aria-hidden="true"></div>
 
         <section class="h2h-board-stats" aria-label="Head-to-head summary">
           <article>
@@ -66,7 +86,7 @@
         </section>
 
         <section id="matchup-log" class="h2h-score-history">
-          <p id="h2h-log-note">Sorted by season.</p>
+          <p class="metric-label" id="h2h-log-note">Sorted by season.</p>
           <div id="h2h-log" class="h2h-log"></div>
         </section>
 

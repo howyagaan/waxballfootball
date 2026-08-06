@@ -1,4 +1,20 @@
 const H2H_DATA = window.WAXBALL_H2H_DATA || { managers: [], matchups: [] };
+const H2H_API_BASE = "https://api.sleeper.app/v1";
+const H2H_CURRENT_LEAGUE_ID = "1312219624808419328";
+const H2H_OWNER_REAL_NAMES = {
+  helloimpaul: "Paul Legallet",
+  bigboybluey: "Miles Blue",
+  erikohno: "Erik Ohno Dagoberg",
+  eviandon: "Milo Manheim",
+  pigmanbigman: "Nicholas Hamilton",
+  "10w5l": "Jacob Moskovitz",
+  willyboyp: "Will Price",
+  bigdicksenior: "Sam Labovitz",
+  darryluvr: "Travis Roy Rogers",
+  chrissy511: "Christian Engelhardt",
+  papicoop: "Jakob Cooper",
+  millsberry27: "Miles Elliot",
+};
 
 const h2hEls = {
   managerA: document.querySelector("#h2h-manager-a"),
@@ -16,14 +32,21 @@ const h2hEls = {
   logNote: document.querySelector("#h2h-log-note"),
 };
 
-const managerStats = buildManagerStats(H2H_DATA.matchups);
-const weekStats = buildWeekStats(H2H_DATA.matchups);
-const seasonStats = buildSeasonStats(H2H_DATA.matchups);
+let h2hMatchups = [...(H2H_DATA.matchups || [])];
+let managerStats = buildManagerStats(h2hMatchups);
+let weekStats = buildWeekStats(h2hMatchups);
+let seasonStats = buildSeasonStats(h2hMatchups);
 
 initH2H();
 
-function initH2H() {
-  const managers = H2H_DATA.managers || [];
+async function initH2H() {
+  const currentMatchups = await loadCompletedSleeperMatchups();
+  h2hMatchups = mergeMatchups(H2H_DATA.matchups || [], currentMatchups);
+  managerStats = buildManagerStats(h2hMatchups);
+  weekStats = buildWeekStats(h2hMatchups);
+  seasonStats = buildSeasonStats(h2hMatchups);
+
+  const managers = [...new Set([...(H2H_DATA.managers || []), ...h2hMatchups.flatMap((game) => game.managers)])].sort();
   if (!managers.length) return;
   h2hEls.managerA.innerHTML = managers.map((manager) => option(manager)).join("");
   h2hEls.managerB.innerHTML = managers.map((manager) => option(manager)).join("");
@@ -40,16 +63,17 @@ function option(manager) {
 
 function syncComparison() {
   if (h2hEls.managerA.value === h2hEls.managerB.value) {
-    const replacement = H2H_DATA.managers.find((manager) => manager !== h2hEls.managerA.value);
+    const managers = [...h2hEls.managerB.options].map((optionEl) => optionEl.value);
+    const replacement = managers.find((manager) => manager !== h2hEls.managerA.value);
     h2hEls.managerB.value = replacement || h2hEls.managerB.value;
   }
   renderComparison(h2hEls.managerA.value, h2hEls.managerB.value);
 }
 
 function renderComparison(a, b) {
-  const games = H2H_DATA.matchups
+  const games = h2hMatchups
     .filter((game) => game.managers.includes(a) && game.managers.includes(b))
-    .sort((left, right) => left.season - right.season || left.week - right.week);
+    .sort((left, right) => right.season - left.season || left.week - right.week);
   const summary = summarizeSeries(a, b, games);
 
   h2hEls.cardA.innerHTML = managerCard(a, summary.aWins, summary.aPoints);
@@ -69,9 +93,92 @@ function renderComparison(a, b) {
 
   h2hEls.quirks.innerHTML = games.length ? quirksMarkup(a, b, games, summary) : emptyCard("No history yet", "These two managers have not met in the archive.");
   h2hEls.logNote.textContent = games.length
-    ? `${games.length} recorded matchup${games.length === 1 ? "" : "s"} from 2024-2025.`
+    ? `${games.length} recorded matchup${games.length === 1 ? "" : "s"} from the Waxball archive.`
     : "No matchup log available for this pair.";
   h2hEls.log.innerHTML = games.length ? matchupBoardMarkup(games, a, b) : "";
+}
+
+async function loadCompletedSleeperMatchups() {
+  try {
+    const [league, state, rosters, users] = await Promise.all([
+      h2hFetchJson(`/league/${H2H_CURRENT_LEAGUE_ID}`),
+      h2hFetchJson("/state/nfl"),
+      h2hFetchJson(`/league/${H2H_CURRENT_LEAGUE_ID}/rosters`),
+      h2hFetchJson(`/league/${H2H_CURRENT_LEAGUE_ID}/users`),
+    ]);
+    const completedThrough = completedThroughWeek(league, state);
+    if (completedThrough < 1) return [];
+    const weeks = Array.from({ length: Math.min(completedThrough, 18) }, (_, index) => index + 1);
+    const weekMatchups = await Promise.all(
+      weeks.map(async (week) => [week, await h2hFetchOptionalJson(`/league/${H2H_CURRENT_LEAGUE_ID}/matchups/${week}`, [])]),
+    );
+    return weekMatchups.flatMap(([week, matchups]) => sleeperWeekToH2H(league, rosters, users, week, matchups));
+  } catch (error) {
+    console.warn("Unable to load current-season H2H matchups.", error);
+    return [];
+  }
+}
+
+function completedThroughWeek(league, state) {
+  if (league?.status === "complete") return Number(league.settings?.last_scored_leg || league.settings?.leg || 18);
+  const stateWeek = Number(state?.display_week || state?.week || 1);
+  const leagueWeek = Number(league?.settings?.leg || stateWeek || 1);
+  return Math.max(0, Math.min(stateWeek, leagueWeek) - 1);
+}
+
+function sleeperWeekToH2H(league, rosters, users, week, matchups) {
+  const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
+  return [...grouped.values()]
+    .filter((pair) => pair.length === 2)
+    .map((pair) => {
+      const [left, right] = pair;
+      const leftRoster = rosters.find((roster) => roster.roster_id === left.roster_id);
+      const rightRoster = rosters.find((roster) => roster.roster_id === right.roster_id);
+      return {
+        id: `${league.season || 2026}-w${week}-m${left.matchup_id || left.roster_id}`,
+        season: Number(league.season || 2026),
+        week,
+        stage: "Regular season",
+        managers: [h2hOwnerName(leftRoster, users), h2hOwnerName(rightRoster, users)],
+        teams: [h2hTeamName(leftRoster, users), h2hTeamName(rightRoster, users)],
+        scores: [Number(left.points || 0), Number(right.points || 0)],
+      };
+    })
+    .filter((game) => game.managers.every(Boolean) && game.scores.some((score) => score > 0));
+}
+
+async function h2hFetchJson(path) {
+  const response = await fetch(`${H2H_API_BASE}${path}`);
+  if (!response.ok) throw new Error(`Sleeper returned ${response.status} for ${path}.`);
+  return response.json();
+}
+
+async function h2hFetchOptionalJson(path, fallback) {
+  try {
+    return await h2hFetchJson(path);
+  } catch {
+    return fallback;
+  }
+}
+
+function mergeMatchups(...groups) {
+  const merged = new Map();
+  groups.flat().forEach((game) => {
+    if (game?.id) merged.set(game.id, game);
+  });
+  return [...merged.values()];
+}
+
+function h2hOwnerName(roster, users) {
+  const user = users.find((candidate) => candidate.user_id === roster?.owner_id);
+  const username = user?.username?.toLowerCase();
+  if (username && H2H_OWNER_REAL_NAMES[username]) return H2H_OWNER_REAL_NAMES[username];
+  return user?.display_name || user?.username || "";
+}
+
+function h2hTeamName(roster, users) {
+  const user = users.find((candidate) => candidate.user_id === roster?.owner_id);
+  return user?.metadata?.team_name?.trim() || user?.display_name || user?.username || `Roster ${roster?.roster_id || "?"}`;
 }
 
 function summarizeSeries(a, b, games) {
@@ -120,9 +227,9 @@ function quirksMarkup(a, b, games) {
     quirkCard("Biggest swing", `${margin(blowout).toFixed(2)} pts`, matchupSentence(blowout)),
   ];
   if (special.length) {
-    cards.push(quirkCard("Archive weirdness", `${special.length} note${special.length === 1 ? "" : "s"}`, special.join(" ")));
+    cards.push(quirkCard("Series notes", `${special.length} note${special.length === 1 ? "" : "s"}`, special.join(" ")));
   } else {
-    cards.push(quirkCard("Archive weirdness", "Nothing too cursed", `${a} and ${b} have avoided league-high or league-low chaos in their meetings.`));
+    cards.push(quirkCard("Series notes", "No league extremes", `${a} and ${b} have avoided league-high or league-low chaos in their meetings.`));
   }
   return cards.join("");
 }
@@ -167,7 +274,7 @@ function matchupLogCard(game, a, b) {
   const aResult = aScore === bScore ? "T" : aScore > bScore ? "W" : "L";
   const bResult = aScore === bScore ? "T" : bScore > aScore ? "W" : "L";
   return `
-    <article class="h2h-chalk-row">
+    <article class="h2h-score-row">
       <span class="h2h-result ${resultClass(aResult)}">${escapeHtml(aResult)}</span>
       <strong class="h2h-score">${escapeHtml(aScore.toFixed(2))}</strong>
       <div class="h2h-row-detail">
@@ -282,6 +389,15 @@ function initialsFor(name) {
     .map((part) => part[0])
     .join("")
     .toUpperCase();
+}
+
+function groupBy(items, keyFn) {
+  return items.reduce((groups, item) => {
+    const key = keyFn(item);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(item);
+    return groups;
+  }, new Map());
 }
 
 function escapeHtml(value) {
