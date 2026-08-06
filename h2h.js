@@ -35,6 +35,7 @@ let weekStats = buildWeekStats(h2hMatchups);
 let seasonStats = buildSeasonStats(h2hMatchups);
 
 initH2H();
+refreshH2HLeagueAvatar();
 
 async function initH2H() {
   const currentMatchups = await loadCompletedSleeperMatchups();
@@ -50,6 +51,30 @@ async function initH2H() {
   h2hEls.managerA.addEventListener("change", syncComparison);
   h2hEls.managerB.addEventListener("change", syncComparison);
   syncComparison();
+}
+
+async function refreshH2HLeagueAvatar() {
+  try {
+    const league = await h2hFetchJson(`/league/${H2H_CURRENT_LEAGUE_ID}`);
+    if (!league?.avatar) return;
+    const avatarSrc = `https://sleepercdn.com/avatars/thumbs/${league.avatar}`;
+    const brandMark = document.querySelector("#league-brand-mark");
+    if (brandMark) {
+      brandMark.innerHTML = `<img alt="" src="${avatarSrc}" />`;
+      brandMark.classList.add("has-image");
+    }
+    const icon = document.querySelector('link[rel="icon"]') || document.createElement("link");
+    icon.rel = "icon";
+    icon.href = avatarSrc;
+    icon.type = "image/png";
+    if (!icon.parentNode) document.head.appendChild(icon);
+    const touchIcon = document.querySelector('link[rel="apple-touch-icon"]') || document.createElement("link");
+    touchIcon.rel = "apple-touch-icon";
+    touchIcon.href = avatarSrc;
+    if (!touchIcon.parentNode) document.head.appendChild(touchIcon);
+  } catch (error) {
+    // Keep the baked-in avatar if Sleeper is unreachable.
+  }
 }
 
 function placeholderOption(label) {
