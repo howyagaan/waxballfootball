@@ -19,6 +19,7 @@ const H2H_OWNER_REAL_NAMES = {
 const h2hEls = {
   managerA: document.querySelector("#h2h-manager-a"),
   managerB: document.querySelector("#h2h-manager-b"),
+  stats: document.querySelector("#h2h-board-stats"),
   series: document.querySelector("#h2h-series"),
   seriesNote: document.querySelector("#h2h-series-note"),
   points: document.querySelector("#h2h-points"),
@@ -181,10 +182,16 @@ function highlightH2HGame(gameId) {
 }
 
 function renderComparison(a, b) {
+  const selectedManager = a || b;
+  if (selectedManager && (!a || !b)) {
+    renderManagerFacts(selectedManager);
+    return;
+  }
   if (!a || !b) {
     renderEmptyComparison();
     return;
   }
+  renderComparisonStatsShell();
 
   const games = h2hMatchups
     .filter((game) => game.managers.includes(a) && game.managers.includes(b))
@@ -203,6 +210,7 @@ function renderComparison(a, b) {
 }
 
 function renderEmptyComparison() {
+  renderComparisonStatsShell();
   h2hEls.series.textContent = "--";
   h2hEls.seriesNote.textContent = "Select two managers.";
   h2hEls.points.textContent = "--";
@@ -211,6 +219,105 @@ function renderEmptyComparison() {
   h2hEls.marginNote.textContent = "Average margin will appear here.";
   h2hEls.logNote.textContent = "";
   h2hEls.log.innerHTML = "";
+}
+
+function renderComparisonStatsShell() {
+  h2hEls.stats.classList.remove("is-manager-facts");
+  h2hEls.stats.innerHTML = `
+    <article id="h2h-record-card">
+      <span>Record</span>
+      <strong id="h2h-series">--</strong>
+      <p id="h2h-series-note"></p>
+    </article>
+    <article id="h2h-points-card">
+      <span>Total points</span>
+      <strong id="h2h-points">--</strong>
+      <p id="h2h-points-note"></p>
+    </article>
+    <article id="h2h-margin-card">
+      <span>Average margin</span>
+      <strong id="h2h-margin">--</strong>
+      <p id="h2h-margin-note"></p>
+    </article>
+  `;
+  refreshH2HStatRefs();
+}
+
+function refreshH2HStatRefs() {
+  h2hEls.series = document.querySelector("#h2h-series");
+  h2hEls.seriesNote = document.querySelector("#h2h-series-note");
+  h2hEls.points = document.querySelector("#h2h-points");
+  h2hEls.pointsNote = document.querySelector("#h2h-points-note");
+  h2hEls.margin = document.querySelector("#h2h-margin");
+  h2hEls.marginNote = document.querySelector("#h2h-margin-note");
+}
+
+function renderManagerFacts(manager) {
+  const facts = managerFacts(manager);
+  h2hEls.stats.classList.add("is-manager-facts");
+  h2hEls.stats.innerHTML = facts.map(managerFactCard).join("");
+  h2hEls.logNote.innerHTML = "";
+  h2hEls.log.innerHTML = "";
+}
+
+function managerFactCard(fact) {
+  return `
+    <article class="h2h-manager-fact">
+      <span>${escapeHtml(fact.label)}</span>
+      <strong>${escapeHtml(fact.value)}</strong>
+      ${fact.note ? `<p>${escapeHtml(fact.note)}</p>` : ""}
+    </article>
+  `;
+}
+
+function managerFacts(manager) {
+  const games = h2hMatchups.filter((game) => game.managers.includes(manager));
+  const rivalries = managerRivalries(manager);
+  const mostMatchups = topValues(rivalries, (rivalry) => rivalry.games.length, "max");
+  const tightestGame = lowestBy(games, margin);
+  const biggestWin = highestBy(games.filter((game) => managerScore(game, manager) > opponentScore(game, manager)), (game) => margin(game));
+  const biggestLoss = highestBy(games.filter((game) => managerScore(game, manager) < opponentScore(game, manager)), (game) => margin(game));
+  const fiercest = topValues(rivalries.filter((rivalry) => rivalry.games.length >= 2), fiercestRivalScore, "min");
+  const easiest = topValues(rivalries.filter((rivalry) => rivalry.pointEdgePerGame > 0), (rivalry) => rivalry.pointEdgePerGame, "max");
+  const toughest = topValues(rivalries.filter((rivalry) => rivalry.pointEdgePerGame < 0), (rivalry) => Math.abs(rivalry.pointEdgePerGame), "max");
+
+  return [
+    {
+      label: "Most matchups",
+      value: rivalryNames(mostMatchups) || "None yet",
+      note: mostMatchups.length ? `${mostMatchups[0].games.length} meetings` : "",
+    },
+    {
+      label: "Tightest game",
+      value: tightestGame ? opponentName(tightestGame, manager) : "None yet",
+      note: tightestGame ? `${managerScore(tightestGame, manager).toFixed(2)}-${opponentScore(tightestGame, manager).toFixed(2)} | Week ${tightestGame.week}, ${tightestGame.season}` : "",
+    },
+    {
+      label: "Biggest win",
+      value: biggestWin ? opponentName(biggestWin, manager) : "None yet",
+      note: biggestWin ? `+${margin(biggestWin).toFixed(2)} pts | Week ${biggestWin.week}, ${biggestWin.season}` : "",
+    },
+    {
+      label: "Biggest loss",
+      value: biggestLoss ? opponentName(biggestLoss, manager) : "None yet",
+      note: biggestLoss ? `-${margin(biggestLoss).toFixed(2)} pts | Week ${biggestLoss.week}, ${biggestLoss.season}` : "",
+    },
+    {
+      label: "Fiercest rival",
+      value: rivalryNames(fiercest) || "None yet",
+      note: fiercest.length ? `${fiercest[0].averageMargin.toFixed(2)} pts avg. | ${rivalryRecord(fiercest[0])}` : "",
+    },
+    {
+      label: "Easiest manager",
+      value: rivalryNames(easiest) || "None yet",
+      note: easiest.length ? `+${easiest[0].pointEdgePerGame.toFixed(2)} pts avg.` : "",
+    },
+    {
+      label: "Toughest manager",
+      value: rivalryNames(toughest) || "None yet",
+      note: toughest.length ? `${toughest[0].pointEdgePerGame.toFixed(2)} pts avg.` : "",
+    },
+  ];
 }
 
 function recordMarkup(a, b, summary) {
@@ -356,6 +463,64 @@ function summarizeSeries(a, b, games) {
       return this.margins.length ? this.margins.reduce((sum, margin) => sum + margin, 0) / this.margins.length : 0;
     },
   });
+}
+
+function managerRivalries(manager) {
+  return h2hManagers
+    .filter((opponent) => opponent !== manager)
+    .map((opponent) => {
+      const games = h2hMatchups.filter((game) => game.managers.includes(manager) && game.managers.includes(opponent));
+      if (!games.length) return null;
+      const summary = summarizeSeries(manager, opponent, games);
+      const pointEdgePerGame = (summary.aPoints - summary.bPoints) / games.length;
+      return {
+        manager,
+        opponent,
+        games,
+        summary,
+        averageMargin: summary.averageMargin,
+        pointEdgePerGame,
+      };
+    })
+    .filter(Boolean);
+}
+
+function managerScore(game, manager) {
+  return Number(game.scores[game.managers.indexOf(manager)] || 0);
+}
+
+function opponentScore(game, manager) {
+  return Number(game.scores[game.managers.findIndex((candidate) => candidate !== manager)] || 0);
+}
+
+function opponentName(game, manager) {
+  return game.managers.find((candidate) => candidate !== manager) || "";
+}
+
+function topValues(items, scoreFn, mode) {
+  if (!items.length) return [];
+  const scorer = mode === "min" ? lowestBy : highestBy;
+  const winner = scorer(items, scoreFn);
+  if (!winner) return [];
+  const winningScore = scoreFn(winner);
+  return items.filter((item) => scoresMatch(scoreFn(item), winningScore));
+}
+
+function rivalryNames(rivalries) {
+  return rivalries.map((rivalry) => shortManagerName(rivalry.opponent)).join(" / ");
+}
+
+function rivalryRecord(rivalry) {
+  const { aWins, bWins, ties } = rivalry.summary;
+  return ties ? `${aWins}-${bWins}-${ties}` : `${aWins}-${bWins}`;
+}
+
+function fiercestRivalScore(rivalry) {
+  const { aWins, bWins, ties } = rivalry.summary;
+  const gamesPlayed = rivalry.games.length;
+  const recordGap = Math.abs(aWins - bWins) / gamesPlayed;
+  const tieWeight = ties ? 0.92 : 1;
+  return (rivalry.averageMargin * tieWeight) + (recordGap * 10);
 }
 
 function matchupBoardMarkup(games, a, b) {
