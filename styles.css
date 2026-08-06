@@ -1598,11 +1598,8 @@ select {
   overflow-wrap: anywhere;
 }
 
-.leader-expander {
+.leader-toggle {
   margin-top: 0.6rem;
-}
-
-.leader-expander summary {
   width: fit-content;
   border: 1px solid rgba(0, 206, 190, 0.35);
   border-radius: 999px;
@@ -1614,10 +1611,11 @@ select {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
+  font-family: inherit;
 }
 
-.leader-expander[open] summary {
-  margin-bottom: 0.15rem;
+.leaders-expanded .leader-toggle {
+  margin-top: 0.75rem;
 }
 
 .season-notes-grid article {
@@ -1997,7 +1995,6 @@ footer {
 @media (max-width: 560px) {
   .showpiece-grid,
   .season-notes-grid,
-  .archive-leaders-grid,
   .article-link-list,
   .article-grid,
   .prize-strip,
@@ -2008,6 +2005,52 @@ footer {
 
   .result-card {
     min-height: 10rem;
+  }
+
+  .archive-leaders-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .archive-leader-card {
+    border-radius: 14px;
+    padding: 0.65rem 0.5rem;
+  }
+
+  .archive-leader-card h3 {
+    margin-bottom: 0.65rem;
+    font-size: clamp(1.05rem, 5vw, 1.25rem);
+  }
+
+  .archive-leader-card .metric-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+
+  .leader-list {
+    gap: 0.42rem;
+  }
+
+  .leader-list li {
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    gap: 0.32rem;
+    padding-top: 0.42rem;
+  }
+
+  .leader-copy strong {
+    font-size: 0.82rem;
+  }
+
+  .leader-copy span {
+    font-size: 0.66rem;
+    line-height: 1.22;
+  }
+
+  .leader-toggle {
+    padding: 0.34rem 0.48rem;
+    font-size: 0.58rem;
+    white-space: normal;
+    text-align: left;
   }
 }
 

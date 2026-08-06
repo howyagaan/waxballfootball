@@ -204,18 +204,16 @@
               <li><div class="leader-copy"><strong>Amon-Ra St. Brown</strong><span>WR · DET · Drafted by Erik Ohno Dagoberg</span></div></li>
               <li><div class="leader-copy"><strong>Breece Hall</strong><span>RB · NYJ · Drafted by Jacob Moskovitz</span></div></li>
             </ol>
-            <details class="leader-expander">
-              <summary>Show picks 6-12</summary>
-              <ol class="leader-list leader-list-extra">
-                <li><div class="leader-copy"><strong>Bijan Robinson</strong><span>RB · ATL · Drafted by Travis Roy Rogers</span></div></li>
-                <li><div class="leader-copy"><strong>Justin Jefferson</strong><span>WR · MIN · Drafted by Christian Engelhardt</span></div></li>
-                <li><div class="leader-copy"><strong>Ja'Marr Chase</strong><span>WR · CIN · Drafted by Sam Labovitz</span></div></li>
-                <li><div class="leader-copy"><strong>Garrett Wilson</strong><span>WR · NYJ · Drafted by Miles Elliot</span></div></li>
-                <li><div class="leader-copy"><strong>Jonathan Taylor</strong><span>RB · IND · Drafted by Jakob Cooper</span></div></li>
-                <li><div class="leader-copy"><strong>A.J. Brown</strong><span>WR · PHI · Drafted by Jakob Cooper</span></div></li>
-                <li><div class="leader-copy"><strong>Jahmyr Gibbs</strong><span>RB · DET · Drafted by Miles Elliot</span></div></li>
-              </ol>
-            </details>
+            <ol class="leader-list leader-list-extra" hidden>
+              <li><div class="leader-copy"><strong>Bijan Robinson</strong><span>RB · ATL · Drafted by Travis Roy Rogers</span></div></li>
+              <li><div class="leader-copy"><strong>Justin Jefferson</strong><span>WR · MIN · Drafted by Christian Engelhardt</span></div></li>
+              <li><div class="leader-copy"><strong>Ja'Marr Chase</strong><span>WR · CIN · Drafted by Sam Labovitz</span></div></li>
+              <li><div class="leader-copy"><strong>Garrett Wilson</strong><span>WR · NYJ · Drafted by Miles Elliot</span></div></li>
+              <li><div class="leader-copy"><strong>Jonathan Taylor</strong><span>RB · IND · Drafted by Jakob Cooper</span></div></li>
+              <li><div class="leader-copy"><strong>A.J. Brown</strong><span>WR · PHI · Drafted by Jakob Cooper</span></div></li>
+              <li><div class="leader-copy"><strong>Jahmyr Gibbs</strong><span>RB · DET · Drafted by Miles Elliot</span></div></li>
+            </ol>
+            <button class="leader-toggle" type="button" data-leader-toggle data-show-label="Show picks 6-12" data-hide-label="Hide picks 6-12">Show picks 6-12</button>
           </div>
         </article>
         <article class="archive-leader-card">
@@ -229,18 +227,16 @@
               <li><div class="leader-copy"><strong>Joe Burrow</strong><span>QB · CIN · Drafted by Jakob Cooper</span></div></li>
               <li><div class="leader-copy"><strong>Baker Mayfield</strong><span>QB · TB · Undrafted in Waxball</span></div></li>
             </ol>
-            <details class="leader-expander">
-              <summary>Show players 6-12</summary>
-              <ol class="leader-list leader-list-extra">
-                <li><div class="leader-copy"><strong>Jayden Daniels</strong><span>QB · WAS · Drafted by Christian Engelhardt</span></div></li>
-                <li><div class="leader-copy"><strong>Jahmyr Gibbs</strong><span>RB · DET · Drafted by Miles Elliot</span></div></li>
-                <li><div class="leader-copy"><strong>Saquon Barkley</strong><span>RB · PHI · Drafted by Christian Engelhardt</span></div></li>
-                <li><div class="leader-copy"><strong>Jalen Hurts</strong><span>QB · PHI · Drafted by Travis Roy Rogers</span></div></li>
-                <li><div class="leader-copy"><strong>Bijan Robinson</strong><span>RB · ATL · Drafted by Travis Roy Rogers</span></div></li>
-                <li><div class="leader-copy"><strong>Derrick Henry</strong><span>RB · BAL · Drafted by Miles Blue</span></div></li>
-                <li><div class="leader-copy"><strong>Justin Jefferson</strong><span>WR · MIN · Drafted by Christian Engelhardt</span></div></li>
-              </ol>
-            </details>
+            <ol class="leader-list leader-list-extra" hidden>
+              <li><div class="leader-copy"><strong>Jayden Daniels</strong><span>QB · WAS · Drafted by Christian Engelhardt</span></div></li>
+              <li><div class="leader-copy"><strong>Jahmyr Gibbs</strong><span>RB · DET · Drafted by Miles Elliot</span></div></li>
+              <li><div class="leader-copy"><strong>Saquon Barkley</strong><span>RB · PHI · Drafted by Christian Engelhardt</span></div></li>
+              <li><div class="leader-copy"><strong>Jalen Hurts</strong><span>QB · PHI · Drafted by Travis Roy Rogers</span></div></li>
+              <li><div class="leader-copy"><strong>Bijan Robinson</strong><span>RB · ATL · Drafted by Travis Roy Rogers</span></div></li>
+              <li><div class="leader-copy"><strong>Derrick Henry</strong><span>RB · BAL · Drafted by Miles Blue</span></div></li>
+              <li><div class="leader-copy"><strong>Justin Jefferson</strong><span>WR · MIN · Drafted by Christian Engelhardt</span></div></li>
+            </ol>
+            <button class="leader-toggle" type="button" data-leader-toggle data-show-label="Show players 6-12" data-hide-label="Hide players 6-12">Show players 6-12</button>
           </div>
         </article>
       </section>
@@ -578,6 +574,20 @@
         selector2024.addEventListener("change", () => renderTeam2024(teams2024[Number(selector2024.value)]));
         renderTeam2024(teams2024[0]);
       }
+
+      document.addEventListener("click", (event) => {
+        const toggle = event.target.closest("[data-leader-toggle]");
+        if (!toggle) return;
+        const expanded = !document.body.classList.contains("leaders-expanded");
+        document.body.classList.toggle("leaders-expanded", expanded);
+        document.querySelectorAll(".leader-list-extra").forEach((list) => {
+          list.hidden = !expanded;
+        });
+        document.querySelectorAll("[data-leader-toggle]").forEach((button) => {
+          button.textContent = expanded ? button.dataset.hideLabel : button.dataset.showLabel;
+          button.setAttribute("aria-expanded", String(expanded));
+        });
+      });
 
       fetch("https://api.sleeper.app/v1/league/1312219624808419328")
         .then((response) => (response.ok ? response.json() : null))

@@ -139,6 +139,12 @@ function init() {
     });
   }
   document.addEventListener("click", (event) => {
+    const leaderToggle = event.target.closest("[data-leader-toggle]");
+    if (leaderToggle) {
+      toggleArchiveLeaders(!document.body.classList.contains("leaders-expanded"));
+      return;
+    }
+
     const rosterTarget = event.target.closest("[data-roster-link]");
     if (rosterTarget) {
       selectedRosterId = Number(rosterTarget.dataset.rosterLink);
@@ -669,24 +675,38 @@ function renderArchiveLeaderPanels(data) {
       "Show players 6-12",
     );
   }
+
+  toggleArchiveLeaders(document.body.classList.contains("leaders-expanded"));
 }
 
 function expandableLeaderList(items, summary) {
   const firstFive = items.slice(0, 5).join("");
   const extra = items.slice(5).join("");
+  const hideLabel = summary.replace(/^Show/i, "Hide");
   return `
     <ol class="leader-list">
       ${firstFive}
     </ol>
     ${extra ? `
-      <details class="leader-expander">
-        <summary>${escapeHtml(summary)}</summary>
-        <ol class="leader-list leader-list-extra">
-          ${extra}
-        </ol>
-      </details>
+      <ol class="leader-list leader-list-extra" hidden>
+        ${extra}
+      </ol>
+      <button class="leader-toggle" type="button" data-leader-toggle data-show-label="${escapeHtml(summary)}" data-hide-label="${escapeHtml(hideLabel)}">
+        ${escapeHtml(summary)}
+      </button>
     ` : ""}
   `;
+}
+
+function toggleArchiveLeaders(expanded) {
+  document.body.classList.toggle("leaders-expanded", expanded);
+  document.querySelectorAll(".leader-list-extra").forEach((list) => {
+    list.hidden = !expanded;
+  });
+  document.querySelectorAll("[data-leader-toggle]").forEach((button) => {
+    button.textContent = expanded ? button.dataset.hideLabel : button.dataset.showLabel;
+    button.setAttribute("aria-expanded", String(expanded));
+  });
 }
 
 function archiveDraftLeaderItem(pick, data) {
