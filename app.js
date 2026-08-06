@@ -397,9 +397,10 @@ function renderArchiveShowpiece(data) {
       <header>
         ${avatar(champion.roster, data.users)}
         <div>
-          <span class="metric-label">Playoff champion · $900</span>
+          <span class="metric-label">Playoff champion</span>
           <strong>${escapeHtml(ownerIdentityName(champion.roster, data.users))}</strong>
           <span class="username">${escapeHtml(champion.team)}</span>
+          <p class="result-reward money">$900</p>
         </div>
       </header>
       <p>${escapeHtml(championship.text)}</p>
@@ -414,9 +415,10 @@ function renderArchiveShowpiece(data) {
       <header>
         ${avatar(poopKing.roster, data.users)}
         <div>
-          <span class="metric-label">💩 King · Calendar Spread</span>
+          <span class="metric-label">💩 King</span>
           <strong>${escapeHtml(ownerIdentityName(poopKing.roster, data.users))}</strong>
           <span class="username">${escapeHtml(poopKing.team)}</span>
+          <p class="result-reward punishment">Calendar Spread</p>
         </div>
       </header>
       <p>${escapeHtml(poopFinal.text)}</p>

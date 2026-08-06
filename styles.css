@@ -538,6 +538,21 @@ body[data-theme="mnf"] .matchup-card {
   line-height: 1.45;
 }
 
+.result-card .result-reward {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.2rem, 3vw, 1.65rem);
+  font-weight: 1000;
+  line-height: 1.05;
+}
+
+.result-card .result-reward.money {
+  color: var(--teal);
+}
+
+.result-card .result-reward.punishment {
+  color: #b78345;
+}
+
 .champion-card {
   background:
     radial-gradient(circle at 85% 15%, rgba(0, 206, 184, 0.35), transparent 10rem),
