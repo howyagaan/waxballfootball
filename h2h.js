@@ -409,7 +409,6 @@ function buildH2HQuirks() {
     quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "record", null, () => ({ a: "bad", b: "bad" })),
     quirkGroup("Most meetings", pairs, "max", (pair) => pair.games.length, (value) => `${value} matchups`, () => [], "record"),
     quirkGroup("Most postseason matchups", postseasonPairs, "max", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
-    quirkGroup("Least postseason matchups", postseasonPairs, "min", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
   ].filter(Boolean);
 }
 
