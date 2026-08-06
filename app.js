@@ -32,6 +32,13 @@ const PPR_LEADERS_2025 = [
   { name: "Bijan Robinson", position: "RB", team: "ATL" },
   { name: "Jahmyr Gibbs", position: "RB", team: "DET" },
   { name: "Josh Allen", position: "QB", team: "BUF" },
+  { name: "Jonathan Taylor", position: "RB", team: "IND" },
+  { name: "Jaxon Smith-Njigba", position: "WR", team: "SEA" },
+  { name: "Drake Maye", position: "QB", team: "NE" },
+  { name: "Matthew Stafford", position: "QB", team: "LAR" },
+  { name: "Trevor Lawrence", position: "QB", team: "JAX" },
+  { name: "Amon-Ra St. Brown", position: "WR", team: "DET" },
+  { name: "De'Von Achane", position: "RB", team: "MIA" },
 ];
 const OWNER_REAL_NAMES = {
   helloimpaul: "Paul Legallet",
@@ -648,17 +655,36 @@ function renderArchiveLeaderPanels(data) {
   if (els.archiveDraftTop) {
     const topPicks = [...(data.draftPicks || [])]
       .sort((a, b) => Number(a.pick_no) - Number(b.pick_no))
-      .slice(0, 5);
+      .slice(0, 12);
     els.archiveDraftTop.innerHTML = topPicks.length
-      ? topPicks.map((pick) => archiveDraftLeaderItem(pick, data)).join("")
-      : `<li><div class="leader-copy"><strong>No draft picks found.</strong></div></li>`;
+      ? expandableLeaderList(topPicks.map((pick) => archiveDraftLeaderItem(pick, data)), "Show picks 6-12")
+      : `<ol class="leader-list"><li><div class="leader-copy"><strong>No draft picks found.</strong></div></li></ol>`;
   }
 
   if (els.archivePprTop) {
-    els.archivePprTop.innerHTML = PPR_LEADERS_2025
-      .map((leader) => archivePprLeaderItem(leader, data))
-      .join("");
+    els.archivePprTop.innerHTML = expandableLeaderList(
+      PPR_LEADERS_2025.map((leader) => archivePprLeaderItem(leader, data)),
+      "Show players 6-12",
+    );
   }
+}
+
+function expandableLeaderList(items, summary) {
+  const firstFive = items.slice(0, 5).join("");
+  const extra = items.slice(5).join("");
+  return `
+    <ol class="leader-list">
+      ${firstFive}
+    </ol>
+    ${extra ? `
+      <details class="leader-expander">
+        <summary>${escapeHtml(summary)}</summary>
+        <ol class="leader-list leader-list-extra">
+          ${extra}
+        </ol>
+      </details>
+    ` : ""}
+  `;
 }
 
 function archiveDraftLeaderItem(pick, data) {
