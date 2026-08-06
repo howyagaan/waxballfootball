@@ -1893,6 +1893,12 @@ select {
   padding-inline: 0.45rem;
 }
 
+.h2h-board-stats article.is-highlighted {
+  border-color: rgba(0, 206, 190, 0.82);
+  background: rgba(0, 206, 190, 0.1);
+  box-shadow: 0 0 0 4px rgba(0, 206, 190, 0.08);
+}
+
 .h2h-quirk-board {
   margin-top: clamp(1.25rem, 4vw, 2rem);
 }

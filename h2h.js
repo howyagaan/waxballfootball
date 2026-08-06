@@ -116,12 +116,13 @@ function handleQuirkClick(event) {
   if (!card) return;
   const managerA = card.dataset.managerA;
   const managerB = card.dataset.managerB;
-  const gameId = card.dataset.gameId;
+  const gameIds = card.dataset.gameIds ? card.dataset.gameIds.split(",").filter(Boolean) : [];
+  const highlightTarget = card.dataset.highlightTarget || "";
   if (!managerA || !managerB) return;
-  selectH2HPair(managerA, managerB, gameId);
+  selectH2HPair(managerA, managerB, gameIds, highlightTarget);
 }
 
-function selectH2HPair(a, b, gameId = "") {
+function selectH2HPair(a, b, gameIds = [], highlightTarget = "") {
   h2hEls.managerA.value = "";
   h2hEls.managerB.value = "";
   populateManagerSelects();
@@ -130,17 +131,39 @@ function selectH2HPair(a, b, gameId = "") {
   populateManagerSelects();
   renderComparison(h2hEls.managerA.value, h2hEls.managerB.value);
   document.querySelector("#compare")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  if (gameId) {
-    requestAnimationFrame(() => highlightH2HGame(gameId));
+  requestAnimationFrame(() => {
+    if (gameIds.length) highlightH2HGames(gameIds);
+    else if (highlightTarget === "record") highlightH2HRecord();
+  });
+}
+
+function clearH2HHighlights() {
+  document.querySelectorAll(".h2h-score-row.is-highlighted, .h2h-board-stats article.is-highlighted").forEach((item) => {
+    item.classList.remove("is-highlighted");
+  });
+}
+
+function highlightH2HRecord() {
+  clearH2HHighlights();
+  const card = document.querySelector("#h2h-record-card");
+  if (!card) return;
+  card.classList.add("is-highlighted");
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function highlightH2HGames(gameIds) {
+  clearH2HHighlights();
+  const rows = gameIds
+    .map((gameId) => document.querySelector(`[data-game-id="${cssEscape(gameId)}"]`))
+    .filter(Boolean);
+  rows.forEach((row) => row.classList.add("is-highlighted"));
+  if (rows[0]) {
+    rows[0].scrollIntoView({ behavior: "smooth", block: "center" });
   }
 }
 
 function highlightH2HGame(gameId) {
-  document.querySelectorAll(".h2h-score-row.is-highlighted").forEach((row) => row.classList.remove("is-highlighted"));
-  const row = document.querySelector(`[data-game-id="${cssEscape(gameId)}"]`);
-  if (!row) return;
-  row.classList.add("is-highlighted");
-  row.scrollIntoView({ behavior: "smooth", block: "center" });
+  highlightH2HGames([gameId]);
 }
 
 function renderComparison(a, b) {
@@ -376,41 +399,55 @@ function renderH2HQuirks() {
 function buildH2HQuirks() {
   const pairs = pairSummaries();
   const withMultiple = pairs.filter((pair) => pair.games.length >= 2);
+  const postseasonPairs = pairs.filter((pair) => pair.specialGames.length);
   const quirks = [
-    quirkFromPair("Tightest average margin", lowestBy(withMultiple, (pair) => pair.averageMargin), (pair) => `${pair.averageMargin.toFixed(2)} pts per meeting`, (pair) => pair.tightest.id),
-    quirkFromPair("Highest-scoring rivalry", highestBy(withMultiple, (pair) => pair.averageTotal), (pair) => `${pair.averageTotal.toFixed(2)} average total`, (pair) => pair.highestTotal.id),
-    quirkFromPair("Most one-sided rivalry", highestBy(withMultiple, (pair) => pair.pointEdgePerGame), (pair) => `${pair.edgeLeaderFirst} +${pair.pointEdgePerGame.toFixed(2)} pts per meeting`, (pair) => pair.biggestMargin.id),
-    quirkFromPair("Most meetings", highestBy(pairs, (pair) => pair.games.length), (pair) => `${pair.games.length} matchups`, (pair) => pair.latest.id),
-    quirkFromPair("Closest single game", lowestBy(pairs, (pair) => margin(pair.tightest)), (pair) => `${margin(pair.tightest).toFixed(2)} pts`, (pair) => pair.tightest.id),
-    quirkFromPair("Biggest point difference", highestBy(pairs, (pair) => margin(pair.biggestMargin)), (pair) => `${margin(pair.biggestMargin).toFixed(2)} pts`, (pair) => pair.biggestMargin.id),
-    quirkFromPair("Most postseason weirdness", highestBy(pairs.filter((pair) => pair.specialGames.length), (pair) => pair.specialGames.length), (pair) => `${pair.specialGames.length} bracket matchups`, (pair) => pair.specialGames[0]?.id),
+    ...quirksFromPairs("Tightest game", pairs, "min", (pair) => margin(pair.tightest), (pair) => `${margin(pair.tightest).toFixed(2)} pts`, (pair) => [pair.tightest.id]),
+    ...quirksFromPairs("Biggest blowout", pairs, "max", (pair) => margin(pair.biggestMargin), (pair) => `${margin(pair.biggestMargin).toFixed(2)} pts`, (pair) => [pair.biggestMargin.id]),
+    ...quirksFromPairs("Tightest average margin", withMultiple, "min", (pair) => pair.averageMargin, (pair) => `${pair.averageMargin.toFixed(2)} pts`, () => [], "record"),
+    ...quirksFromPairs("Most one sided rivalry", withMultiple, "max", (pair) => pair.pointEdgePerGame, (pair) => `${pair.edgeLeaderShort} +${pair.pointEdgePerGame.toFixed(2)}pts`, () => [], "record"),
+    ...quirksFromPairs("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (pair) => `${pair.averageTotal.toFixed(2)} average total`, () => [], "record"),
+    ...quirksFromPairs("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (pair) => `${pair.averageTotal.toFixed(2)} average total`, () => [], "record"),
+    ...quirksFromPairs("Most meetings", pairs, "max", (pair) => pair.games.length, (pair) => `${pair.games.length} matchups`, () => [], "record"),
+    ...quirksFromPairs("Least meetings", pairs, "min", (pair) => pair.games.length, (pair) => `${pair.games.length} matchup${pair.games.length === 1 ? "" : "s"}`, () => [], "record"),
+    ...quirksFromPairs("Most postseason matchups", postseasonPairs, "max", (pair) => pair.specialGames.length, (pair) => `${pair.specialGames.length}`, (pair) => pair.specialGames.map((game) => game.id)),
   ].filter(Boolean);
   const seen = new Set();
   return quirks.filter((quirk) => {
-    const key = `${quirk.title}-${quirk.managerA}-${quirk.managerB}-${quirk.gameId}`;
+    const key = `${quirk.title}-${quirk.managerA}-${quirk.managerB}-${quirk.gameIds.join("|")}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
 }
 
-function quirkFromPair(title, pair, valueFn, gameIdFn) {
-  if (!pair) return null;
+function quirksFromPairs(title, pairs, mode, scoreFn, valueFn, gameIdsFn, highlightTarget = "") {
+  if (!pairs.length) return [];
+  const scorer = mode === "min" ? lowestBy : highestBy;
+  const winner = scorer(pairs, scoreFn);
+  if (!winner) return [];
+  const winningScore = scoreFn(winner);
+  return pairs
+    .filter((pair) => scoresMatch(scoreFn(pair), winningScore))
+    .map((pair) => quirkFromPair(title, pair, valueFn, gameIdsFn, highlightTarget));
+}
+
+function quirkFromPair(title, pair, valueFn, gameIdsFn, highlightTarget = "") {
   return {
     title,
     value: valueFn(pair),
     managerA: pair.managers[0],
     managerB: pair.managers[1],
-    gameId: gameIdFn(pair) || pair.latest.id,
+    gameIds: gameIdsFn(pair),
+    highlightTarget,
   };
 }
 
 function quirkCard(quirk) {
   return `
-    <button class="h2h-quirk-card" type="button" data-h2h-quirk data-manager-a="${escapeHtml(quirk.managerA)}" data-manager-b="${escapeHtml(quirk.managerB)}" data-game-id="${escapeHtml(quirk.gameId)}">
+    <button class="h2h-quirk-card" type="button" data-h2h-quirk data-manager-a="${escapeHtml(quirk.managerA)}" data-manager-b="${escapeHtml(quirk.managerB)}" data-game-ids="${escapeHtml(quirk.gameIds.join(","))}" data-highlight-target="${escapeHtml(quirk.highlightTarget)}">
       <span>${escapeHtml(quirk.title)}</span>
       <strong>${escapeHtml(quirk.value)}</strong>
-      <small>${escapeHtml(firstName(quirk.managerA))} vs ${escapeHtml(firstName(quirk.managerB))}</small>
+      <small>${escapeHtml(shortManagerName(quirk.managerA))} vs ${escapeHtml(shortManagerName(quirk.managerB))}</small>
     </button>
   `;
 }
@@ -439,6 +476,7 @@ function pairSummaries() {
       averageTotal: totals.reduce((sum, value) => sum + value, 0) / totals.length,
       pointEdgePerGame: edge,
       edgeLeaderFirst: firstName(points[0] >= points[1] ? managers[0] : managers[1]),
+      edgeLeaderShort: shortManagerName(points[0] >= points[1] ? managers[0] : managers[1]),
     };
   });
 }
@@ -450,7 +488,7 @@ function gameBadges(game, seriesGames) {
   const biggestSwing = [...seriesGames].sort((left, right) => margin(right) - margin(left))[0];
   if (tightest?.id === game.id) badges.push("Tightest matchup");
   if (highest?.id === game.id) badges.push("Highest-scoring matchup");
-  if (biggestSwing?.id === game.id && seriesGames.length > 1) badges.push("Biggest point difference");
+  if (biggestSwing?.id === game.id && seriesGames.length > 1) badges.push("Biggest blowout");
   badges.push(...stageBadges(game));
   badges.push(...gameFacts(game));
   return [...new Set(badges)];
@@ -572,8 +610,18 @@ function firstName(name) {
   return String(name || "").split(/\s+/).filter(Boolean)[0] || "Manager";
 }
 
+function shortManagerName(name) {
+  if (name === "Miles Blue") return "Miles B";
+  if (name === "Miles Elliot") return "Miles E";
+  return firstName(name);
+}
+
 function pairKey(managers) {
   return [...managers].sort().join("||");
+}
+
+function scoresMatch(left, right) {
+  return Math.abs(Number(left) - Number(right)) < 0.0001;
 }
 
 function lowestBy(items, scoreFn) {
