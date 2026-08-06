@@ -405,9 +405,9 @@ function buildH2HQuirks() {
     quirkGroup("Biggest blowout", pairs, "max", (pair) => margin(pair.biggestMargin), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.biggestMargin.id], "", null, (pair) => gameSideTones(pair, pair.biggestMargin)),
     quirkGroup("Tightest average margin", withMultiple, "min", (pair) => pair.averageMargin, (value) => `${value.toFixed(2)} pts`, () => [], "record", null, edgeSideTones),
     quirkGroup("Most one-sided rivalry", withMultiple, "max", (pair) => pair.pointEdgePerGame, (value) => `${value.toFixed(2)}pts`, () => [], "record", null, edgeSideTones),
-    quirkGroup("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "record", null, () => ({ a: "good", b: "good" })),
-    quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "record", null, () => ({ a: "bad", b: "bad" })),
-    quirkGroup("Most meetings", pairs, "max", (pair) => pair.games.length, (value) => `${value} matchups`, () => [], "record"),
+    quirkGroup("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "record"),
+    quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "record"),
+    quirkGroup("Most meetings", pairs, "max", (pair) => pair.games.length, (value) => `${value}`, () => [], "record"),
     quirkGroup("Most postseason matchups", postseasonPairs, "max", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
   ].filter(Boolean);
 }
