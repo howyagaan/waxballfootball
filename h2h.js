@@ -448,7 +448,7 @@ function quirkSingleEntryCard(quirk, entry) {
     <button class="h2h-quirk-card h2h-quirk-card-button" type="button" data-h2h-quirk-entry data-manager-a="${escapeHtml(entry.managerA)}" data-manager-b="${escapeHtml(entry.managerB)}" data-game-ids="${escapeHtml(entry.gameIds.join(","))}" data-highlight-target="${escapeHtml(entry.highlightTarget)}">
       <span>${escapeHtml(quirk.title)}</span>
       <strong>${escapeHtml(quirk.value)}</strong>
-      ${quirkPairMarkup(entry)}
+      ${quirkPairMarkup(entry, true)}
       ${entry.detail ? `<small>${escapeHtml(entry.detail)}</small>` : ""}
     </button>
   `;
@@ -474,12 +474,19 @@ function quirkEntryButton(entry) {
   `;
 }
 
-function quirkPairMarkup(entry) {
+function quirkPairMarkup(entry, goodFirst = false) {
+  const sides = [
+    { manager: entry.managerA, tone: entry.sideTones.a },
+    { manager: entry.managerB, tone: entry.sideTones.b },
+  ];
+  if (goodFirst && sides[1].tone === "good" && sides[0].tone !== "good") {
+    sides.reverse();
+  }
   return `
     <span class="h2h-quirk-pair">
-      <span class="h2h-quirk-name ${escapeHtml(toneClass(entry.sideTones.a))}">${escapeHtml(shortManagerName(entry.managerA))}</span>
+      <span class="h2h-quirk-name ${escapeHtml(toneClass(sides[0].tone))}">${escapeHtml(shortManagerName(sides[0].manager))}</span>
       <span class="h2h-quirk-vs">vs</span>
-      <span class="h2h-quirk-name ${escapeHtml(toneClass(entry.sideTones.b))}">${escapeHtml(shortManagerName(entry.managerB))}</span>
+      <span class="h2h-quirk-name ${escapeHtml(toneClass(sides[1].tone))}">${escapeHtml(shortManagerName(sides[1].manager))}</span>
     </span>
   `;
 }
