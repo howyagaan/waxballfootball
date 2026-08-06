@@ -122,6 +122,9 @@ function handleQuirkClick(event) {
 }
 
 function selectH2HPair(a, b, gameId = "") {
+  h2hEls.managerA.value = "";
+  h2hEls.managerB.value = "";
+  populateManagerSelects();
   h2hEls.managerA.value = a;
   h2hEls.managerB.value = b;
   populateManagerSelects();
