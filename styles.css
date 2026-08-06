@@ -1850,6 +1850,7 @@ select {
 
 .h2h-see-history {
   grid-column: 2;
+  margin-top: 1rem;
   width: 100%;
   border: 1px solid rgba(0, 206, 190, 0.34);
   border-radius: 999px;
