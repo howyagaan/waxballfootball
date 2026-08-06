@@ -26,6 +26,13 @@ const ARTICLES_2026 = [
   },
   */
 ];
+const PPR_LEADERS_2025 = [
+  { name: "Christian McCaffrey", position: "RB", team: "SF" },
+  { name: "Puka Nacua", position: "WR", team: "LAR" },
+  { name: "Bijan Robinson", position: "RB", team: "ATL" },
+  { name: "Jahmyr Gibbs", position: "RB", team: "DET" },
+  { name: "Josh Allen", position: "QB", team: "BUF" },
+];
 const OWNER_REAL_NAMES = {
   helloimpaul: "Paul Legallet",
   bigboybluey: "Miles Blue",
@@ -79,6 +86,8 @@ const els = {
   notes: document.querySelector("#notes-list"),
   archiveSummary: document.querySelector("#archive-summary"),
   archiveBody: document.querySelector("#archive-body"),
+  archiveDraftTop: document.querySelector("#archive-draft-top"),
+  archivePprTop: document.querySelector("#archive-ppr-top"),
   playoffSummary: document.querySelector("#playoff-summary"),
   playoffList: document.querySelector("#playoff-list"),
   transactionSummary: document.querySelector("#transaction-summary"),
@@ -363,6 +372,7 @@ function renderArchivePage() {
     `${archiveRowManagerName(archiveToilet, archiveData) || "Jakob Cooper"} becoming the 💩 King.`;
 
   renderArchiveTable(archiveData);
+  renderArchiveLeaderPanels(archiveData);
   renderTeamSelector(archiveData.rosters, archiveData.users);
   renderSelectedTeam();
 }
@@ -632,6 +642,67 @@ function renderArchiveTable(data) {
       </tr>
     `)
     .join("");
+}
+
+function renderArchiveLeaderPanels(data) {
+  if (els.archiveDraftTop) {
+    const topPicks = [...(data.draftPicks || [])]
+      .sort((a, b) => Number(a.pick_no) - Number(b.pick_no))
+      .slice(0, 5);
+    els.archiveDraftTop.innerHTML = topPicks.length
+      ? topPicks.map((pick) => archiveDraftLeaderItem(pick, data)).join("")
+      : `<li><div class="leader-copy"><strong>No draft picks found.</strong></div></li>`;
+  }
+
+  if (els.archivePprTop) {
+    els.archivePprTop.innerHTML = PPR_LEADERS_2025
+      .map((leader) => archivePprLeaderItem(leader, data))
+      .join("");
+  }
+}
+
+function archiveDraftLeaderItem(pick, data) {
+  const player = draftPickPlayer(pick);
+  const manager = draftManagerByRosterId(pick.roster_id, data);
+  return `
+    <li>
+      <div class="leader-copy">
+        <strong>${escapeHtml(player.name)}</strong>
+        <span>${escapeHtml(player.position)} · ${escapeHtml(player.team)} · Drafted by ${escapeHtml(manager)}</span>
+      </div>
+    </li>
+  `;
+}
+
+function archivePprLeaderItem(leader, data) {
+  const pick = draftPickForPlayer(leader.name, data.draftPicks || []);
+  const manager = pick ? draftManagerByRosterId(pick.roster_id, data) : "Undrafted in Waxball";
+  return `
+    <li>
+      <div class="leader-copy">
+        <strong>${escapeHtml(leader.name)}</strong>
+        <span>${escapeHtml(leader.position)} · ${escapeHtml(leader.team)} · ${pick ? "Drafted by " : ""}${escapeHtml(manager)}</span>
+      </div>
+    </li>
+  `;
+}
+
+function draftPickPlayer(pick) {
+  return {
+    name: `${pick.metadata?.first_name || ""} ${pick.metadata?.last_name || ""}`.trim() || String(pick.player_id || "Unknown player"),
+    position: pick.metadata?.position || "NFL",
+    team: pick.metadata?.team || "FA",
+  };
+}
+
+function draftPickForPlayer(playerName, picks) {
+  const target = normalizePlayerName(playerName);
+  return picks.find((pick) => normalizePlayerName(draftPickPlayer(pick).name) === target);
+}
+
+function draftManagerByRosterId(rosterId, data) {
+  const roster = data.rosters.find((item) => Number(item.roster_id) === Number(rosterId));
+  return roster ? ownerIdentityName(roster, data.users) : "Unknown manager";
 }
 
 function renderPlayoffs(data) {
@@ -2223,4 +2294,10 @@ function initialsFor(name) {
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
+}
+
+function normalizePlayerName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 }
