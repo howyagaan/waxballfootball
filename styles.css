@@ -1602,6 +1602,11 @@ select {
   overflow-wrap: anywhere;
 }
 
+.leader-copy .leader-source {
+  margin-top: 0.04rem;
+  color: color-mix(in srgb, var(--muted) 82%, var(--ink));
+}
+
 .leader-toggle {
   margin-top: 0.6rem;
   width: fit-content;
@@ -2048,11 +2053,6 @@ footer {
   .leader-copy span {
     font-size: 0.66rem;
     line-height: 1.22;
-  }
-
-  .leader-copy .leader-meta-tight {
-    font-size: 0.56rem;
-    white-space: nowrap;
   }
 
   .leader-toggle {
