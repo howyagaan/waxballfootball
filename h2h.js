@@ -123,7 +123,7 @@ function renderComparison(a, b) {
   h2hEls.seriesNote.textContent = "";
   h2hEls.points.innerHTML = games.length ? pointsMarkup(a, b, summary) : "--";
   h2hEls.pointsNote.textContent = "";
-  h2hEls.margin.textContent = games.length ? `${summary.averageMargin.toFixed(2)} pts` : "--";
+  h2hEls.margin.innerHTML = games.length ? marginMarkup(a, b, summary, games.length) : "--";
   h2hEls.marginNote.textContent = "";
 
   h2hEls.logNote.innerHTML = games.length ? matchupSideLabels(a, b) : "No matchup log available for this pair.";
@@ -164,6 +164,13 @@ function pointsMarkup(a, b, summary) {
       <span class="h2h-stat-piece ${bClass}">${summary.bPoints.toFixed(2)} ${escapeHtml(firstName(b).toUpperCase())}</span>
     </span>
   `;
+}
+
+function marginMarkup(a, b, summary, gamesPlayed) {
+  const edge = gamesPlayed ? (summary.aPoints - summary.bPoints) / gamesPlayed : 0;
+  if (!edge) return `<span class="h2h-stat-piece neutral">EVEN</span>`;
+  const leader = edge > 0 ? a : b;
+  return `<span class="h2h-stat-piece good">${escapeHtml(firstName(leader).toUpperCase())} +${Math.abs(edge).toFixed(2)} pts</span>`;
 }
 
 function matchupSideLabels(a, b) {

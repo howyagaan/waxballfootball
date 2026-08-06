@@ -1698,11 +1698,11 @@ select {
 
 .h2h-board-stats article {
   display: flex;
-  min-height: 7.6rem;
+  min-height: clamp(5.8rem, 13vw, 7rem);
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: clamp(0.8rem, 2vw, 1rem);
+  padding: clamp(0.75rem, 2vw, 1rem);
   text-align: center;
 }
 
@@ -1711,7 +1711,7 @@ select {
   width: 100%;
   margin-top: 0.22rem;
   color: var(--ink);
-  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-size: clamp(1.45rem, 3vw, 2.05rem);
   line-height: 1;
 }
 
