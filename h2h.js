@@ -361,8 +361,16 @@ function fierceVerdictMarkup(manager, rivalry, rankedRivals = []) {
         <span>Rivalry score</span>
         <strong>${score}/100</strong>
       </div>
-      <button class="h2h-see-history" type="button" data-h2h-rival-entry data-manager-a="${escapeHtml(manager)}" data-manager-b="${escapeHtml(rivalry.opponent)}">See history</button>
     </div>
+    <div class="h2h-rival-fact-list">
+      ${facts.map((fact) => `
+        <div class="h2h-rival-fact-row">
+          <span>${escapeHtml(fact.label)}</span>
+          <strong>${escapeHtml(fact.value)}</strong>
+        </div>
+      `).join("")}
+    </div>
+    <button class="h2h-see-history" type="button" data-h2h-rival-entry data-manager-a="${escapeHtml(manager)}" data-manager-b="${escapeHtml(rivalry.opponent)}">See history</button>
     ${nextRivals.length ? `
       <div class="h2h-next-rivals" aria-label="Next fiercest rivals">
         ${nextRivals.map((nextRival, index) => `
@@ -374,14 +382,6 @@ function fierceVerdictMarkup(manager, rivalry, rankedRivals = []) {
         `).join("")}
       </div>
     ` : ""}
-    <div class="h2h-rival-fact-list">
-      ${facts.map((fact) => `
-        <div class="h2h-rival-fact-row">
-          <span>${escapeHtml(fact.label)}</span>
-          <strong>${escapeHtml(fact.value)}</strong>
-        </div>
-      `).join("")}
-    </div>
   `;
 }
 
