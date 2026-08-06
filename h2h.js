@@ -399,22 +399,27 @@ function fierceVerdictMarkup(manager, rivalry, rankedRivals = []) {
 
 function fierceVerdictFacts(manager, rivalry) {
   const record = rivalryRecord(rivalry);
-  const tightest = lowestBy(rivalry.games, margin);
-  const biggestWin = highestBy(rivalry.games.filter((game) => managerScore(game, manager) > opponentScore(game, manager)), margin);
-  const biggestLoss = highestBy(rivalry.games.filter((game) => managerScore(game, manager) < opponentScore(game, manager)), margin);
+  const managerGames = h2hMatchups.filter((game) => game.managers.includes(manager));
+  const tightest = lowestBy(managerGames, margin);
+  const biggestWin = highestBy(managerGames.filter((game) => managerScore(game, manager) > opponentScore(game, manager)), margin);
+  const biggestLoss = highestBy(managerGames.filter((game) => managerScore(game, manager) < opponentScore(game, manager)), margin);
   const facts = [
     { label: "Record", value: `${rivalryStoryName(manager)} ${record} ${rivalryStoryName(rivalry.opponent)}` },
     { label: "Total points", value: `${rivalryStoryName(manager)} ${rivalry.summary.aPoints.toFixed(2)} | ${rivalryStoryName(rivalry.opponent)} ${rivalry.summary.bPoints.toFixed(2)}` },
     { label: "Average margin", value: `${rivalry.averageMargin.toFixed(2)} pts` },
   ];
-  if (tightest) facts.push({ label: "Tightest game", value: gameFactValue(tightest) });
-  if (biggestWin) facts.push({ label: "Biggest win", value: gameFactValue(biggestWin) });
-  if (biggestLoss) facts.push({ label: "Biggest loss", value: gameFactValue(biggestLoss) });
+  if (tightest && rivalryIncludesGame(rivalry, tightest)) facts.push({ label: "Tightest game", value: gameFactValue(tightest) });
+  if (biggestWin && rivalryIncludesGame(rivalry, biggestWin)) facts.push({ label: "Biggest win", value: gameFactValue(biggestWin) });
+  if (biggestLoss && rivalryIncludesGame(rivalry, biggestLoss)) facts.push({ label: "Biggest loss", value: gameFactValue(biggestLoss) });
   facts.push(...rivalry.games
     .filter((game) => gameStakeWeight(game) > 0)
     .sort((left, right) => gameStakeWeight(right) - gameStakeWeight(left) || right.season - left.season || right.week - left.week)
     .map((game) => ({ label: stakeFactLabel(game, manager), value: gameFactValue(game) })));
   return facts;
+}
+
+function rivalryIncludesGame(rivalry, game) {
+  return rivalry.games.some((rivalryGame) => rivalryGame.id === game.id);
 }
 
 function gameTitle(game) {
