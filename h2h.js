@@ -402,7 +402,7 @@ function fierceVerdictFacts(manager, rivalry) {
   facts.push(...rivalry.games
     .filter((game) => gameStakeWeight(game) > 0)
     .sort((left, right) => gameStakeWeight(right) - gameStakeWeight(left) || right.season - left.season || right.week - left.week)
-    .map((game) => ({ label: stakeFactLabel(game, manager), value: gameFactValue(game) })));
+    .map((game) => ({ label: stakeFactLabel(game, manager), value: stakeFactValue(game) })));
   return facts;
 }
 
@@ -423,6 +423,42 @@ function gameScoreline(game) {
   const left = `${rivalryStoryName(game.managers[0])} ${Number(game.scores[0]).toFixed(2)}`;
   const right = `${rivalryStoryName(game.managers[1])} ${Number(game.scores[1]).toFixed(2)}`;
   return `${left} vs ${right}`;
+}
+
+function stakeFactValue(game) {
+  const title = gameTitle(game).replace(/^the\s+/i, "");
+  const lowerTitle = title.toLowerCase();
+  const winner = gameWinnerName(game);
+  const loser = gameLoserName(game);
+  const scoreline = gameScoreline(game);
+  if (lowerTitle.includes("toilet bowl final")) {
+    return `${scoreline} | ${winner} made ${loser} the 💩 King in ${game.season}.`;
+  }
+  if (lowerTitle.includes("toilet bowl week")) {
+    return `${scoreline} | ${winner} kept ${loser} in the Toilet Bowl in ${game.season}.`;
+  }
+  if (lowerTitle.includes("championship")) {
+    return `${scoreline} | ${winner} beat ${loser} for the ${game.season} championship.`;
+  }
+  if (lowerTitle.includes("playoff")) {
+    return `${scoreline} | ${winner} knocked ${loser} out of the playoffs in ${game.season}.`;
+  }
+  if (lowerTitle.includes("3rd-place") || lowerTitle.includes("5th-place") || lowerTitle.includes("7th-place") || lowerTitle.includes("9th-place")) {
+    return `${scoreline} | ${winner} beat ${loser} in the ${title}.`;
+  }
+  return `${scoreline} | ${gameTitle(game)}`;
+}
+
+function gameWinnerName(game) {
+  const leftScore = Number(game.scores[0]);
+  const rightScore = Number(game.scores[1]);
+  return rivalryStoryName(leftScore >= rightScore ? game.managers[0] : game.managers[1]);
+}
+
+function gameLoserName(game) {
+  const leftScore = Number(game.scores[0]);
+  const rightScore = Number(game.scores[1]);
+  return rivalryStoryName(leftScore >= rightScore ? game.managers[1] : game.managers[0]);
 }
 
 function stakeFactLabel(game, manager) {
