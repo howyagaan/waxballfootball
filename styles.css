@@ -1706,7 +1706,7 @@ select {
 
 .h2h-rival-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  grid-template-columns: 1fr;
   gap: 0.75rem;
   margin: 0.85rem 0;
 }
@@ -1771,6 +1771,31 @@ select {
 
 .h2h-rival-verdict:empty {
   display: none;
+}
+
+.h2h-rival-score {
+  display: inline-grid;
+  gap: 0.15rem;
+  margin-bottom: 0.9rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid rgba(0, 206, 190, 0.28);
+  border-radius: 999px;
+  background: rgba(0, 206, 190, 0.1);
+}
+
+.h2h-rival-score span {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.h2h-rival-verdict .h2h-rival-score strong {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.25rem, 4vw, 1.85rem);
+  line-height: 1;
 }
 
 .h2h-rival-verdict strong {

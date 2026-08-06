@@ -352,7 +352,12 @@ function managerFactsEmptyMarkup() {
 }
 
 function fierceVerdictMarkup(manager, rivalry) {
+  const score = rivalryScoreOutOf100(rivalry);
   return `
+    <div class="h2h-rival-score">
+      <span>Rivalry score</span>
+      <strong>${score}/100</strong>
+    </div>
     <span>Fiercest rival</span>
     <strong>${escapeHtml(shortManagerName(rivalry.opponent))}</strong>
     <p>${escapeHtml(fierceVerdictNote(manager, rivalry))}</p>
@@ -362,12 +367,18 @@ function fierceVerdictMarkup(manager, rivalry) {
 function fierceVerdictNote(manager, rivalry) {
   const record = rivalryRecord(rivalry);
   const edge = rivalry.pointEdgePerGame;
+  const gamesPlayed = rivalry.games.length;
+  const postseasonCount = rivalry.games.filter((game) => game.stage !== "Regular season").length;
+  const meetingsText = `${gamesPlayed} meeting${gamesPlayed === 1 ? "" : "s"}`;
+  const postseasonText = postseasonCount
+    ? `, ${postseasonCount} of them with postseason stakes`
+    : "";
   const edgeText = Math.abs(edge) < 0.005
-    ? "an even scoring split"
+    ? "the scoring is basically dead even"
     : edge > 0
-      ? `${firstName(manager)} ahead by ${edge.toFixed(2)} pts avg.`
-      : `${firstName(rivalry.opponent)} ahead by ${Math.abs(edge).toFixed(2)} pts avg.`;
-  return `${rivalry.games.length} meetings, ${record} record, ${rivalry.averageMargin.toFixed(2)} pts avg. margin, ${edgeText}.`;
+      ? `${firstName(manager)} has the scoring edge by ${edge.toFixed(2)} pts a game`
+      : `${firstName(rivalry.opponent)} has the scoring edge by ${Math.abs(edge).toFixed(2)} pts a game`;
+  return `This is the matchup with the most actual heat: ${meetingsText}${postseasonText}, a ${record} record, an average margin of ${rivalry.averageMargin.toFixed(2)} pts, and ${edgeText}.`;
 }
 
 function recordMarkup(a, b, summary) {
@@ -576,6 +587,10 @@ function fiercestRivalScore(rivalry) {
   const scoringJuice = rivalry.games.reduce((sum, game) => sum + total(game), 0) / gamesPlayed / 20;
   const tiesBonus = ties * 3;
   return closeness + meetings + postseason + (recordBalance * 18) + scoringJuice + tiesBonus;
+}
+
+function rivalryScoreOutOf100(rivalry) {
+  return Math.max(1, Math.min(100, Math.round(fiercestRivalScore(rivalry))));
 }
 
 function matchupBoardMarkup(games, a, b) {
