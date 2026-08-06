@@ -27,6 +27,7 @@ const h2hEls = {
   marginNote: document.querySelector("#h2h-margin-note"),
   log: document.querySelector("#h2h-log"),
   logNote: document.querySelector("#h2h-log-note"),
+  quirks: document.querySelector("#h2h-quirks"),
 };
 
 let h2hMatchups = [...(H2H_DATA.matchups || [])];
@@ -50,7 +51,9 @@ async function initH2H() {
   populateManagerSelects();
   h2hEls.managerA.addEventListener("change", syncComparison);
   h2hEls.managerB.addEventListener("change", syncComparison);
+  h2hEls.quirks?.addEventListener("click", handleQuirkClick);
   syncComparison();
+  renderH2HQuirks();
 }
 
 async function refreshH2HLeagueAvatar() {
@@ -106,6 +109,35 @@ function syncComparison() {
   }
   populateManagerSelects();
   renderComparison(h2hEls.managerA.value, h2hEls.managerB.value);
+}
+
+function handleQuirkClick(event) {
+  const card = event.target.closest("[data-h2h-quirk]");
+  if (!card) return;
+  const managerA = card.dataset.managerA;
+  const managerB = card.dataset.managerB;
+  const gameId = card.dataset.gameId;
+  if (!managerA || !managerB) return;
+  selectH2HPair(managerA, managerB, gameId);
+}
+
+function selectH2HPair(a, b, gameId = "") {
+  h2hEls.managerA.value = a;
+  h2hEls.managerB.value = b;
+  populateManagerSelects();
+  renderComparison(h2hEls.managerA.value, h2hEls.managerB.value);
+  document.querySelector("#compare")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (gameId) {
+    requestAnimationFrame(() => highlightH2HGame(gameId));
+  }
+}
+
+function highlightH2HGame(gameId) {
+  document.querySelectorAll(".h2h-score-row.is-highlighted").forEach((row) => row.classList.remove("is-highlighted"));
+  const row = document.querySelector(`[data-game-id="${cssEscape(gameId)}"]`);
+  if (!row) return;
+  row.classList.add("is-highlighted");
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function renderComparison(a, b) {
@@ -316,7 +348,7 @@ function matchupLogCard(game, a, b, seriesGames) {
   const bResult = aScore === bScore ? "T" : bScore > aScore ? "W" : "L";
   const badges = gameBadges(game, seriesGames);
   return `
-    <article class="h2h-score-row">
+    <article class="h2h-score-row" data-game-id="${escapeHtml(game.id)}">
       <div class="h2h-score-main">
         <span class="h2h-result ${resultClass(aResult)}">${escapeHtml(aResult)}</span>
         <strong class="h2h-score">${escapeHtml(aScore.toFixed(2))}</strong>
@@ -330,6 +362,82 @@ function matchupLogCard(game, a, b, seriesGames) {
       ${badges.length ? `<div class="h2h-badges">${badges.map((badge) => `<span>${escapeHtml(badge)}</span>`).join("")}</div>` : ""}
     </article>
   `;
+}
+
+function renderH2HQuirks() {
+  if (!h2hEls.quirks) return;
+  const quirks = buildH2HQuirks();
+  h2hEls.quirks.innerHTML = quirks.map(quirkCard).join("");
+}
+
+function buildH2HQuirks() {
+  const pairs = pairSummaries();
+  const withMultiple = pairs.filter((pair) => pair.games.length >= 2);
+  const quirks = [
+    quirkFromPair("Tightest average margin", lowestBy(withMultiple, (pair) => pair.averageMargin), (pair) => `${pair.averageMargin.toFixed(2)} pts per meeting`, (pair) => pair.tightest.id),
+    quirkFromPair("Highest-scoring rivalry", highestBy(withMultiple, (pair) => pair.averageTotal), (pair) => `${pair.averageTotal.toFixed(2)} average total`, (pair) => pair.highestTotal.id),
+    quirkFromPair("Most one-sided rivalry", highestBy(withMultiple, (pair) => pair.pointEdgePerGame), (pair) => `${pair.edgeLeaderFirst} +${pair.pointEdgePerGame.toFixed(2)} pts per meeting`, (pair) => pair.biggestMargin.id),
+    quirkFromPair("Most meetings", highestBy(pairs, (pair) => pair.games.length), (pair) => `${pair.games.length} matchups`, (pair) => pair.latest.id),
+    quirkFromPair("Closest single game", lowestBy(pairs, (pair) => margin(pair.tightest)), (pair) => `${margin(pair.tightest).toFixed(2)} pts`, (pair) => pair.tightest.id),
+    quirkFromPair("Biggest point difference", highestBy(pairs, (pair) => margin(pair.biggestMargin)), (pair) => `${margin(pair.biggestMargin).toFixed(2)} pts`, (pair) => pair.biggestMargin.id),
+    quirkFromPair("Most postseason weirdness", highestBy(pairs.filter((pair) => pair.specialGames.length), (pair) => pair.specialGames.length), (pair) => `${pair.specialGames.length} bracket matchups`, (pair) => pair.specialGames[0]?.id),
+  ].filter(Boolean);
+  const seen = new Set();
+  return quirks.filter((quirk) => {
+    const key = `${quirk.title}-${quirk.managerA}-${quirk.managerB}-${quirk.gameId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function quirkFromPair(title, pair, valueFn, gameIdFn) {
+  if (!pair) return null;
+  return {
+    title,
+    value: valueFn(pair),
+    managerA: pair.managers[0],
+    managerB: pair.managers[1],
+    gameId: gameIdFn(pair) || pair.latest.id,
+  };
+}
+
+function quirkCard(quirk) {
+  return `
+    <button class="h2h-quirk-card" type="button" data-h2h-quirk data-manager-a="${escapeHtml(quirk.managerA)}" data-manager-b="${escapeHtml(quirk.managerB)}" data-game-id="${escapeHtml(quirk.gameId)}">
+      <span>${escapeHtml(quirk.title)}</span>
+      <strong>${escapeHtml(quirk.value)}</strong>
+      <small>${escapeHtml(firstName(quirk.managerA))} vs ${escapeHtml(firstName(quirk.managerB))}</small>
+    </button>
+  `;
+}
+
+function pairSummaries() {
+  const pairs = groupBy(h2hMatchups, (game) => pairKey(game.managers));
+  return [...pairs.entries()].map(([key, games]) => {
+    const managers = key.split("||");
+    const sortedGames = [...games].sort((left, right) => right.season - left.season || left.week - right.week);
+    const totals = sortedGames.map(total);
+    const margins = sortedGames.map(margin);
+    const points = managers.map((manager) => sortedGames.reduce((sum, game) => {
+      const index = game.managers.indexOf(manager);
+      return sum + Number(game.scores[index] || 0);
+    }, 0));
+    const edge = Math.abs(points[0] - points[1]) / sortedGames.length;
+    return {
+      managers,
+      games: sortedGames,
+      latest: sortedGames[0],
+      tightest: lowestBy(sortedGames, margin),
+      highestTotal: highestBy(sortedGames, total),
+      biggestMargin: highestBy(sortedGames, margin),
+      specialGames: sortedGames.filter((game) => game.stage !== "Regular season"),
+      averageMargin: margins.reduce((sum, value) => sum + value, 0) / margins.length,
+      averageTotal: totals.reduce((sum, value) => sum + value, 0) / totals.length,
+      pointEdgePerGame: edge,
+      edgeLeaderFirst: firstName(points[0] >= points[1] ? managers[0] : managers[1]),
+    };
+  });
 }
 
 function gameBadges(game, seriesGames) {
@@ -461,6 +569,18 @@ function firstName(name) {
   return String(name || "").split(/\s+/).filter(Boolean)[0] || "Manager";
 }
 
+function pairKey(managers) {
+  return [...managers].sort().join("||");
+}
+
+function lowestBy(items, scoreFn) {
+  return items.reduce((best, item) => (best && scoreFn(best) <= scoreFn(item) ? best : item), null);
+}
+
+function highestBy(items, scoreFn) {
+  return items.reduce((best, item) => (best && scoreFn(best) >= scoreFn(item) ? best : item), null);
+}
+
 function groupBy(items, keyFn) {
   return items.reduce((groups, item) => {
     const key = keyFn(item);
@@ -468,6 +588,11 @@ function groupBy(items, keyFn) {
     groups.get(key).push(item);
     return groups;
   }, new Map());
+}
+
+function cssEscape(value) {
+  if (window.CSS?.escape) return CSS.escape(value);
+  return String(value).replaceAll('"', '\\"').replaceAll("\\", "\\\\");
 }
 
 function escapeHtml(value) {
