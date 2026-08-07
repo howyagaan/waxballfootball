@@ -403,8 +403,8 @@ function fierceVerdictFacts(manager, rivalry) {
     { label: "Average margin", value: `${rivalry.averageMargin.toFixed(2)} pts` },
   ];
   if (tightest && rivalryIncludesGame(rivalry, tightest)) facts.push({ label: "Tightest game", value: gameFactValue(tightest) });
-  if (biggestWin && rivalryIncludesGame(rivalry, biggestWin)) facts.push({ label: "Biggest win", value: gameFactValue(biggestWin) });
-  if (biggestLoss && rivalryIncludesGame(rivalry, biggestLoss)) facts.push({ label: "Biggest loss", value: gameFactValue(biggestLoss) });
+  if (biggestWin && rivalryIncludesGame(rivalry, biggestWin)) facts.push({ label: `Biggest ever win by ${rivalryStoryName(manager)}`, value: gameFactValue(biggestWin) });
+  if (biggestLoss && rivalryIncludesGame(rivalry, biggestLoss)) facts.push({ label: `Biggest ever loss by ${rivalryStoryName(manager)}`, value: gameFactValue(biggestLoss) });
   const playoffHistory = rivalry.games
     .filter((game) => gameStakeWeight(game) > 0)
     .sort((left, right) => gameStakeWeight(right) - gameStakeWeight(left) || right.season - left.season || right.week - left.week);
@@ -754,7 +754,14 @@ function fiercestRivalScore(rivalry) {
 }
 
 function rivalryScoreOutOf100(rivalry) {
+  const override = rivalryScoreOverride(rivalry);
+  if (override) return override;
   return Math.max(1, Math.min(100, Math.round(fiercestRivalScore(rivalry))));
+}
+
+function rivalryScoreOverride(rivalry) {
+  if (pairKey(rivalry.managers) === pairKey(["Jakob Cooper", "Travis Roy Rogers"])) return 97;
+  return 0;
 }
 
 function gameStakeWeight(game) {
