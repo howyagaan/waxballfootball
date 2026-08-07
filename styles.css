@@ -1624,8 +1624,8 @@ select {
 }
 
 .h2h-hero {
-  min-height: clamp(18rem, 32vw, 24rem);
-  padding: clamp(3.4rem, 7vw, 5rem) 0 clamp(2rem, 4vw, 3rem);
+  min-height: clamp(13rem, 24vw, 18rem);
+  padding: clamp(2.6rem, 5vw, 4rem) 0 clamp(0.8rem, 2vw, 1.35rem);
   background: transparent;
   text-align: center;
 }
@@ -2768,6 +2768,15 @@ footer {
 }
 
 @media (max-width: 560px) {
+  .h2h-hero {
+    min-height: 0;
+    padding: 1.65rem 0 0.85rem;
+  }
+
+  .h2h-hero .hero-main {
+    gap: 0.45rem;
+  }
+
   .showpiece-grid,
   .season-notes-grid,
   .article-link-list,
