@@ -693,24 +693,20 @@ function selectedFiercestRivalry(manager) {
 function selectedFiercestRivalries(manager, limit = 3) {
   const pairs = pairSummaries().filter((pair) => pair.managers.includes(manager));
   if (!pairs.length) return [];
-  const topByManager = new Map(h2hManagers.map((candidate) => {
-    const candidatePairs = pairsForManager(candidate);
-    const topPair = highestBy(candidatePairs, rivalryScoreOutOf100);
-    return [candidate, topPair?.key || ""];
-  }));
-  const inbound = pairs.filter((pair) => {
-    const opponent = pair.managers.find((candidate) => candidate !== manager);
-    return opponent && topByManager.get(opponent) === pair.key;
-  });
-  const preferred = [...inbound].sort((left, right) => rivalryScoreOutOf100(right) - rivalryScoreOutOf100(left));
-  const remaining = pairs
-    .filter((pair) => !preferred.some((preferredPair) => preferredPair.key === pair.key))
-    .sort((left, right) => rivalryScoreOutOf100(right) - rivalryScoreOutOf100(left));
-  return [...preferred, ...remaining].slice(0, limit).map((pair) => rivalryFromPair(manager, pair));
-}
-
-function pairsForManager(manager) {
-  return pairSummaries().filter((pair) => pair.managers.includes(manager));
+  return [...pairs]
+    .sort((left, right) => {
+      const scoreDiff = rivalryScoreOutOf100(right) - rivalryScoreOutOf100(left);
+      if (scoreDiff) return scoreDiff;
+      const meetingsDiff = right.games.length - left.games.length;
+      if (meetingsDiff) return meetingsDiff;
+      const marginDiff = left.averageMargin - right.averageMargin;
+      if (marginDiff) return marginDiff;
+      const leftOpponent = left.managers.find((candidate) => candidate !== manager) || "";
+      const rightOpponent = right.managers.find((candidate) => candidate !== manager) || "";
+      return leftOpponent.localeCompare(rightOpponent);
+    })
+    .slice(0, limit)
+    .map((pair) => rivalryFromPair(manager, pair));
 }
 
 function rivalryFromPair(manager, pair) {
