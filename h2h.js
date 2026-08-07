@@ -791,9 +791,9 @@ function gameOutcomeWeight(game) {
   const winner = gameWinnerManager(game);
   const loser = gameLoserManager(game);
   let weight = 0;
-  if (winner === outcomes.champion) weight += 8;
-  if (outcomes.money.includes(winner)) weight += 5;
-  if (loser === outcomes.toiletBowlLoser) weight += 7;
+  if (winner === outcomes.champion) weight += 4;
+  if (outcomes.money.includes(winner)) weight += 2.5;
+  if (loser === outcomes.toiletBowlLoser) weight += 3.5;
   return weight;
 }
 
