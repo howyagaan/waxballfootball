@@ -754,15 +754,7 @@ function fiercestRivalScore(rivalry) {
 }
 
 function rivalryScoreOutOf100(rivalry) {
-  const override = rivalryScoreOverride(rivalry);
-  if (override) return override;
   return Math.max(1, Math.min(100, Math.round(fiercestRivalScore(rivalry))));
-}
-
-function rivalryScoreOverride(rivalry) {
-  const managers = rivalry.managers || [rivalry.manager, rivalry.opponent].filter(Boolean);
-  if (managers.length === 2 && pairKey(managers) === pairKey(["Jakob Cooper", "Travis Roy Rogers"])) return 97;
-  return 0;
 }
 
 function gameStakeWeight(game) {
