@@ -15,6 +15,18 @@ const H2H_OWNER_REAL_NAMES = {
   papicoop: "Jakob Cooper",
   millsberry27: "Miles Elliot",
 };
+const H2H_SEASON_OUTCOMES = {
+  2024: {
+    champion: "Christian Engelhardt",
+    money: ["Christian Engelhardt", "Erik Ohno Dagoberg", "Travis Roy Rogers"],
+    toiletBowlLoser: "Jacob Moskovitz",
+  },
+  2025: {
+    champion: "Milo Manheim",
+    money: ["Milo Manheim", "Miles Blue", "Jacob Moskovitz"],
+    toiletBowlLoser: "Jakob Cooper",
+  },
+};
 
 const h2hEls = {
   rivalManager: document.querySelector("#h2h-rival-manager"),
@@ -444,15 +456,23 @@ function stakeFactValue(game) {
 }
 
 function gameWinnerName(game) {
-  const leftScore = Number(game.scores[0]);
-  const rightScore = Number(game.scores[1]);
-  return rivalryStoryName(leftScore >= rightScore ? game.managers[0] : game.managers[1]);
+  return rivalryStoryName(gameWinnerManager(game));
 }
 
 function gameLoserName(game) {
+  return rivalryStoryName(gameLoserManager(game));
+}
+
+function gameWinnerManager(game) {
   const leftScore = Number(game.scores[0]);
   const rightScore = Number(game.scores[1]);
-  return rivalryStoryName(leftScore >= rightScore ? game.managers[1] : game.managers[0]);
+  return leftScore >= rightScore ? game.managers[0] : game.managers[1];
+}
+
+function gameLoserManager(game) {
+  const leftScore = Number(game.scores[0]);
+  const rightScore = Number(game.scores[1]);
+  return leftScore >= rightScore ? game.managers[1] : game.managers[0];
 }
 
 function stakeFactLabel(game, manager) {
@@ -714,7 +734,7 @@ function fiercestRivalScore(rivalry) {
   const recordBalance = 1 - recordGap;
   const closeness = 86 / (rivalry.averageMargin + 4);
   const meetings = gamesPlayed * 5.5;
-  const stakes = rivalry.games.reduce((sum, game) => sum + gameStakeWeight(game), 0);
+  const stakes = rivalry.games.reduce((sum, game) => sum + gameRivalryWeight(game), 0);
   const scoringJuice = rivalry.games.reduce((sum, game) => sum + total(game), 0) / gamesPlayed / 20;
   const tiesBonus = ties * 3;
   return closeness + meetings + stakes + (recordBalance * 20) + scoringJuice + tiesBonus;
@@ -739,6 +759,22 @@ function gameStakeWeight(game) {
   if (game.stage === "Toilet Bowl") return 18;
   if (game.stage === "Toilet Bowl placement") return 12;
   return 0;
+}
+
+function gameRivalryWeight(game) {
+  return gameStakeWeight(game) + gameOutcomeWeight(game);
+}
+
+function gameOutcomeWeight(game) {
+  const outcomes = H2H_SEASON_OUTCOMES[Number(game.season)];
+  if (!outcomes) return 0;
+  const winner = gameWinnerManager(game);
+  const loser = gameLoserManager(game);
+  let weight = 0;
+  if (winner === outcomes.champion) weight += 8;
+  if (outcomes.money.includes(winner)) weight += 5;
+  if (loser === outcomes.toiletBowlLoser) weight += 7;
+  return weight;
 }
 
 function matchupBoardMarkup(games, a, b) {
