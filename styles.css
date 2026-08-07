@@ -1725,6 +1725,15 @@ select {
   margin: 0.85rem 0;
 }
 
+.h2h-board-stats .h2h-rivalry-score-card {
+  grid-column: 1 / -1;
+  min-height: clamp(5rem, 10vw, 6.5rem);
+  border-color: rgba(0, 206, 190, 0.42);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(0, 206, 190, 0.16), transparent 55%),
+    rgba(7, 12, 18, 0.54);
+}
+
 .h2h-board-stats:empty {
   display: none;
 }
@@ -1780,6 +1789,11 @@ select {
   color: var(--ink);
   font-size: clamp(1.45rem, 3vw, 2.05rem);
   line-height: 1;
+}
+
+.h2h-rivalry-score-card strong {
+  color: var(--teal);
+  font-size: clamp(2.2rem, 5vw, 3.3rem);
 }
 
 .h2h-rival-stats strong {

@@ -250,7 +250,9 @@ function renderComparison(a, b) {
     .filter((game) => game.managers.includes(a) && game.managers.includes(b))
     .sort((left, right) => right.season - left.season || left.week - right.week);
   const summary = summarizeSeries(a, b, games);
+  const rivalry = games.length ? comparisonRivalry(a, b, games, summary) : null;
 
+  h2hEls.stats.querySelector("#h2h-rivalry-score").textContent = rivalry ? `${rivalryScoreOutOf100(rivalry)}/100` : "--";
   h2hEls.series.innerHTML = games.length ? recordMarkup(a, b, summary) : "0-0";
   h2hEls.seriesNote.textContent = "";
   h2hEls.points.innerHTML = games.length ? pointsMarkup(a, b, summary) : "--";
@@ -270,6 +272,10 @@ function renderEmptyComparison() {
 
 function renderComparisonStatsShell() {
   h2hEls.stats.innerHTML = `
+    <article id="h2h-rivalry-score-card" class="h2h-rivalry-score-card">
+      <span>Rivalry score</span>
+      <strong id="h2h-rivalry-score">--</strong>
+    </article>
     <article id="h2h-record-card">
       <span>Record</span>
       <strong id="h2h-series">--</strong>
@@ -287,6 +293,17 @@ function renderComparisonStatsShell() {
     </article>
   `;
   refreshH2HStatRefs();
+}
+
+function comparisonRivalry(manager, opponent, games, summary) {
+  return {
+    manager,
+    opponent,
+    games,
+    summary,
+    averageMargin: summary.averageMargin,
+    pointEdgePerGame: games.length ? (summary.aPoints - summary.bPoints) / games.length : 0,
+  };
 }
 
 function refreshH2HStatRefs() {
