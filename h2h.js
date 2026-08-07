@@ -50,6 +50,7 @@ let h2hMatchups = [...(H2H_DATA.matchups || [])];
 let managerStats = buildManagerStats(h2hMatchups);
 let weekStats = buildWeekStats(h2hMatchups);
 let seasonStats = buildSeasonStats(h2hMatchups);
+let historicalStats = buildHistoricalStats(h2hMatchups);
 let h2hManagers = [];
 
 initH2H();
@@ -61,6 +62,7 @@ async function initH2H() {
   managerStats = buildManagerStats(h2hMatchups);
   weekStats = buildWeekStats(h2hMatchups);
   seasonStats = buildSeasonStats(h2hMatchups);
+  historicalStats = buildHistoricalStats(h2hMatchups);
 
   h2hManagers = [...new Set([...(H2H_DATA.managers || []), ...h2hMatchups.flatMap((game) => game.managers)])].sort();
   if (!h2hManagers.length) return;
@@ -1028,12 +1030,22 @@ function gameBadges(game, seriesGames) {
   const tightest = [...seriesGames].sort((left, right) => margin(left) - margin(right))[0];
   const highest = [...seriesGames].sort((left, right) => total(right) - total(left))[0];
   const biggestSwing = [...seriesGames].sort((left, right) => margin(right) - margin(left))[0];
+  badges.push(...historicalGameBadges(game));
   if (tightest?.id === game.id) badges.push("Tightest matchup");
   if (highest?.id === game.id) badges.push("Highest-scoring matchup");
   if (biggestSwing?.id === game.id && seriesGames.length > 1) badges.push("Biggest blowout");
   badges.push(...stageBadges(game));
   badges.push(...gameFacts(game));
   return [...new Set(badges)];
+}
+
+function historicalGameBadges(game) {
+  const badges = [];
+  if (historicalStats.tightest.some((candidate) => candidate.id === game.id)) badges.push("Tightest game ever");
+  if (historicalStats.biggestBlowout.some((candidate) => candidate.id === game.id)) badges.push("Biggest blowout");
+  if (historicalStats.highestTotal.some((candidate) => candidate.id === game.id)) badges.push("Highest-scoring game");
+  if (historicalStats.lowestTotal.some((candidate) => candidate.id === game.id)) badges.push("Lowest-scoring game");
+  return badges;
 }
 
 function stageBadges(game) {
@@ -1138,6 +1150,18 @@ function buildSeasonStats(games) {
     stats.set(key, current);
   });
   return stats;
+}
+
+function buildHistoricalStats(games) {
+  if (!games.length) {
+    return { tightest: [], biggestBlowout: [], highestTotal: [], lowestTotal: [] };
+  }
+  return {
+    tightest: topValues(games, margin, "min"),
+    biggestBlowout: topValues(games, margin, "max"),
+    highestTotal: topValues(games, total, "max"),
+    lowestTotal: topValues(games, total, "min"),
+  };
 }
 
 function margin(game) {
