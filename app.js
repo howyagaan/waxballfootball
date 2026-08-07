@@ -45,7 +45,7 @@ const OWNER_REAL_NAMES = {
   bigboybluey: "Miles Blue",
   erikohno: "Erik Ohno Dagoberg",
   eviandon: "Milo Manheim",
-  pigmanbigman: "Nicholas Hamilton",
+  pigmanbigman: "Nic Hamilton",
   "10w5l": "Jacob Moskovitz",
   willyboyp: "Will Price",
   bigdicksenior: "Sam Labovitz",

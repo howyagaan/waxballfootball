@@ -6,7 +6,7 @@ const H2H_OWNER_REAL_NAMES = {
   bigboybluey: "Miles Blue",
   erikohno: "Erik Ohno Dagoberg",
   eviandon: "Milo Manheim",
-  pigmanbigman: "Nicholas Hamilton",
+  pigmanbigman: "Nic Hamilton",
   "10w5l": "Jacob Moskovitz",
   willyboyp: "Will Price",
   bigdicksenior: "Sam Labovitz",
@@ -697,6 +697,8 @@ function selectedFiercestRivalries(manager, limit = 3) {
     .sort((left, right) => {
       const scoreDiff = rivalryScoreOutOf100(right) - rivalryScoreOutOf100(left);
       if (scoreDiff) return scoreDiff;
+      const priorityDiff = fiercestTiePriority(manager, left) - fiercestTiePriority(manager, right);
+      if (priorityDiff) return priorityDiff;
       const meetingsDiff = right.games.length - left.games.length;
       if (meetingsDiff) return meetingsDiff;
       const marginDiff = left.averageMargin - right.averageMargin;
@@ -707,6 +709,12 @@ function selectedFiercestRivalries(manager, limit = 3) {
     })
     .slice(0, limit)
     .map((pair) => rivalryFromPair(manager, pair));
+}
+
+function fiercestTiePriority(manager, pair) {
+  const opponent = pair.managers.find((candidate) => candidate !== manager) || "";
+  if (manager === "Jakob Cooper" && opponent === "Jacob Moskovitz") return -1;
+  return 0;
 }
 
 function rivalryFromPair(manager, pair) {
