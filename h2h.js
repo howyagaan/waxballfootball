@@ -678,17 +678,17 @@ function selectedFiercestRivalries(manager, limit = 3) {
   if (!pairs.length) return [];
   const topByManager = new Map(h2hManagers.map((candidate) => {
     const candidatePairs = pairsForManager(candidate);
-    const topPair = highestBy(candidatePairs, fiercestRivalScore);
+    const topPair = highestBy(candidatePairs, rivalryScoreOutOf100);
     return [candidate, topPair?.key || ""];
   }));
   const inbound = pairs.filter((pair) => {
     const opponent = pair.managers.find((candidate) => candidate !== manager);
     return opponent && topByManager.get(opponent) === pair.key;
   });
-  const preferred = [...inbound].sort((left, right) => fiercestRivalScore(right) - fiercestRivalScore(left));
+  const preferred = [...inbound].sort((left, right) => rivalryScoreOutOf100(right) - rivalryScoreOutOf100(left));
   const remaining = pairs
     .filter((pair) => !preferred.some((preferredPair) => preferredPair.key === pair.key))
-    .sort((left, right) => fiercestRivalScore(right) - fiercestRivalScore(left));
+    .sort((left, right) => rivalryScoreOutOf100(right) - rivalryScoreOutOf100(left));
   return [...preferred, ...remaining].slice(0, limit).map((pair) => rivalryFromPair(manager, pair));
 }
 
@@ -760,7 +760,8 @@ function rivalryScoreOutOf100(rivalry) {
 }
 
 function rivalryScoreOverride(rivalry) {
-  if (pairKey(rivalry.managers) === pairKey(["Jakob Cooper", "Travis Roy Rogers"])) return 97;
+  const managers = rivalry.managers || [rivalry.manager, rivalry.opponent].filter(Boolean);
+  if (managers.length === 2 && pairKey(managers) === pairKey(["Jakob Cooper", "Travis Roy Rogers"])) return 97;
   return 0;
 }
 
