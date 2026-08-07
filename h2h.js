@@ -372,7 +372,7 @@ function fierceVerdictMarkup(manager, rivalry, rankedRivals = []) {
       ${facts.map((fact) => `
         <div class="h2h-rival-fact-row">
           <span>${escapeHtml(fact.label)}</span>
-          <strong>${escapeHtml(fact.value)}</strong>
+          ${fact.html ? fact.html : `<strong>${escapeHtml(fact.value)}</strong>`}
         </div>
       `).join("")}
     </div>
@@ -405,10 +405,12 @@ function fierceVerdictFacts(manager, rivalry) {
   if (tightest && rivalryIncludesGame(rivalry, tightest)) facts.push({ label: "Tightest game", value: gameFactValue(tightest) });
   if (biggestWin && rivalryIncludesGame(rivalry, biggestWin)) facts.push({ label: "Biggest win", value: gameFactValue(biggestWin) });
   if (biggestLoss && rivalryIncludesGame(rivalry, biggestLoss)) facts.push({ label: "Biggest loss", value: gameFactValue(biggestLoss) });
-  facts.push(...rivalry.games
+  const playoffHistory = rivalry.games
     .filter((game) => gameStakeWeight(game) > 0)
-    .sort((left, right) => gameStakeWeight(right) - gameStakeWeight(left) || right.season - left.season || right.week - left.week)
-    .map((game) => ({ label: stakeFactLabel(game, manager), value: stakeFactValue(game) })));
+    .sort((left, right) => gameStakeWeight(right) - gameStakeWeight(left) || right.season - left.season || right.week - left.week);
+  if (playoffHistory.length) {
+    facts.push({ label: "Playoff history", html: playoffHistoryMarkup(playoffHistory) });
+  }
   return facts;
 }
 
@@ -431,28 +433,55 @@ function gameScoreline(game) {
   return `${left} vs ${right}`;
 }
 
-function stakeFactValue(game) {
+function playoffHistoryMarkup(games) {
+  return `
+    <div class="h2h-playoff-history-list">
+      ${games.map((game) => `
+        <div class="h2h-playoff-history-item">
+          <strong>${escapeHtml(gameScoreline(game))}</strong>
+          <em>${escapeHtml(stakeResultText(game))}</em>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function stakeResultText(game) {
   const title = gameTitle(game).replace(/^the\s+/i, "");
   const lowerTitle = title.toLowerCase();
   const winner = gameWinnerName(game);
   const loser = gameLoserName(game);
-  const scoreline = gameScoreline(game);
+  let result = "";
   if (lowerTitle.includes("toilet bowl final")) {
-    return `${scoreline} | ${winner} made ${loser} the 💩 King in ${game.season}.`;
+    result = `${winner} made ${loser} the 💩 King in ${game.season}.`;
+  } else if (lowerTitle.includes("toilet bowl week")) {
+    result = `${winner} kept ${loser} in the Toilet Bowl in ${game.season}.`;
+  } else if (lowerTitle.includes("championship")) {
+    result = `${winner} beat ${loser} for the ${game.season} championship.`;
+  } else if (lowerTitle.includes("playoff")) {
+    result = `${winner} knocked ${loser} out of the playoffs in ${game.season}.`;
+  } else if (lowerTitle.includes("3rd-place") || lowerTitle.includes("5th-place") || lowerTitle.includes("7th-place") || lowerTitle.includes("9th-place")) {
+    result = `${winner} beat ${loser} in the ${title}.`;
+  } else {
+    result = gameTitle(game);
   }
-  if (lowerTitle.includes("toilet bowl week")) {
-    return `${scoreline} | ${winner} kept ${loser} in the Toilet Bowl in ${game.season}.`;
+  const outcome = seasonOutcomeResultText(game);
+  return outcome ? `${result} ${outcome}` : result;
+}
+
+function seasonOutcomeResultText(game) {
+  const outcomes = H2H_SEASON_OUTCOMES[Number(game.season)];
+  if (!outcomes) return "";
+  const winner = gameWinnerManager(game);
+  const loser = gameLoserManager(game);
+  const notes = [];
+  if (winner === outcomes.champion && game.stage !== "Championship") {
+    notes.push(`${gameWinnerName(game)} went on to win the playoff final.`);
   }
-  if (lowerTitle.includes("championship")) {
-    return `${scoreline} | ${winner} beat ${loser} for the ${game.season} championship.`;
+  if (loser === outcomes.toiletBowlLoser && game.stage !== "Toilet Bowl final") {
+    notes.push(`${gameLoserName(game)} went on to lose the Toilet Bowl final.`);
   }
-  if (lowerTitle.includes("playoff")) {
-    return `${scoreline} | ${winner} knocked ${loser} out of the playoffs in ${game.season}.`;
-  }
-  if (lowerTitle.includes("3rd-place") || lowerTitle.includes("5th-place") || lowerTitle.includes("7th-place") || lowerTitle.includes("9th-place")) {
-    return `${scoreline} | ${winner} beat ${loser} in the ${title}.`;
-  }
-  return `${scoreline} | ${gameTitle(game)}`;
+  return notes.join(" ");
 }
 
 function gameWinnerName(game) {
@@ -473,22 +502,6 @@ function gameLoserManager(game) {
   const leftScore = Number(game.scores[0]);
   const rightScore = Number(game.scores[1]);
   return leftScore >= rightScore ? game.managers[1] : game.managers[0];
-}
-
-function stakeFactLabel(game, manager) {
-  const title = gameTitle(game);
-  const opponent = rivalryStoryName(game.managers.find((candidate) => candidate !== manager));
-  const managerWon = managerScore(game, manager) > opponentScore(game, manager);
-  if (title.toLowerCase().includes("toilet bowl final")) {
-    return managerWon ? `Beat ${opponent} in Toilet Bowl final` : `Lost Toilet Bowl final to ${opponent}`;
-  }
-  if (title.toLowerCase().includes("championship")) {
-    return managerWon ? `Beat ${opponent} in championship` : `Lost championship to ${opponent}`;
-  }
-  if (title.toLowerCase().includes("playoff")) {
-    return managerWon ? `Knocked ${opponent} out of playoffs` : `Knocked out by ${opponent}`;
-  }
-  return title.replace(/^the\s+/i, "");
 }
 
 function recordMarkup(a, b, summary) {

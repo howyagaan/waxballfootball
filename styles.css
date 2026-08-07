@@ -1943,6 +1943,24 @@ select {
   line-height: 1.18;
 }
 
+.h2h-playoff-history-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.h2h-playoff-history-item {
+  display: grid;
+  gap: 0.24rem;
+}
+
+.h2h-playoff-history-item em {
+  color: var(--muted);
+  font-size: clamp(0.86rem, 1.8vw, 1rem);
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
 .h2h-rival-verdict p,
 .h2h-rival-stats p {
   margin: 0.32rem 0 0;
