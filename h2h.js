@@ -886,8 +886,8 @@ function buildH2HQuirks() {
   return [
     quirkGroup("Tightest game", pairs, "min", (pair) => margin(pair.tightest), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.tightest.id], "", null, (pair) => gameSideTones(pair, pair.tightest)),
     quirkGroup("Biggest blowout", pairs, "max", (pair) => margin(pair.biggestMargin), (value) => `${value.toFixed(2)} pts`, (pair) => [pair.biggestMargin.id], "", null, (pair) => gameSideTones(pair, pair.biggestMargin)),
-    quirkGroup("Tightest rivalry", withMultiple, "min", (pair) => pair.averageMargin, (value) => `${value.toFixed(2)} pts avg.`, () => [], "margin", null, edgeSideTones),
-    quirkGroup("Most one-sided rivalry", withMultiple, "max", (pair) => pair.pointEdgePerGame, (value) => `${value.toFixed(2)} pts avg.`, () => [], "record", null, edgeSideTones),
+    quirkGroup("Fiercest rivals", withMultiple, "max", rivalryScoreOutOf100, (value) => `${value}/100`, () => [], "record", null, edgeSideTones),
+    quirkGroup("Most one-sided rivalry", withMultiple, "max", (pair) => pair.pointEdgePerGame, (value, pair) => `${dominantRecord(pair)} • ${value.toFixed(2)} pts avg.`, () => [], "record", null, edgeSideTones),
     quirkGroup("Highest-scoring rivalry", withMultiple, "max", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "points"),
     quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "points"),
     quirkGroup("Most postseason matchups", postseasonPairs, "max", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
@@ -905,9 +905,22 @@ function quirkGroup(title, pairs, mode, scoreFn, valueFn, gameIdsFn, highlightTa
     .map((pair) => quirkEntry(pair, gameIdsFn, highlightTarget, detailFn, sideToneFn));
   return {
     title,
-    value: valueFn(winningScore),
+    value: valueFn(winningScore, winner),
     entries,
   };
+}
+
+function dominantRecord(pair) {
+  const leader = pair.points[0] >= pair.points[1] ? pair.managers[0] : pair.managers[1];
+  return recordForPair(pair, leader);
+}
+
+function recordForPair(pair, manager) {
+  const { aWins, bWins, ties } = pair.summary;
+  const isFirst = pair.managers[0] === manager;
+  const wins = isFirst ? aWins : bWins;
+  const losses = isFirst ? bWins : aWins;
+  return ties ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
 }
 
 function quirkCard(quirk) {
