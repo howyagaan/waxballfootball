@@ -419,9 +419,9 @@ function fierceVerdictFacts(manager, rivalry) {
     { label: "Total points", value: `${rivalryStoryName(manager)} ${rivalry.summary.aPoints.toFixed(2)} | ${rivalryStoryName(rivalry.opponent)} ${rivalry.summary.bPoints.toFixed(2)}` },
     { label: "Average margin", value: `${rivalry.averageMargin.toFixed(2)} pts` },
   ];
-  if (tightest && rivalryIncludesGame(rivalry, tightest)) facts.push({ label: "Tightest game", value: gameFactValue(tightest) });
-  if (biggestWin && rivalryIncludesGame(rivalry, biggestWin)) facts.push({ label: `Biggest ever win by ${rivalryStoryName(manager)}`, value: gameFactValue(biggestWin) });
-  if (biggestLoss && rivalryIncludesGame(rivalry, biggestLoss)) facts.push({ label: `Biggest ever loss by ${rivalryStoryName(manager)}`, value: gameFactValue(biggestLoss) });
+  if (tightest && rivalryIncludesGame(rivalry, tightest)) facts.push({ label: `${possessiveRivalryStoryName(manager)} Tightest Game`, value: gameFactValue(tightest) });
+  if (biggestWin && rivalryIncludesGame(rivalry, biggestWin)) facts.push({ label: `${possessiveRivalryStoryName(manager)} Biggest Ever Win`, value: gameFactValue(biggestWin) });
+  if (biggestLoss && rivalryIncludesGame(rivalry, biggestLoss)) facts.push({ label: `${possessiveRivalryStoryName(manager)} Biggest Ever Loss`, value: gameFactValue(biggestLoss) });
   const playoffHistory = rivalry.games
     .filter((game) => gameStakeWeight(game) > 0)
     .sort((left, right) => gameStakeWeight(right) - gameStakeWeight(left) || right.season - left.season || right.week - left.week);
@@ -1137,6 +1137,11 @@ function rivalryStoryName(name) {
   if (name === "Miles Blue") return "Blue";
   if (name === "Miles Elliot") return "Miles E";
   return firstName(name);
+}
+
+function possessiveRivalryStoryName(name) {
+  const storyName = rivalryStoryName(name);
+  return /s$/i.test(storyName) ? `${storyName}'` : `${storyName}'s`;
 }
 
 function pairKey(managers) {
