@@ -1041,10 +1041,10 @@ function gameBadges(game, seriesGames) {
 
 function historicalGameBadges(game) {
   const badges = [];
-  if (historicalStats.tightest.some((candidate) => candidate.id === game.id)) badges.push("Tightest game ever");
-  if (historicalStats.biggestBlowout.some((candidate) => candidate.id === game.id)) badges.push("Biggest blowout");
-  if (historicalStats.highestTotal.some((candidate) => candidate.id === game.id)) badges.push("Highest-scoring game");
-  if (historicalStats.lowestTotal.some((candidate) => candidate.id === game.id)) badges.push("Lowest-scoring game");
+  if (historicalStats.tightest.some((candidate) => candidate.id === game.id)) badges.push("Waxball-wide tightest game");
+  if (historicalStats.biggestBlowout.some((candidate) => candidate.id === game.id)) badges.push("Waxball-wide biggest blowout");
+  if (historicalStats.highestTotal.some((candidate) => candidate.id === game.id)) badges.push("Waxball-wide highest-scoring game");
+  if (historicalStats.lowestTotal.some((candidate) => candidate.id === game.id)) badges.push("Waxball-wide lowest-scoring game");
   return badges;
 }
 
