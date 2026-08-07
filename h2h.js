@@ -852,7 +852,24 @@ function buildH2HQuirks() {
     quirkGroup("Lowest-scoring rivalry", withMultiple, "min", (pair) => pair.averageTotal, (value) => `${value.toFixed(2)} pts avg.`, () => [], "points"),
     quirkGroup("Most meetings", pairs, "max", (pair) => pair.games.length, (value) => `${value}`, () => [], "record"),
     quirkGroup("Most postseason matchups", postseasonPairs, "max", (pair) => pair.specialGames.length, (value) => `${value}`, (pair) => pair.specialGames.map((game) => game.id)),
+    fiercestRivalriesQuirk(pairs),
   ].filter(Boolean);
+}
+
+function fiercestRivalriesQuirk(pairs) {
+  const entries = [...pairs]
+    .sort((left, right) => rivalryScoreOutOf100(right) - rivalryScoreOutOf100(left) || right.games.length - left.games.length || left.averageMargin - right.averageMargin)
+    .slice(0, 5)
+    .map((pair, index) => ({
+      ...quirkEntry(pair, () => [], "record"),
+      detail: `#${index + 1} · ${rivalryScoreOutOf100(pair)}/100`,
+    }));
+  if (!entries.length) return null;
+  return {
+    title: "Fiercest rivalries",
+    value: "Top 5",
+    entries,
+  };
 }
 
 function quirkGroup(title, pairs, mode, scoreFn, valueFn, gameIdsFn, highlightTarget = "", detailFn = null, sideToneFn = null) {
