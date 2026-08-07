@@ -1720,6 +1720,10 @@ select {
   margin: 0.85rem 0;
 }
 
+.h2h-board-stats:empty {
+  display: none;
+}
+
 .h2h-rival-stats {
   display: grid;
   grid-template-columns: 1fr;
