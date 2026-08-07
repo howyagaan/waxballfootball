@@ -152,6 +152,10 @@ function handleQuirkClick(event) {
   const gameIds = entry.dataset.gameIds ? entry.dataset.gameIds.split(",").filter(Boolean) : [];
   const highlightTarget = entry.dataset.highlightTarget || "";
   if (!managerA || !managerB) return;
+  if (highlightTarget === "rivalry") {
+    selectRivalryPair(managerA, managerB);
+    return;
+  }
   selectH2HPair(managerA, managerB, gameIds, highlightTarget);
 }
 
@@ -181,8 +185,21 @@ function selectH2HPair(a, b, gameIds = [], highlightTarget = "") {
   });
 }
 
+function selectRivalryPair(a, b) {
+  if (!h2hEls.rivalManager) return;
+  h2hEls.rivalManager.value = a;
+  renderRivalManager(a);
+  document.querySelector("#fiercest-rival")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  requestAnimationFrame(() => {
+    const card = h2hEls.rivalVerdict;
+    if (!card) return;
+    card.classList.add("is-highlighted");
+    window.setTimeout(() => card.classList.remove("is-highlighted"), 1400);
+  });
+}
+
 function clearH2HHighlights() {
-  document.querySelectorAll(".h2h-score-row.is-highlighted, .h2h-board-stats article.is-highlighted").forEach((item) => {
+  document.querySelectorAll(".h2h-score-row.is-highlighted, .h2h-board-stats article.is-highlighted, .h2h-rival-verdict.is-highlighted").forEach((item) => {
     item.classList.remove("is-highlighted");
   });
 }
@@ -861,7 +878,7 @@ function fiercestRivalriesQuirk(pairs) {
     .sort((left, right) => rivalryScoreOutOf100(right) - rivalryScoreOutOf100(left) || right.games.length - left.games.length || left.averageMargin - right.averageMargin)
     .slice(0, 5)
     .map((pair, index) => ({
-      ...quirkEntry(pair, () => [], "record"),
+      ...quirkEntry(pair, () => [], "rivalry"),
       detail: `#${index + 1} · ${rivalryScoreOutOf100(pair)}/100`,
     }));
   if (!entries.length) return null;
@@ -869,6 +886,7 @@ function fiercestRivalriesQuirk(pairs) {
     title: "Fiercest rivalries",
     value: "Top 5",
     entries,
+    featured: true,
   };
 }
 
@@ -892,8 +910,9 @@ function quirkCard(quirk) {
   if (quirk.entries.length === 1) {
     return quirkSingleEntryCard(quirk, quirk.entries[0]);
   }
+  const featuredClass = quirk.featured ? " h2h-quirk-card-featured" : "";
   return `
-    <article class="h2h-quirk-card">
+    <article class="h2h-quirk-card${featuredClass}">
       <span>${escapeHtml(quirk.title)}</span>
       <strong>${escapeHtml(quirk.value)}</strong>
       <div class="h2h-quirk-options">

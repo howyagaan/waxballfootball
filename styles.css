@@ -2152,6 +2152,11 @@ select {
   box-shadow: 0 0 0 4px rgba(0, 206, 190, 0.08);
 }
 
+.h2h-rival-verdict.is-highlighted {
+  border-radius: 22px;
+  box-shadow: 0 0 0 4px rgba(0, 206, 190, 0.14), 0 0 38px rgba(0, 206, 190, 0.16);
+}
+
 .h2h-quirk-board {
   margin-top: clamp(1.25rem, 4vw, 2rem);
 }
@@ -2796,6 +2801,39 @@ footer {
   .h2h-quirk-card {
     min-height: 6.6rem;
     padding: 0.7rem;
+  }
+
+  .h2h-quirk-card-featured {
+    border-color: rgba(0, 206, 190, 0.42);
+    border-radius: 24px;
+    padding: 1.2rem;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(0, 206, 190, 0.22), transparent 38%),
+      rgba(18, 24, 32, 0.98);
+  }
+
+  .h2h-quirk-card-featured > span {
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
+  }
+
+  .h2h-quirk-card-featured > strong {
+    margin: 0.65rem 0 0.95rem;
+    font-size: clamp(2rem, 10vw, 3rem);
+  }
+
+  .h2h-quirk-card-featured .h2h-quirk-options {
+    gap: 0.75rem;
+  }
+
+  .h2h-quirk-card-featured .h2h-quirk-entry {
+    border-color: rgba(0, 206, 190, 0.34);
+    padding: 0.78rem 0.9rem;
+  }
+
+  .h2h-quirk-card-featured .h2h-quirk-entry span,
+  .h2h-quirk-card-featured .h2h-quirk-entry small {
+    font-size: 0.82rem;
   }
 
   .h2h-quirk-card-button {
