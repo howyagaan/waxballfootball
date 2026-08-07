@@ -1676,7 +1676,7 @@ select {
 }
 
 .h2h-rival-top {
-  grid-template-columns: minmax(0, 22rem);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .h2h-team-select,
