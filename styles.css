@@ -1627,6 +1627,7 @@ select {
   background:
     radial-gradient(circle at 10% 10%, rgba(0, 206, 190, 0.15), transparent 34%),
     linear-gradient(135deg, rgba(8, 18, 24, 0.96), rgba(18, 24, 32, 0.94));
+  padding-top: clamp(3rem, 7vw, 5.25rem);
   text-align: center;
 }
 
