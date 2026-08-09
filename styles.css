@@ -2919,26 +2919,26 @@ footer {
 
   .h2h-quirk-card-featured {
     border-color: rgba(0, 206, 190, 0.42);
-    border-radius: 24px;
-    padding: 1.2rem;
+    border-radius: 20px;
+    padding: 0.7rem;
     background:
       radial-gradient(circle at 20% 0%, rgba(0, 206, 190, 0.22), transparent 38%),
       rgba(18, 24, 32, 0.98);
   }
 
   .h2h-quirk-card-featured > span {
-    font-size: 0.82rem;
-    letter-spacing: 0.14em;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
   }
 
   .h2h-quirk-card-featured > strong {
-    margin: 0.65rem 0 0.95rem;
-    font-size: clamp(2rem, 10vw, 3rem);
+    margin: 0.45rem 0;
+    font-size: clamp(1.45rem, 9vw, 2.15rem);
   }
 
   .h2h-quirk-card-featured .h2h-quirk-options {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.42rem;
   }
 
   .h2h-quirk-card:has(.h2h-quirk-options):not(.h2h-quirk-card-featured) .h2h-quirk-options {
@@ -2947,12 +2947,14 @@ footer {
 
   .h2h-quirk-card-featured .h2h-quirk-entry {
     border-color: rgba(0, 206, 190, 0.34);
-    padding: 0.78rem 0.9rem;
+    min-height: 0;
+    border-radius: 999px;
+    padding: 0.42rem 0.58rem;
   }
 
   .h2h-quirk-card-featured .h2h-quirk-entry span,
   .h2h-quirk-card-featured .h2h-quirk-entry small {
-    font-size: 0.82rem;
+    font-size: 0.7rem;
   }
 
   .h2h-quirk-card-button {
