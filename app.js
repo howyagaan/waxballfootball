@@ -291,7 +291,7 @@ function renderCurrentPage() {
   const rosters = currentData.rosters;
   const users = currentData.users;
   const history = archiveData.history;
-  const leader = sortRosters(rosters)[0];
+  const leader = sortRosters(rosters, users)[0];
   const showCurrentLeader = hasCompletedWeek(rosters, league);
 
   applyModeTheme(nflData.mode);
@@ -457,7 +457,7 @@ function renderPrizeCard(element, row, data, label, prize) {
 }
 
 function renderStandings(rosters, users) {
-  const rows = sortRosters(rosters)
+  const rows = sortRosters(rosters, users)
     .map((roster, index) => {
       const record = `${stat(roster, "wins")}-${stat(roster, "losses")}`;
       const selected = Number(selectedRosterId) === Number(roster.roster_id);
@@ -844,7 +844,7 @@ function heroLeagueCopy(league) {
     return "Waxball is back for its 3rd season. This site will update automatically throughout the year and act as an archive for previous seasons. Godspeed boys, and happy Waxing.";
   }
   if (currentSeasonHasResults()) {
-    const leader = sortRosters(currentData.rosters)[0];
+    const leader = sortRosters(currentData.rosters, currentData.users)[0];
     const last = lastPlaceRoster(currentData.rosters);
     return `${teamName(leader, currentData.users)} leads Waxball right now, while ${teamName(last, currentData.users)} is staring at the danger zone. Matchups and player windows update as the week unfolds.`;
   }
@@ -899,8 +899,8 @@ function activeCurrentLeagueId() {
   return isHistoricalCurrentPreview() ? ARCHIVE_2025_LEAGUE_ID : CURRENT_LEAGUE_ID;
 }
 
-function currentPosition(roster, rosters) {
-  const rank = sortRosters(rosters).findIndex((item) => item.roster_id === roster.roster_id) + 1;
+function currentPosition(roster, rosters, users = currentData?.users || []) {
+  const rank = sortRosters(rosters, users).findIndex((item) => item.roster_id === roster.roster_id) + 1;
   return rank ? `#${rank}` : "--";
 }
 
@@ -2142,7 +2142,16 @@ function movementStats(transactions, rosters, users) {
   return { tradeCount, addDropCount, waiverHawk: roster ? { name: teamName(roster, users), count: top[1] } : null };
 }
 
-function sortRosters(rosters) {
+function sortRosters(rosters, users = currentData?.users || []) {
+  if (shouldSortLeagueTableByFirstName(rosters)) {
+    return [...rosters].sort((a, b) => {
+      const aName = ownerIdentityName(a, users);
+      const bName = ownerIdentityName(b, users);
+      const firstDiff = trueFirstName(aName).localeCompare(trueFirstName(bName), undefined, { sensitivity: "base" });
+      if (firstDiff) return firstDiff;
+      return aName.localeCompare(bName, undefined, { sensitivity: "base" });
+    });
+  }
   return [...rosters].sort((a, b) => {
     const winDiff = stat(b, "wins") - stat(a, "wins");
     if (winDiff) return winDiff;
@@ -2150,6 +2159,16 @@ function sortRosters(rosters) {
     if (lossDiff) return lossDiff;
     return totalPoints(b, "fpts") - totalPoints(a, "fpts");
   });
+}
+
+function shouldSortLeagueTableByFirstName(rosters) {
+  return PAGE === "current"
+    && currentData?.league?.status === "pre_draft"
+    && rosters.every((roster) => !stat(roster, "wins") && !stat(roster, "losses") && !totalPoints(roster, "fpts"));
+}
+
+function trueFirstName(name) {
+  return String(name || "").trim().split(/\s+/)[0] || "";
 }
 
 function teamCell(roster, users) {
