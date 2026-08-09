@@ -54,6 +54,11 @@ const OWNER_REAL_NAMES = {
   papicoop: "Jakob Cooper",
   millsberry27: "Miles Elliot",
 };
+const ARCHIVE_2025_TEAM_NAME_OVERRIDES = {
+  "10w5l": "fantasyboy12345",
+  erikohno: "Ricky McFricky",
+  helloimpaul: "helloimpaul",
+};
 const els = {
   status: document.querySelector("#status-message"),
   statusDot: document.querySelector("#status-dot"),
@@ -502,10 +507,11 @@ function renderMatchups(matchups, rosters, users, week) {
 
 function renderTeamSelector(rosters, users) {
   if (!els.teamSelect) return;
-  const sorted = [...rosters].sort((a, b) => teamName(a, users).localeCompare(teamName(b, users)));
+  const optionName = (roster) => (PAGE === "current" ? ownerIdentityName(roster, users) : teamName(roster, users));
+  const sorted = [...rosters].sort((a, b) => optionName(a).localeCompare(optionName(b)));
   const leagueOption = PAGE === "current" ? `<option value="league">LEAGUE VIEW</option>` : "";
   const options = sorted
-    .map((roster) => `<option value="${roster.roster_id}">${escapeHtml(teamName(roster, users))}</option>`)
+    .map((roster) => `<option value="${roster.roster_id}">${escapeHtml(optionName(roster))}</option>`)
     .join("");
   els.teamSelect.innerHTML = leagueOption + options;
   if (
@@ -2201,7 +2207,16 @@ function shortFinish(finish) {
 
 function teamName(roster, users) {
   const user = userForRoster(roster, users);
+  const override = archive2025TeamNameOverride(user);
+  if (override) return override;
   return user?.metadata?.team_name?.trim() || user?.display_name || user?.username || `Roster ${roster.roster_id}`;
+}
+
+function archive2025TeamNameOverride(user) {
+  if (!user || (PAGE !== "archive" && !isHistoricalCurrentPreview())) return "";
+  const username = user.username?.toLowerCase();
+  const displayName = user.display_name?.toLowerCase();
+  return ARCHIVE_2025_TEAM_NAME_OVERRIDES[username] || ARCHIVE_2025_TEAM_NAME_OVERRIDES[displayName] || "";
 }
 
 function ownerName(roster, users) {
