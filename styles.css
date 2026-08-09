@@ -2365,10 +2365,6 @@ select {
     linear-gradient(135deg, rgba(18, 24, 32, 0.98), rgba(11, 17, 25, 0.96));
 }
 
-.h2h-quirk-card-featured > span {
-  color: #ffcf5a;
-}
-
 .h2h-quirk-card-featured > strong {
   margin: 0.45rem 0 0;
   font-size: clamp(2.5rem, 5vw, 4.4rem);
