@@ -1209,6 +1209,9 @@ strong {
 .draft-order-card .draft-order-table {
   filter: blur(10px);
   opacity: 0.34;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .draft-team-name {

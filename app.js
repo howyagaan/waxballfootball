@@ -491,6 +491,8 @@ function renderStandingsHeader(isDraftOrder) {
   const standingsTable = els.standings?.closest("table");
   standingsTable?.classList.toggle("draft-order-table", isDraftOrder);
   standingsTable?.closest(".mobile-table-card")?.classList.toggle("draft-order-card", isDraftOrder);
+  const teamControl = els.teamSelect?.closest(".hero-team-control");
+  if (teamControl) teamControl.hidden = isDraftOrder;
   if (!els.standingsHead) return;
   els.standingsHead.innerHTML = isDraftOrder
     ? `
