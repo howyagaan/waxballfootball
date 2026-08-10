@@ -515,7 +515,7 @@ function renderDraftOrderMock(rosters, users) {
       <tr class="${Number(selectedRosterId) === Number(roster.roster_id) ? "selected-row" : ""}">
         <td class="rank">${index + 1}</td>
         <td>${managerCell(roster, users)}</td>
-        <td class="draft-team-name">${escapeHtml(teamName(roster, users))}</td>
+        <td class="draft-team-name">${escapeHtml(draftOrderTeamName(roster, users))}</td>
       </tr>
     `)
     .join("");
@@ -2295,6 +2295,13 @@ function teamName(roster, users) {
   const override = archive2025TeamNameOverride(user);
   if (override) return override;
   return user?.metadata?.team_name?.trim() || user?.display_name || user?.username || `Roster ${roster.roster_id}`;
+}
+
+function draftOrderTeamName(roster, users) {
+  const user = userForRoster(roster, users);
+  const username = user?.username?.toLowerCase();
+  const displayName = user?.display_name?.toLowerCase();
+  return ARCHIVE_2025_TEAM_NAME_OVERRIDES[username] || ARCHIVE_2025_TEAM_NAME_OVERRIDES[displayName] || teamName(roster, users);
 }
 
 function archive2025TeamNameOverride(user) {
