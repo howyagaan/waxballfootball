@@ -90,6 +90,8 @@ const els = {
   gamedayCopy: document.querySelector("#gameday-copy"),
   watchList: document.querySelector("#watch-list"),
   standingsTitle: document.querySelector("#standings-title"),
+  standingsEyebrow: document.querySelector("#standings-eyebrow"),
+  standingsHead: document.querySelector("#standings-head"),
   standingsNote: document.querySelector("#standings-note"),
   refreshStamp: document.querySelector("#refresh-stamp"),
   standings: document.querySelector("#standings-body"),
@@ -457,6 +459,14 @@ function renderPrizeCard(element, row, data, label, prize) {
 }
 
 function renderStandings(rosters, users) {
+  const isDraftOrder = shouldShowDraftOrderMock(rosters);
+  renderStandingsHeader(isDraftOrder);
+
+  if (isDraftOrder) {
+    renderDraftOrderMock(rosters, users);
+    return;
+  }
+
   const rows = sortRosters(rosters, users)
     .map((roster, index) => {
       const record = `${stat(roster, "wins")}-${stat(roster, "losses")}`;
@@ -473,6 +483,45 @@ function renderStandings(rosters, users) {
     })
     .join("");
   els.standings.innerHTML = rows || `<tr><td colspan="5">No standings available.</td></tr>`;
+}
+
+function renderStandingsHeader(isDraftOrder) {
+  if (els.standingsEyebrow) els.standingsEyebrow.textContent = isDraftOrder ? "Draft room" : "Sleeper live";
+  if (els.standingsTitle) els.standingsTitle.textContent = isDraftOrder ? "Draft Order" : "League Table";
+  els.standings?.closest("table")?.classList.toggle("draft-order-table", isDraftOrder);
+  if (!els.standingsHead) return;
+  els.standingsHead.innerHTML = isDraftOrder
+    ? `
+      <tr>
+        <th>#</th>
+        <th>Manager</th>
+        <th>Team</th>
+        <th>Status</th>
+      </tr>
+    `
+    : `
+      <tr>
+        <th>#</th>
+        <th>Team</th>
+        <th>Rec</th>
+        <th>PF</th>
+        <th>PA</th>
+      </tr>
+    `;
+}
+
+function renderDraftOrderMock(rosters, users) {
+  const rows = sortRosters(rosters, users)
+    .map((roster, index) => `
+      <tr class="${Number(selectedRosterId) === Number(roster.roster_id) ? "selected-row" : ""}">
+        <td class="rank">${index + 1}</td>
+        <td>${managerCell(roster, users)}</td>
+        <td class="draft-team-name">${escapeHtml(teamName(roster, users))}</td>
+        <td><span class="draft-status-pill">Mock</span></td>
+      </tr>
+    `)
+    .join("");
+  els.standings.innerHTML = rows || `<tr><td colspan="4">Draft order will appear here.</td></tr>`;
 }
 
 function renderMatchups(matchups, rosters, users, week) {
@@ -2162,6 +2211,10 @@ function sortRosters(rosters, users = currentData?.users || []) {
 }
 
 function shouldSortLeagueTableByFirstName(rosters) {
+  return shouldShowDraftOrderMock(rosters);
+}
+
+function shouldShowDraftOrderMock(rosters) {
   return PAGE === "current"
     && currentData?.league?.status === "pre_draft"
     && rosters.every((roster) => !stat(roster, "wins") && !stat(roster, "losses") && !totalPoints(roster, "fpts"));
@@ -2182,6 +2235,21 @@ function teamCell(roster, users) {
       <div class="team-copy">
         <strong>${escapeHtml(teamName(roster, users))}</strong>
         <span class="username">${escapeHtml(ownerIdentityName(roster, users))}</span>
+      </div>
+    </${tag}>
+  `;
+}
+
+function managerCell(roster, users) {
+  const tag = PAGE === "current" ? "button" : "div";
+  const attrs = PAGE === "current"
+    ? `type="button" data-roster-link="${escapeHtml(roster.roster_id)}" aria-label="Open ${escapeHtml(ownerIdentityName(roster, users))} team page"`
+    : "";
+  return `
+    <${tag} class="team-cell" ${attrs}>
+      ${avatar(roster, users)}
+      <div class="team-copy">
+        <strong>${escapeHtml(ownerIdentityName(roster, users))}</strong>
       </div>
     </${tag}>
   `;

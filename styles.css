@@ -1181,6 +1181,38 @@ strong {
   width: 4.2rem;
 }
 
+.draft-order-table th:nth-child(3),
+.draft-order-table td:nth-child(3) {
+  width: 28%;
+}
+
+.draft-order-table th:nth-child(4),
+.draft-order-table td:nth-child(4) {
+  width: 5.4rem;
+  text-align: center;
+}
+
+.draft-team-name {
+  color: var(--muted);
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+.draft-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.8rem;
+  border-radius: 999px;
+  background: rgba(0, 206, 184, 0.14);
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.34rem 0.6rem;
+}
+
 .archive-table th:nth-child(5),
 .archive-table td:nth-child(5) {
   width: 5.5rem;
@@ -2721,6 +2753,16 @@ footer {
   .fit-table th:nth-child(5),
   .fit-table td:nth-child(5) {
     width: 3.5rem;
+  }
+
+  .draft-order-table th:nth-child(3),
+  .draft-order-table td:nth-child(3) {
+    width: 31%;
+  }
+
+  .draft-order-table th:nth-child(4),
+  .draft-order-table td:nth-child(4) {
+    width: 4.8rem;
   }
 
   .archive-table th:nth-child(5),
