@@ -488,7 +488,9 @@ function renderStandings(rosters, users) {
 function renderStandingsHeader(isDraftOrder) {
   if (els.standingsEyebrow) els.standingsEyebrow.textContent = isDraftOrder ? "Draft room" : "Sleeper live";
   if (els.standingsTitle) els.standingsTitle.textContent = isDraftOrder ? "Draft Order" : "League Table";
-  els.standings?.closest("table")?.classList.toggle("draft-order-table", isDraftOrder);
+  const standingsTable = els.standings?.closest("table");
+  standingsTable?.classList.toggle("draft-order-table", isDraftOrder);
+  standingsTable?.closest(".mobile-table-card")?.classList.toggle("draft-order-card", isDraftOrder);
   if (!els.standingsHead) return;
   els.standingsHead.innerHTML = isDraftOrder
     ? `
