@@ -496,7 +496,6 @@ function renderStandingsHeader(isDraftOrder) {
         <th>#</th>
         <th>Manager</th>
         <th>Team</th>
-        <th>Status</th>
       </tr>
     `
     : `
@@ -517,11 +516,10 @@ function renderDraftOrderMock(rosters, users) {
         <td class="rank">${index + 1}</td>
         <td>${managerCell(roster, users)}</td>
         <td class="draft-team-name">${escapeHtml(teamName(roster, users))}</td>
-        <td><span class="draft-status-pill">Mock</span></td>
       </tr>
     `)
     .join("");
-  els.standings.innerHTML = rows || `<tr><td colspan="4">Draft order will appear here.</td></tr>`;
+  els.standings.innerHTML = rows || `<tr><td colspan="3">Draft order will appear here.</td></tr>`;
 }
 
 function renderMatchups(matchups, rosters, users, week) {
