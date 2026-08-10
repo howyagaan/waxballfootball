@@ -516,7 +516,7 @@ function renderDraftOrderMock(rosters, users) {
     .map((roster, index) => `
       <tr class="${Number(selectedRosterId) === Number(roster.roster_id) ? "selected-row" : ""}">
         <td class="rank">${index + 1}</td>
-        <td>${managerCell(roster, users)}</td>
+        <td>${managerCell(roster, users, { interactive: false })}</td>
         <td class="draft-team-name">${escapeHtml(draftOrderTeamName(roster, users))}</td>
       </tr>
     `)
@@ -2240,9 +2240,10 @@ function teamCell(roster, users) {
   `;
 }
 
-function managerCell(roster, users) {
-  const tag = PAGE === "current" ? "button" : "div";
-  const attrs = PAGE === "current"
+function managerCell(roster, users, options = {}) {
+  const isInteractive = options.interactive !== false && PAGE === "current";
+  const tag = isInteractive ? "button" : "div";
+  const attrs = isInteractive
     ? `type="button" data-roster-link="${escapeHtml(roster.roster_id)}" aria-label="Open ${escapeHtml(ownerIdentityName(roster, users))} team page"`
     : "";
   return `

@@ -1195,7 +1195,7 @@ strong {
   place-items: center;
   z-index: 3;
   border-radius: inherit;
-  background: rgba(5, 9, 13, 0.28);
+  background: rgba(5, 9, 13, 0.46);
   color: var(--text);
   font-size: clamp(2.1rem, 7vw, 5.5rem);
   font-weight: 1000;
@@ -1207,8 +1207,8 @@ strong {
 }
 
 .draft-order-card .draft-order-table {
-  filter: blur(4px);
-  opacity: 0.52;
+  filter: blur(10px);
+  opacity: 0.34;
 }
 
 .draft-team-name {
