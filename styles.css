@@ -516,6 +516,7 @@ body[data-theme="mnf"] .matchup-card {
     linear-gradient(135deg, rgba(0, 206, 184, 0.18), transparent 42%),
     rgba(18, 24, 32, 0.94);
   box-shadow: var(--shadow);
+  margin-top: clamp(1rem, 2.6vw, 1.75rem);
   margin-bottom: 2rem;
   padding: clamp(1rem, 3vw, 1.4rem);
 }
@@ -2605,10 +2606,16 @@ body[data-page="archive-2024"] .season-notes-grid p {
 }
 
 .article-hero {
+  grid-template-columns: 1fr;
   min-height: auto;
   padding-top: clamp(2.2rem, 8vw, 5rem);
   padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
   text-align: center;
+}
+
+.article-hero .hero-main {
+  display: grid;
+  justify-items: center;
 }
 
 .article-hero h1 {
@@ -2626,6 +2633,21 @@ body[data-page="archive-2024"] .season-notes-grid p {
 
 .article-hero .hero-actions {
   justify-content: center;
+}
+
+@media (min-width: 821px) {
+  .article-hero h1.week-3-title {
+    max-width: none;
+    font-size: clamp(4.2rem, 7.4vw, 6.1rem);
+  }
+
+  .article-hero h1.week-3-title span {
+    white-space: nowrap;
+  }
+}
+
+#weekly-archive {
+  scroll-margin-top: 5.5rem;
 }
 
 .wax-article-card {
