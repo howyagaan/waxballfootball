@@ -2646,8 +2646,9 @@ body[data-page="archive-2024"] .season-notes-grid p {
   }
 }
 
-#weekly-archive {
-  scroll-margin-top: 5.5rem;
+.archive-bottom-anchor {
+  display: block;
+  height: 1px;
 }
 
 .wax-article-card {
