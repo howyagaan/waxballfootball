@@ -1098,6 +1098,24 @@ strong {
   overflow-wrap: anywhere;
 }
 
+.reward-stack {
+  display: grid;
+  gap: 0.15rem;
+  line-height: 1.05;
+}
+
+.reward-stack span {
+  display: block;
+}
+
+.reward-first {
+  color: #25e978;
+}
+
+.reward-second {
+  color: var(--gold);
+}
+
 .pill {
   flex: 0 0 auto;
   border-radius: 999px;
