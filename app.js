@@ -50,10 +50,25 @@ const OWNER_REAL_NAMES = {
   willyboyp: "Will Price",
   bigdicksenior: "Sam Labovitz",
   darryluvr: "Travis Roy Rogers",
+  darryluvr3000: "Travis Roy Rogers",
   chrissy511: "Christian Engelhardt",
   papicoop: "Jakob Cooper",
   millsberry27: "Miles Elliot",
 };
+const DRAFT_ORDER_2026 = [
+  "Miles Elliot",
+  "Jakob Cooper",
+  "Erik Ohno Dagoberg",
+  "Christian Engelhardt",
+  "Jacob Moskovitz",
+  "Nic Hamilton",
+  "Miles Blue",
+  "Paul Legallet",
+  "Sam Labovitz",
+  "Will Price",
+  "Travis Roy Rogers",
+  "Milo Manheim",
+];
 const ARCHIVE_2025_TEAM_NAME_OVERRIDES = {
   "10w5l": "fantasyboy12345",
   erikohno: "Ricky McFricky",
@@ -492,7 +507,7 @@ function renderStandingsHeader(isDraftOrder) {
   standingsTable?.classList.toggle("draft-order-table", isDraftOrder);
   standingsTable?.closest(".mobile-table-card")?.classList.toggle("draft-order-card", isDraftOrder);
   const teamControl = els.teamSelect?.closest(".hero-team-control");
-  if (teamControl) teamControl.hidden = isDraftOrder;
+  if (teamControl && PAGE === "current") teamControl.hidden = false;
   if (!els.standingsHead) return;
   els.standingsHead.innerHTML = isDraftOrder
     ? `
@@ -518,8 +533,8 @@ function renderDraftOrderMock(rosters, users) {
     .map((roster, index) => `
       <tr class="${Number(selectedRosterId) === Number(roster.roster_id) ? "selected-row" : ""}">
         <td class="rank">${index + 1}</td>
-        <td>${managerCell(roster, users, { interactive: false })}</td>
-        <td class="draft-team-name">${escapeHtml(draftOrderTeamName(roster, users))}</td>
+        <td>${managerCell(roster, users)}</td>
+        <td class="draft-team-name">${escapeHtml(teamName(roster, users))}</td>
       </tr>
     `)
     .join("");
@@ -2196,6 +2211,8 @@ function movementStats(transactions, rosters, users) {
 function sortRosters(rosters, users = currentData?.users || []) {
   if (shouldSortLeagueTableByFirstName(rosters)) {
     return [...rosters].sort((a, b) => {
+      const draftDiff = draftOrderRank(a, users) - draftOrderRank(b, users);
+      if (draftDiff) return draftDiff;
       const aName = ownerIdentityName(a, users);
       const bName = ownerIdentityName(b, users);
       const firstDiff = trueFirstName(aName).localeCompare(trueFirstName(bName), undefined, { sensitivity: "base" });
@@ -2210,6 +2227,12 @@ function sortRosters(rosters, users = currentData?.users || []) {
     if (lossDiff) return lossDiff;
     return totalPoints(b, "fpts") - totalPoints(a, "fpts");
   });
+}
+
+function draftOrderRank(roster, users) {
+  const name = ownerIdentityName(roster, users).toLowerCase();
+  const index = DRAFT_ORDER_2026.findIndex((manager) => manager.toLowerCase() === name);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 }
 
 function shouldSortLeagueTableByFirstName(rosters) {
@@ -2248,11 +2271,15 @@ function managerCell(roster, users, options = {}) {
   const attrs = isInteractive
     ? `type="button" data-roster-link="${escapeHtml(roster.roster_id)}" aria-label="Open ${escapeHtml(ownerIdentityName(roster, users))} team page"`
     : "";
+  const subline = options.subline
+    ? `<span class="username">${escapeHtml(options.subline)}</span>`
+    : "";
   return `
     <${tag} class="team-cell" ${attrs}>
       ${avatar(roster, users)}
       <div class="team-copy">
         <strong>${escapeHtml(ownerIdentityName(roster, users))}</strong>
+        ${subline}
       </div>
     </${tag}>
   `;
@@ -2300,13 +2327,6 @@ function teamName(roster, users) {
   const override = archive2025TeamNameOverride(user);
   if (override) return override;
   return user?.metadata?.team_name?.trim() || user?.display_name || user?.username || `Roster ${roster.roster_id}`;
-}
-
-function draftOrderTeamName(roster, users) {
-  const user = userForRoster(roster, users);
-  const username = user?.username?.toLowerCase();
-  const displayName = user?.display_name?.toLowerCase();
-  return ARCHIVE_2025_TEAM_NAME_OVERRIDES[username] || ARCHIVE_2025_TEAM_NAME_OVERRIDES[displayName] || teamName(roster, users);
 }
 
 function archive2025TeamNameOverride(user) {

@@ -1192,33 +1192,6 @@ strong {
   width: 28%;
 }
 
-.draft-order-card::after {
-  content: "COMING SOON...";
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  z-index: 3;
-  border-radius: inherit;
-  background: rgba(5, 9, 13, 0.46);
-  color: var(--text);
-  font-size: clamp(2.1rem, 7vw, 5.5rem);
-  font-weight: 1000;
-  letter-spacing: 0.06em;
-  text-align: center;
-  text-transform: uppercase;
-  text-shadow: 0 0 1.5rem rgba(0, 206, 184, 0.32), 0 0.18rem 0.9rem rgba(0, 0, 0, 0.55);
-  pointer-events: none;
-}
-
-.draft-order-card .draft-order-table {
-  filter: blur(10px);
-  opacity: 0.34;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
 .draft-team-name {
   color: var(--muted);
   font-weight: 850;
