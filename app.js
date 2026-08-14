@@ -61,13 +61,13 @@ const DRAFT_ORDER_2026 = [
   "Erik Ohno Dagoberg",
   "Christian Engelhardt",
   "Jacob Moskovitz",
+  "Milo Manheim",
   "Nic Hamilton",
   "Miles Blue",
   "Paul Legallet",
   "Sam Labovitz",
   "Will Price",
   "Travis Roy Rogers",
-  "Milo Manheim",
 ];
 const ARCHIVE_2025_TEAM_NAME_OVERRIDES = {
   "10w5l": "fantasyboy12345",
