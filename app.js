@@ -1060,22 +1060,22 @@ function archiveFinalProfile(roster, data) {
   if (historyRow.rank <= 6) {
     const elimination = data.winnersBracket.find((game) => game.l === historyRow.rosterId);
     if (elimination) {
-      return `${title} They made the playoff bracket and were knocked out by ${rosterName(elimination.w, data.rosters, data.users)} in ${roundLabel(elimination, "playoff")}.`;
+      return `${title} He made the playoff bracket and was knocked out by ${rosterName(elimination.w, data.rosters, data.users)} in ${roundLabel(elimination, "playoff")}.`;
     }
-    return `${title} They made the playoff bracket and stayed alive deeper than their seed suggested.`;
+    return `${title} He made the playoff bracket and stayed alive deeper than his seed suggested.`;
   }
 
   const survival = [...data.losersBracket].reverse().find((game) => game.l === historyRow.rosterId);
   if (survival) {
-    return `${title} They landed in the Toilet Bowl and survived by beating ${rosterName(opponentInGame(survival, historyRow.rosterId), data.rosters, data.users)} in ${roundLabel(survival, "poop")}.`;
+    return `${title} He landed in the Toilet Bowl and survived by beating ${rosterName(opponentInGame(survival, historyRow.rosterId), data.rosters, data.users)} in ${roundLabel(survival, "poop")}.`;
   }
 
   const danger = data.losersBracket.find((game) => game.w === historyRow.rosterId);
   if (danger) {
-    return `${title} They landed in the Toilet Bowl and were pushed toward danger by ${rosterName(opponentInGame(danger, historyRow.rosterId), data.rosters, data.users)} in ${roundLabel(danger, "poop")}.`;
+    return `${title} He landed in the Toilet Bowl and was pushed toward danger by ${rosterName(opponentInGame(danger, historyRow.rosterId), data.rosters, data.users)} in ${roundLabel(danger, "poop")}.`;
   }
 
-  return `${title} Their playoff or Toilet Bowl path was not recorded in the bracket feed.`;
+  return `${title} His playoff or Toilet Bowl path was not recorded in the bracket feed.`;
 }
 
 function draftedPlayersForRoster(roster, picks) {
