@@ -2418,6 +2418,182 @@ select {
   padding: 0.7rem;
 }
 
+.wax-stats-hero .hero-main h1 {
+  background: linear-gradient(135deg, #ff5d78 0%, #ff5d78 42%, #27e47b 58%, #27e47b 100%);
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 42px rgba(39, 228, 123, 0.16);
+}
+
+.wax-stats-board {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  margin-top: clamp(1rem, 3vw, 1.5rem);
+  padding: clamp(1rem, 3vw, 1.35rem);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 206, 190, 0.13), transparent 34%),
+    linear-gradient(145deg, rgba(18, 24, 32, 0.98), rgba(12, 18, 26, 0.94));
+  box-shadow: var(--shadow);
+}
+
+.wax-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.wax-stats-grid-extra {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.wax-stat-card {
+  display: flex;
+  min-height: 13rem;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 206, 190, 0.11), transparent 35%),
+    rgba(7, 12, 18, 0.48);
+}
+
+.wax-stat-card > span,
+.wax-stats-note .eyebrow {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 1000;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.wax-stat-card > strong {
+  display: block;
+  margin: 0.55rem 0;
+  color: var(--teal);
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  line-height: 0.95;
+}
+
+.wax-stat-card.is-green > strong {
+  color: #27e47b;
+}
+
+.wax-stat-card.is-red > strong {
+  color: #ff5d78;
+}
+
+.wax-stat-details {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.wax-stat-details p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.wax-stat-details b,
+.wax-stat-details span,
+.wax-stat-details em {
+  display: block;
+}
+
+.wax-stat-details b {
+  color: var(--ink);
+}
+
+.wax-stat-details em {
+  color: var(--teal);
+  font-style: normal;
+}
+
+.wax-stat-details a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-thickness: 0.09em;
+  text-underline-offset: 0.16em;
+}
+
+.wax-stat-details a:hover,
+.wax-stat-details a:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
+.wax-stats-note p {
+  max-width: 58rem;
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.wax-stats-request {
+  position: relative;
+  overflow: hidden;
+  max-width: 58rem;
+  margin-inline: auto;
+  border-color: rgba(0, 206, 190, 0.55);
+  text-align: center;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 93, 120, 0.16), transparent 32%),
+    radial-gradient(circle at 82% 100%, rgba(39, 228, 123, 0.16), transparent 34%),
+    linear-gradient(145deg, rgba(18, 24, 32, 0.98), rgba(9, 18, 24, 0.98));
+}
+
+.wax-stats-request::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 206, 190, 0.16);
+}
+
+.wax-stats-request .eyebrow {
+  color: var(--teal);
+  font-size: clamp(0.82rem, 1.8vw, 1rem);
+}
+
+.wax-stats-request p:not(.eyebrow) {
+  max-width: 42rem;
+  margin: 0.75rem auto 0;
+  color: var(--ink);
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-weight: 950;
+  line-height: 1.18;
+}
+
+.wax-stats-suggestions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wax-stats-suggestions li {
+  border: 1px solid rgba(0, 206, 190, 0.18);
+  border-radius: 999px;
+  background: rgba(0, 206, 190, 0.08);
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 1000;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  padding: 0.58rem 0.75rem;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .leaders-expanded .leader-toggle {
   margin-top: 0.75rem;
 }
@@ -3219,6 +3395,15 @@ footer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .wax-stats-grid,
+  .wax-stats-grid-extra {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wax-stats-suggestions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .h2h-score-main {
     grid-template-columns: 1.5rem minmax(3.8rem, 1fr) minmax(4.2rem, 0.75fr) minmax(3.8rem, 1fr) 1.5rem;
     gap: 0.28rem;
@@ -3372,6 +3557,19 @@ footer {
 
   .h2h-row-detail small {
     display: none;
+  }
+
+  .wax-stats-grid,
+  .wax-stats-grid-extra {
+    grid-template-columns: 1fr;
+  }
+
+  .wax-stat-card {
+    min-height: 10.5rem;
+  }
+
+  .wax-stats-suggestions {
+    grid-template-columns: 1fr;
   }
 }
 
