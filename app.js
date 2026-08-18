@@ -106,6 +106,7 @@ const els = {
   watchList: document.querySelector("#watch-list"),
   standingsTitle: document.querySelector("#standings-title"),
   standingsEyebrow: document.querySelector("#standings-eyebrow"),
+  standingsAction: document.querySelector("#standings-action"),
   standingsHead: document.querySelector("#standings-head"),
   standingsNote: document.querySelector("#standings-note"),
   refreshStamp: document.querySelector("#refresh-stamp"),
@@ -379,7 +380,11 @@ function renderMidweekArticleAction() {
 
 function renderPreseasonCountdown() {
   const now = currentDate();
-  renderCountdown(els.draftCountdown, els.draftCountdownValue, new Date(DRAFT_DAY), now);
+  if (currentData?.league?.status === "pre_draft") {
+    renderCountdown(els.draftCountdown, els.draftCountdownValue, new Date(DRAFT_DAY), now);
+  } else {
+    els.draftCountdown?.setAttribute("hidden", "");
+  }
   renderCountdown(els.countdown, els.countdownValue, new Date(FIRST_2026_KICKOFF), now);
 }
 
@@ -503,11 +508,12 @@ function renderStandings(rosters, users) {
 function renderStandingsHeader(isDraftOrder) {
   if (els.standingsEyebrow) els.standingsEyebrow.textContent = isDraftOrder ? "Draft room" : "Sleeper live";
   if (els.standingsTitle) els.standingsTitle.textContent = isDraftOrder ? "Draft Order" : "League Table";
+  if (els.standingsAction) els.standingsAction.textContent = isDraftOrder ? "Draft Order" : "League Table";
   const standingsTable = els.standings?.closest("table");
   standingsTable?.classList.toggle("draft-order-table", isDraftOrder);
   standingsTable?.closest(".mobile-table-card")?.classList.toggle("draft-order-card", isDraftOrder);
   const teamControl = els.teamSelect?.closest(".hero-team-control");
-  if (teamControl && PAGE === "current") teamControl.hidden = false;
+  if (teamControl && PAGE === "current") teamControl.hidden = isDraftOrder;
   if (!els.standingsHead) return;
   els.standingsHead.innerHTML = isDraftOrder
     ? `
