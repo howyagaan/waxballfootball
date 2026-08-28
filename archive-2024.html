@@ -604,24 +604,29 @@
         });
       });
 
+      const waxballAvatarSrc = "https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd";
+      const setArchiveSiteAvatar = (src) => {
+        const icon = document.querySelector('link[rel="icon"]') || document.createElement("link");
+        icon.rel = "icon";
+        icon.href = src;
+        icon.type = "image/png";
+        if (!icon.parentNode) document.head.appendChild(icon);
+        const touchIcon = document.querySelector('link[rel="apple-touch-icon"]') || document.createElement("link");
+        touchIcon.rel = "apple-touch-icon";
+        touchIcon.href = src;
+        if (!touchIcon.parentNode) document.head.appendChild(touchIcon);
+      };
+      setArchiveSiteAvatar(waxballAvatarSrc);
+
       fetch("https://api.sleeper.app/v1/league/1312219624808419328")
         .then((response) => (response.ok ? response.json() : null))
         .then((league) => {
-          if (!league?.avatar) return;
-          const avatarSrc = `https://sleepercdn.com/avatars/thumbs/${league.avatar}`;
+          const avatarSrc = league?.avatar ? `https://sleepercdn.com/avatars/thumbs/${league.avatar}` : waxballAvatarSrc;
           const brandMark = document.querySelector("#league-brand-mark");
           if (brandMark) {
             brandMark.innerHTML = `<img alt="" src="${avatarSrc}" />`;
           }
-          const icon = document.querySelector('link[rel="icon"]') || document.createElement("link");
-          icon.rel = "icon";
-          icon.href = avatarSrc;
-          icon.type = "image/png";
-          if (!icon.parentNode) document.head.appendChild(icon);
-          const touchIcon = document.querySelector('link[rel="apple-touch-icon"]') || document.createElement("link");
-          touchIcon.rel = "apple-touch-icon";
-          touchIcon.href = avatarSrc;
-          if (!touchIcon.parentNode) document.head.appendChild(touchIcon);
+          setArchiveSiteAvatar(waxballAvatarSrc);
         })
         .catch(() => {});
     </script>

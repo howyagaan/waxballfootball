@@ -9,11 +9,13 @@ const EASTERN_TIME_ZONE = "America/New_York";
 const PRESEASON_END_DATE_KEY = "2026-09-07";
 const DRAFT_DAY = "2026-09-05T18:00:00-04:00";
 const FIRST_2026_KICKOFF = "2026-09-09T20:20:00-04:00";
+const WAXBALL_AVATAR_SRC = "https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd";
 const QUERY_PARAMS = new URLSearchParams(window.location.search);
 const SEASON_PREVIEW = QUERY_PARAMS.get("season");
 const WEEK_PREVIEW = Number(QUERY_PARAMS.get("week"));
 const DATE_PREVIEW = QUERY_PARAMS.get("date");
 const PRESENTATION_PREVIEW = QUERY_PARAMS.get("presentation") || document.body.dataset.presentation || "";
+const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const ARTICLES_2026 = [
   /*
   {
@@ -211,6 +213,9 @@ async function loadAll() {
     currentData = current;
     archiveData = archive;
     nflData = nfl;
+    if (isDraftCompletePreview()) {
+      applyDraftCompletePreview(currentData);
+    }
     if (isHistoricalCurrentPreview()) {
       currentData.previewMode = "historical-current";
       currentData.rosters = standingsThroughWeek(currentData.rosters, currentData.matchupsByWeek, previewWeek() - 1);
@@ -248,6 +253,126 @@ async function loadSeason(leagueId, options = {}) {
   const history = buildHistory(league, rosters, users, winnersBracket, losersBracket);
 
   return { league, rosters, users, state, week, winnersBracket, losersBracket, transactions, draftPicks, matchupsByWeek, history };
+}
+
+function applyDraftCompletePreview(data) {
+  if (!data) return;
+  data.previewMode = "draft-complete";
+  data.league = {
+    ...data.league,
+    status: "in_season",
+    settings: {
+      ...data.league.settings,
+      start_week: 1,
+    },
+  };
+  data.week = 1;
+  data.rosters = data.rosters.map((roster) => ({
+    ...roster,
+    ...draftPreviewRosterPatch(roster, data.users),
+    settings: {
+      ...roster.settings,
+      wins: 0,
+      losses: 0,
+      ties: 0,
+      fpts: 0,
+      fpts_decimal: 0,
+      fpts_against: 0,
+      fpts_against_decimal: 0,
+    },
+  }));
+  data.matchupsByWeek = {
+    ...data.matchupsByWeek,
+    1: draftCompletePreviewMatchups(data.rosters, data.users),
+  };
+  nflData = {
+    ...nflData,
+    events: draftCompletePreviewEvents(),
+    mode: modeDefinition("tnf"),
+  };
+}
+
+function draftPreviewRosterPatch(roster, users) {
+  const players = DRAFT_COMPLETE_PREVIEW_ROSTERS[ownerIdentityName(roster, users)];
+  if (!players) return {};
+  const ids = players.map((player) => player.id);
+  return {
+    players: ids,
+    starters: ids.slice(0, 9),
+    previewPlayers: players,
+  };
+}
+
+const DRAFT_COMPLETE_PREVIEW_ROSTERS = {
+  "Milo Manheim": [
+    previewPlayer("preview-hurts", "Jalen Hurts", "QB", "PHI"),
+    previewPlayer("preview-saquon", "Saquon Barkley", "RB", "PHI"),
+    previewPlayer("preview-cook", "James Cook", "RB", "BUF"),
+    previewPlayer("preview-ajb", "A.J. Brown", "WR", "PHI"),
+    previewPlayer("preview-lamb", "CeeDee Lamb", "WR", "DAL"),
+    previewPlayer("preview-kittle", "George Kittle", "TE", "SF"),
+    previewPlayer("preview-devonta", "DeVonta Smith", "WR", "PHI"),
+    previewPlayer("preview-elliott", "Jake Elliott", "K", "PHI"),
+    previewPlayer("preview-eagles", "Eagles D/ST", "D/ST", "PHI"),
+    previewPlayer("preview-stroud", "C.J. Stroud", "QB", "HOU"),
+    previewPlayer("preview-pollard", "Tony Pollard", "RB", "TEN"),
+    previewPlayer("preview-mclaurin", "Terry McLaurin", "WR", "WAS"),
+  ],
+  "Nic Hamilton": [
+    previewPlayer("preview-dak", "Dak Prescott", "QB", "DAL"),
+    previewPlayer("preview-gibbs", "Jahmyr Gibbs", "RB", "DET"),
+    previewPlayer("preview-kyren", "Kyren Williams", "RB", "LAR"),
+    previewPlayer("preview-pickens", "George Pickens", "WR", "DAL"),
+    previewPlayer("preview-waddle", "Jaylen Waddle", "WR", "MIA"),
+    previewPlayer("preview-ferguson", "Jake Ferguson", "TE", "DAL"),
+    previewPlayer("preview-dsmith", "DeVonta Smith", "WR", "PHI"),
+    previewPlayer("preview-aubrey", "Brandon Aubrey", "K", "DAL"),
+    previewPlayer("preview-cowboys", "Cowboys D/ST", "D/ST", "DAL"),
+    previewPlayer("preview-love", "Jordan Love", "QB", "GB"),
+    previewPlayer("preview-dobbins", "J.K. Dobbins", "RB", "DEN"),
+    previewPlayer("preview-jamo", "Jameson Williams", "WR", "DET"),
+  ],
+};
+
+function previewPlayer(id, name, position, team) {
+  return { id, name, position, team, injuryStatus: "" };
+}
+
+function draftCompletePreviewEvents() {
+  return [
+    presentationEvent("2026-week1-thu-dal-phi", "2026-09-10T00:20:00Z", "DAL @ PHI", "Dallas Cowboys at Philadelphia Eagles", "DAL", "PHI", "NBC"),
+  ];
+}
+
+function draftCompletePreviewMatchups(rosters, users) {
+  const ordered = rostersByDraftOrder(rosters, users);
+  const pairings = [
+    [0, 11],
+    [1, 10],
+    [2, 9],
+    [3, 8],
+    [4, 7],
+    [5, 6],
+  ];
+  return pairings.flatMap((pair, matchupIndex) => pair
+    .map((orderedIndex) => ordered[orderedIndex])
+    .filter(Boolean)
+    .map((roster) => ({
+      roster_id: roster.roster_id,
+      matchup_id: matchupIndex + 1,
+      points: 0,
+      starters: roster.starters || [],
+      players: roster.players || [],
+      starters_points: roster.starters?.map(() => 0) || [],
+    })));
+}
+
+function rostersByDraftOrder(rosters, users) {
+  return [...rosters].sort((a, b) => {
+    const draftDiff = draftOrderRank(a, users) - draftOrderRank(b, users);
+    if (draftDiff) return draftDiff;
+    return ownerIdentityName(a, users).localeCompare(ownerIdentityName(b, users), undefined, { sensitivity: "base" });
+  });
 }
 
 async function loadNflContext() {
@@ -590,7 +715,10 @@ function renderTeamSelector(rosters, users) {
     !selectedRosterId ||
     (selectedRosterId !== "league" && !rosters.some((roster) => roster.roster_id === selectedRosterId))
   ) {
-    selectedRosterId = PAGE === "current" ? "league" : sorted[0]?.roster_id || null;
+    const previewRoster = isDraftCompletePreview()
+      ? rosters.find((roster) => ownerIdentityName(roster, users) === "Milo Manheim")
+      : null;
+    selectedRosterId = previewRoster?.roster_id || (PAGE === "current" ? "league" : sorted[0]?.roster_id || null);
   }
   if (selectedRosterId) els.teamSelect.value = String(selectedRosterId);
 }
@@ -909,6 +1037,9 @@ function formatArticleDate(value) {
 }
 
 function heroLeagueCopy(league) {
+  if (isDraftCompletePreview()) {
+    return "Draft complete preview: the draft countdown is gone, standings are live, the team selector is back, and Week 1 matchups are ready for Sleeper data.";
+  }
   if (isHistoricalCurrentPreview()) {
     return `${league.season} preview mode: Thursday Week ${currentWeek}, rebuilt from Sleeper matchups, rosters, avatars, and standings through the prior week.`;
   }
@@ -944,11 +1075,16 @@ function currentSeasonHasResults() {
 
 function isPreseasonMode() {
   if (isHistoricalCurrentPreview()) return false;
+  if (isDraftCompletePreview()) return false;
   return PAGE === "current" && !isModePreview() && easternDateKey(currentDate()) <= PRESEASON_END_DATE_KEY;
 }
 
 function isModePreview() {
   return Boolean(previewModeDefinition());
+}
+
+function isDraftCompletePreview() {
+  return PAGE === "current" && DRAFT_COMPLETE_PREVIEW;
 }
 
 function isHistoricalCurrentPreview() {
@@ -1518,9 +1654,8 @@ function renderHeroMode(mode) {
 }
 
 function renderLeagueAvatar(league) {
-  if (!league?.avatar) return;
-  const avatarSrc = `https://sleepercdn.com/avatars/thumbs/${league.avatar}`;
-  setSiteAvatar(avatarSrc);
+  const avatarSrc = league?.avatar ? `https://sleepercdn.com/avatars/thumbs/${league.avatar}` : WAXBALL_AVATAR_SRC;
+  setSiteAvatar(WAXBALL_AVATAR_SRC);
   if (!els.brandMark) return;
   els.brandMark.innerHTML = `<img alt="" src="${avatarSrc}" />`;
   els.brandMark.classList.add("has-image");
@@ -1759,6 +1894,19 @@ function matchupVersusTeam(roster, users) {
 }
 
 async function teamPlayerContext(roster, events, matchup = null) {
+  if (isDraftCompletePreview() && roster.previewPlayers?.length) {
+    const starterIds = matchup?.starters?.length ? matchup.starters : roster.starters || [];
+    const starterSet = new Set(starterIds);
+    const starters = starterIds
+      .map((id) => roster.previewPlayers.find((player) => player.id === id))
+      .filter(Boolean);
+    const bench = roster.previewPlayers.filter((player) => !starterSet.has(player.id));
+    const teamsInNextGames = new Set(nextMatchdayGames(events).flatMap((event) => nflTeamsForEvent(event)));
+    const watch = [...starters, ...bench]
+      .filter((player) => teamsInNextGames.has(player.team))
+      .slice(0, 8);
+    return { starters, bench, watch };
+  }
   const players = await loadPlayers();
   const starterIds = (matchup?.starters?.length ? matchup.starters : roster.starters || []).filter((id) => id && id !== "0");
   const starterSet = new Set(starterIds);
