@@ -1038,6 +1038,147 @@ body[data-theme="mnf"] .matchup-card {
     linear-gradient(135deg, rgba(255, 184, 77, 0.12), var(--panel-2));
 }
 
+.draft-scout-panel {
+  flex: 0 0 100%;
+  order: 4;
+  --draft-purple: #9b6dff;
+  --draft-purple-2: #d96dff;
+  --draft-purple-dark: #171027;
+  border: 1px solid rgba(155, 109, 255, 0.58);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(217, 109, 255, 0.25), transparent 34%),
+    radial-gradient(circle at 88% 8%, rgba(155, 109, 255, 0.18), transparent 30%),
+    linear-gradient(135deg, rgba(44, 26, 74, 0.92), var(--panel-2));
+  box-shadow:
+    0 0 0 1px rgba(217, 109, 255, 0.06) inset,
+    0 24px 80px rgba(55, 22, 95, 0.32),
+    var(--shadow);
+  padding: clamp(1rem, 3vw, 1.45rem);
+}
+
+.draft-scout-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(13rem, 18rem);
+  align-items: end;
+  gap: 1rem;
+}
+
+.draft-scout-head h2 {
+  margin: 0.15rem 0 0;
+  width: fit-content;
+  background: linear-gradient(90deg, #ffffff 0%, #d96dff 45%, #9b6dff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 1000;
+  letter-spacing: 0.05em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  text-shadow: 0 0 34px rgba(155, 109, 255, 0.22);
+}
+
+.draft-scout-head select {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid rgba(217, 109, 255, 0.5);
+  border-radius: 999px;
+  background: rgba(60, 34, 98, 0.58);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 900;
+  padding: 0.7rem 1rem;
+  box-shadow: 0 0 0 4px rgba(155, 109, 255, 0.08);
+}
+
+.draft-scout-body {
+  margin-top: 1rem;
+  color: var(--muted);
+}
+
+.draft-scout-body > p {
+  margin: 0;
+}
+
+.draft-scout-season + .draft-scout-season,
+.draft-scout-note {
+  margin-top: 1rem;
+}
+
+.draft-scout-comparison {
+  border: 1px solid rgba(217, 109, 255, 0.36);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(217, 109, 255, 0.16), transparent 42%),
+    rgba(8, 15, 23, 0.5);
+  padding: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.draft-scout-comparison p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.draft-scout-season h3 {
+  margin: 0 0 0.65rem;
+  color: #dcbcff;
+  font-size: 0.95rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.draft-scout-note {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(8, 15, 23, 0.45);
+  padding: 0.9rem;
+}
+
+.draft-scout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.draft-scout-grid > div {
+  border: 1px solid rgba(155, 109, 255, 0.26);
+  border-radius: 16px;
+  background: rgba(13, 11, 24, 0.58);
+  padding: 0.9rem;
+}
+
+.draft-scout-grid strong {
+  display: block;
+  color: var(--ink);
+  font-size: 1.25rem;
+  line-height: 1.05;
+}
+
+.draft-scout-grid p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.scout-stars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.scout-stars span {
+  border-radius: 999px;
+  background: rgba(155, 109, 255, 0.18);
+  color: #dcbcff;
+  font-weight: 950;
+  padding: 0.38rem 0.62rem;
+}
+
 .status-row {
   display: flex;
   align-items: center;
@@ -3258,6 +3399,15 @@ footer {
 
   .preseason-countdown {
     width: 100%;
+  }
+
+  .draft-scout-head,
+  .draft-scout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .draft-scout-head select {
+    min-height: 3.35rem;
   }
 
   .hero-team-control {

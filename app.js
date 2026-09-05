@@ -71,6 +71,176 @@ const DRAFT_ORDER_2026 = [
   "Will Price",
   "Travis Roy Rogers",
 ];
+const DRAFT_SCOUT_2025 = {
+  "Jakob Cooper": {
+    slot: "1st",
+    method: "Modified Zero RB. He opened WR-WR before taking his first back in round three, then stayed mostly balanced after the receiver-heavy start.",
+    firstThree: ["Ja'Marr Chase (1.1)", "A.J. Brown (2.1)", "Omarion Hampton (3.1)"],
+    late: ["Jayden Reed (R10)", "Rhamondre Stevenson (R11)", "Cameron Dicker (R12)", "Baltimore Ravens D/ST (R13)"],
+    read: "Started with two receiver anchors, then balanced running back and tight end depth before taking quarterbacks later.",
+  },
+  "Sam Labovitz": {
+    slot: "2nd",
+    method: "Hero RB with an Elite QB. Bijan was the anchor back, then Sam bought quarterback advantage with Josh Allen in round three.",
+    firstThree: ["Bijan Robinson (1.2)", "Tee Higgins (2.2)", "Josh Allen (3.2)"],
+    late: ["Kyle Pitts (R10)", "Tank Bigsby (R11)", "Philadelphia Eagles D/ST (R12)", "J.J. McCarthy (R13)"],
+    read: "Grabbed an elite back, a receiver, and quarterback edge early, then filled out depth across every position.",
+  },
+  "Travis Roy Rogers": {
+    slot: "3rd",
+    method: "Balanced RB/WR build. He alternated premium receivers and backs early, then waited on quarterback and tight end.",
+    firstThree: ["CeeDee Lamb (1.3)", "James Cook (2.3)", "Alvin Kamara (3.3)"],
+    late: ["Brandon Aiyuk (R10)", "Dalton Kincaid (R11)", "C.J. Stroud (R12)", "Christian Kirk (R13)"],
+    read: "Opened with a clear WR/RB build, waited on quarterback, and used the middle rounds to pile up receiver depth.",
+  },
+  "Erik Ohno Dagoberg": {
+    slot: "4th",
+    method: "Robust RB. He started RB-RB, then used the next receiver run to build weekly ceiling around a heavy backfield.",
+    firstThree: ["Jahmyr Gibbs (1.4)", "Kyren Williams (2.4)", "Ladd McConkey (3.4)"],
+    late: ["Jayden Higgins (R10)", "Keenan Allen (R11)", "Braelon Allen (R12)", "Blake Corum (R13)"],
+    read: "Built from running backs first, then stacked receiver options before adding extra back depth late.",
+  },
+  "Will Price": {
+    slot: "5th",
+    method: "Robust RB with an Elite QB. He opened RB-RB-Lamar, then spent the next stretch catching up at receiver.",
+    firstThree: ["Saquon Barkley (1.5)", "Jonathan Taylor (2.5)", "Lamar Jackson (3.5)"],
+    late: ["Darnell Mooney (R10)", "Jake Ferguson (R11)", "Jake Bates (R12)", "Luther Burden (R13)"],
+    read: "Took two top backs and Lamar early, then spent most of the next stretch building receiver volume.",
+  },
+  "Paul Legallet": {
+    slot: "6th",
+    method: "Anchor WR build. Jefferson was the first-round anchor, then Paul leaned receiver-heavy while still grabbing two backs in the first six.",
+    firstThree: ["Justin Jefferson (1.6)", "Josh Jacobs (2.6)", "Jaxon Smith-Njigba (3.6)"],
+    late: ["Dak Prescott (R10)", "Nick Chubb (R11)", "Marvin Mims (R12)", "Denver Broncos D/ST (R13)"],
+    read: "Started receiver-heavy, then came back to running back depth and delayed tight end until late.",
+  },
+  "Jacob Moskovitz": {
+    slot: "7th",
+    method: "Anchor WR with an Elite QB. Amon-Ra started the build, then Jayden Daniels gave him an early quarterback edge.",
+    firstThree: ["Amon-Ra St. Brown (1.7)", "Bucky Irving (2.7)", "Jayden Daniels (3.7)"],
+    late: ["Tucker Kraft (R10)", "Caleb Williams (R11)", "Trey Benson (R12)", "Rachaad White (R13)"],
+    read: "Added elite quarterback upside early, then kept the roster balanced between receiver and running back.",
+  },
+  "Nic Hamilton": {
+    slot: "8th",
+    method: "Modified Zero RB with an early QB. He started WR-WR, waited until round three for RB, then took quarterback in round four.",
+    firstThree: ["Nico Collins (1.8)", "Drake London (2.8)", "Kenneth Walker (3.8)"],
+    late: ["Jacory Croskey-Merritt (R10)", "Rashod Bateman (R11)", "Tyler Allgeier (R12)", "Romeo Doubs (R13)"],
+    read: "Went receiver first, found running back starters next, then rounded out with late depth shots.",
+  },
+  "Christian Engelhardt": {
+    slot: "9th",
+    method: "Hero RB with an Elite TE. McCaffrey anchored the build, then Brock Bowers came in round three as the positional advantage swing.",
+    firstThree: ["Christian McCaffrey (1.9)", "Brian Thomas (2.9)", "Brock Bowers (3.9)"],
+    late: ["Justin Fields (R10)", "Najee Harris (R11)", "Cam Ward (R12)", "Zach Ertz (R13)"],
+    read: "Paid up early for an elite tight end after a RB/WR start, then leaned receiver for depth.",
+  },
+  "Miles Blue": {
+    slot: "10th",
+    method: "Hero RB with Elite QB/TE. Derrick Henry anchored the roster before Blue bought Hurts and McBride inside the first four rounds.",
+    firstThree: ["Derrick Henry (1.10)", "Puka Nacua (2.10)", "Jalen Hurts (3.10)"],
+    late: ["Keon Coleman (R10)", "Dallas Goedert (R11)", "Drake Maye (R12)", "Pittsburgh Steelers D/ST (R13)"],
+    read: "Used the turn to secure a power RB, elite receiver, quarterback, and tight end inside the first four rounds.",
+  },
+  "Miles Elliot": {
+    slot: "11th",
+    method: "Anchor WR with an Elite QB. Malik Nabers started the build, then Joe Burrow gave him a round-three quarterback anchor.",
+    firstThree: ["Malik Nabers (1.11)", "Chase Brown (2.11)", "Joe Burrow (3.11)"],
+    late: ["Colston Loveland (R10)", "Tyjae Spears (R11)", "Ray Davis (R12)", "Justin Herbert (R13)"],
+    read: "Balanced the board from the back of the round, pairing early QB stability with WR/RB depth.",
+  },
+  "Milo Manheim": {
+    slot: "12th",
+    method: "Robust RB with an Elite TE. Milo opened RB-RB, then added Trey McBride at the turn before balancing the roster.",
+    firstThree: ["Ashton Jeanty (1.12)", "De'Von Achane (2.12)", "Trey McBride (3.12)"],
+    late: ["Brock Purdy (R10)", "Rashid Shaheed (R11)", "Jaydon Blue (R12)", "Hunter Henry (R13)"],
+    read: "Double-tapped running back at the turn, took tight end early, then chased receiver depth through the middle rounds.",
+  },
+};
+const DRAFT_SCOUT_2024 = {
+  "Nic Hamilton": {
+    slot: "1st",
+    method: "Hero RB with an Elite QB. McCaffrey was the lone RB anchor, then Josh Allen came in round three as the quarterback edge.",
+    firstThree: ["Christian McCaffrey (1.1)", "Chris Olave (2.10)", "Josh Allen (3.1)"],
+    late: ["Jakobi Meyers (R13)", "Greg Zuerlein (R14)", "Tua Tagovailoa (R15)", "Bengals D/ST (R16)"],
+    read: "Paid for the best running back profile immediately, then locked in quarterback advantage early instead of waiting.",
+  },
+  "Miles Blue": {
+    slot: "2nd",
+    method: "Anchor WR with an Elite QB. CeeDee Lamb was the receiver anchor, then Mahomes came in round three.",
+    firstThree: ["CeeDee Lamb (1.2)", "Derrick Henry (2.9)", "Patrick Mahomes (3.2)"],
+    late: ["Harrison Butker (R13)", "Taysom Hill (R14)", "Jared Goff (R15)", "Chiefs D/ST (R16)"],
+    read: "Took a top receiver first, paired him with Derrick Henry, then bought quarterback security with Mahomes.",
+  },
+  "Will Price": {
+    slot: "3rd",
+    method: "Zero RB. Will went WR-WR-WR before taking his first back in round four, then added tight end and quarterback after that.",
+    firstThree: ["Tyreek Hill (1.3)", "Davante Adams (2.8)", "Marvin Harrison Jr. (3.3)"],
+    late: ["Jameson Williams (R13)", "Ravens D/ST (R14)", "Younghoe Koo (R15)", "Joshua Palmer (R16)"],
+    read: "Committed hardest to receivers early, which left the roster depending on mid-round backs to become usable starters.",
+  },
+  "Erik Ohno Dagoberg": {
+    slot: "4th",
+    method: "Zero RB. Erik opened WR-WR-WR, then took RB-TE-RB before waiting until round seven for quarterback.",
+    firstThree: ["Amon-Ra St. Brown (1.4)", "Puka Nacua (2.7)", "Mike Evans (3.4)"],
+    late: ["Ty Chandler (R13)", "Curtis Samuel (R14)", "Ka'imi Fairbairn (R15)", "Lions D/ST (R16)"],
+    read: "Loaded up on receiver value first, then used the middle rounds to patch running back and tight end.",
+  },
+  "Jacob Moskovitz": {
+    slot: "5th",
+    method: "Robust RB with an Elite TE. He started RB-RB-TE and had three backs inside the first six rounds.",
+    firstThree: ["Breece Hall (1.5)", "Travis Etienne Jr. (2.6)", "Travis Kelce (3.5)"],
+    late: ["Darnell Mooney (R13)", "Cameron Dicker (R14)", "Jets D/ST (R15)", "Aaron Rodgers (R16)"],
+    read: "Built around running back volume and Kelce, then took Lamar to complete a very position-advantage focused start.",
+  },
+  "Travis Roy Rogers": {
+    slot: "6th",
+    method: "Robust RB with an Elite QB. He opened RB-RB, grabbed Hurts in round four, and kept hammering receivers through the middle.",
+    firstThree: ["Bijan Robinson (1.6)", "Isiah Pacheco (2.5)", "Nico Collins (3.6)"],
+    late: ["Justin Herbert (R13)", "49ers D/ST (R14)", "Evan McPherson (R15)", "Jaleel McLaughlin (R16)"],
+    read: "Started with two backs, then used Hurts and a long receiver run to build weekly ceiling.",
+  },
+  "Christian Engelhardt": {
+    slot: "7th",
+    method: "Balanced anchor build. He alternated premium receiver and running back starts, then added quarterback in round six.",
+    firstThree: ["Justin Jefferson (1.7)", "Saquon Barkley (2.4)", "Michael Pittman Jr. (3.7)"],
+    late: ["Dallas Goedert (R13)", "Cowboys D/ST (R14)", "Jake Moody (R15)", "Romeo Doubs (R16)"],
+    read: "Did not chase one extreme tactic. The draft was built around proven weekly starters across WR and RB.",
+  },
+  "Sam Labovitz": {
+    slot: "8th",
+    method: "Anchor WR with an early TE. Chase anchored the build, then LaPorta came in round four before quarterback in round six.",
+    firstThree: ["Ja'Marr Chase (1.8)", "Kyren Williams (2.3)", "Drake London (3.8)"],
+    late: ["Pat Freiermuth (R13)", "Jake Elliott (R14)", "Browns D/ST (R15)", "Rashid Shaheed (R16)"],
+    read: "Started with receiver ceiling, took Kyren as the running back anchor, and got tight end out of the way early.",
+  },
+  "Miles Elliot": {
+    slot: "9th",
+    method: "Balanced anchor build. He opened WR-RB-RB-WR, then paired McBride and Kyler in rounds five and six.",
+    firstThree: ["Garrett Wilson (1.9)", "Jahmyr Gibbs (2.2)", "De'Von Achane (3.9)"],
+    late: ["Blake Corum (R13)", "Brandon Aubrey (R14)", "Steelers D/ST (R15)", "Kirk Cousins (R16)"],
+    read: "Used the turn area to grab two explosive backs after a receiver anchor, then paired McBride with Kyler.",
+  },
+  "Jakob Cooper": {
+    slot: "10th",
+    method: "Hero RB / balanced build. Taylor anchored the roster, then Jakob alternated WR, RB, WR, TE, and WR before waiting on quarterback.",
+    firstThree: ["Jonathan Taylor (1.10)", "A.J. Brown (2.1)", "Alvin Kamara (3.10)"],
+    late: ["Justin Tucker (R13)", "Adam Thielen (R14)", "Dolphins D/ST (R15)", "Deshaun Watson (R16)"],
+    read: "Used the turn to pair Taylor with A.J. Brown, then kept alternating reliable RB/WR pieces before Burrow in round nine.",
+  },
+};
+const DRAFT_SCOUT_COMPARISONS = {
+  "Jakob Cooper": "Jakob moved from a Taylor-led Hero RB build in 2024 to a modified Zero RB approach in 2025, opening Chase and A.J. Brown before touching running back.",
+  "Sam Labovitz": "Sam kept the same broad WR/RB balance, but 2025 was more aggressive at quarterback: Josh Allen in round three instead of waiting until round six.",
+  "Travis Roy Rogers": "Trav was more running-back heavy in 2024, starting RB-RB. In 2025 he softened that into a balanced RB/WR build and waited longer on quarterback.",
+  "Erik Ohno Dagoberg": "Erik made the sharpest tactical flip: Zero RB in 2024 with three straight receivers, then Robust RB in 2025 with Gibbs and Kyren to start.",
+  "Will Price": "Will went from full Zero RB in 2024 to the opposite in 2025, opening Saquon, Jonathan Taylor, and Lamar before addressing receiver.",
+  "Jacob Moskovitz": "Mosko shifted away from the 2024 scarce-position build of RB-RB-TE-QB and moved toward an Amon-Ra anchor with Jayden Daniels as the early edge.",
+  "Nic Hamilton": "Nic kept the early quarterback instinct from 2024, but moved from Hero RB at 1.1 to a modified Zero RB start with two receivers first.",
+  "Christian Engelhardt": "Christian stayed balanced both years, but 2025 was more clearly built around positional leverage with McCaffrey plus Brock Bowers inside three rounds.",
+  "Miles Blue": "Blue took an elite quarterback in round three both years. The main change was the anchor: CeeDee first in 2024, Derrick Henry first in 2025.",
+  "Miles Elliot": "Miles stayed balanced across both drafts. In 2025 he pushed quarterback earlier with Joe Burrow in round three after taking Kyler in round six in 2024.",
+};
 const ARCHIVE_2025_TEAM_NAME_OVERRIDES = {
   "10w5l": "fantasyboy12345",
   erikohno: "Ricky McFricky",
@@ -92,6 +262,9 @@ const els = {
   champion: document.querySelector("#champion-metric"),
   draftCountdown: document.querySelector("#draft-countdown"),
   draftCountdownValue: document.querySelector("#draft-countdown-value"),
+  draftScoutPanel: document.querySelector("#draft-scout-panel"),
+  draftScoutSelect: document.querySelector("#draft-scout-select"),
+  draftScoutBody: document.querySelector("#draft-scout-body"),
   countdown: document.querySelector("#preseason-countdown"),
   countdownValue: document.querySelector("#countdown-value"),
   teamSelect: document.querySelector("#team-select"),
@@ -161,6 +334,11 @@ function init() {
       renderSelectedTeam();
       if (currentData) renderStandings(currentData.rosters, currentData.users);
       if (selectedRosterId !== "league") scrollToLeagueTable();
+    });
+  }
+  if (els.draftScoutSelect) {
+    els.draftScoutSelect.addEventListener("change", () => {
+      renderDraftScoutReport(els.draftScoutSelect.value);
     });
   }
   document.addEventListener("click", (event) => {
@@ -481,6 +659,7 @@ function renderCurrentPage() {
     els.refreshStamp.textContent = `Updated ${formatTime()}`;
   }
   renderPreseasonCountdown();
+  renderDraftScoutPanel(shouldShowDraftOrderMock(rosters));
   renderMidweekArticleAction();
   renderStandings(rosters, users);
   renderMatchups(currentData.matchupsByWeek[currentWeek] || [], rosters, users, currentWeek);
@@ -511,6 +690,85 @@ function renderPreseasonCountdown() {
     els.draftCountdown?.setAttribute("hidden", "");
   }
   renderCountdown(els.countdown, els.countdownValue, new Date(FIRST_2026_KICKOFF), now);
+}
+
+function renderDraftScoutPanel(show) {
+  if (!els.draftScoutPanel || !els.draftScoutSelect || !els.draftScoutBody) return;
+  els.draftScoutPanel.toggleAttribute("hidden", !show);
+  if (!show) return;
+
+  const currentValue = els.draftScoutSelect.value;
+  els.draftScoutSelect.innerHTML = `
+    <option value="">Choose manager</option>
+    ${Object.keys(DRAFT_SCOUT_2025).map((manager) => `<option value="${escapeHtml(manager)}">${escapeHtml(manager)}</option>`).join("")}
+  `;
+  if (currentValue && DRAFT_SCOUT_2025[currentValue]) {
+    els.draftScoutSelect.value = currentValue;
+    renderDraftScoutReport(currentValue);
+  } else {
+    els.draftScoutBody.innerHTML = `<p>Select a manager to see his draft review.</p>`;
+  }
+}
+
+function renderDraftScoutReport(manager) {
+  if (!els.draftScoutBody) return;
+  const report2025 = DRAFT_SCOUT_2025[manager];
+  const report2024 = DRAFT_SCOUT_2024[manager];
+  if (!report2025 && !report2024) {
+    els.draftScoutBody.innerHTML = `<p>Select a manager to see his draft review.</p>`;
+    return;
+  }
+  els.draftScoutBody.innerHTML = `
+    ${draftScoutComparisonHtml(manager)}
+    ${draftScoutSeasonHtml("2025", report2025)}
+    ${report2024 ? draftScoutSeasonHtml("2024", report2024) : `<p class="draft-scout-note">${escapeHtml(manager)} was not in the 2024 Waxball league.</p>`}
+  `;
+}
+
+function draftScoutComparisonHtml(manager) {
+  const comparison = DRAFT_SCOUT_COMPARISONS[manager];
+  if (!comparison) return "";
+  return `
+    <div class="draft-scout-comparison">
+      <span class="metric-label">Year-to-Year Read</span>
+      <p>${escapeHtml(comparison)}</p>
+    </div>
+  `;
+}
+
+function draftScoutSeasonHtml(season, report) {
+  if (!report) return "";
+  return `
+    <section class="draft-scout-season" aria-label="${season} draft review">
+      <h3>${season} Draft Review</h3>
+      <div class="draft-scout-grid">
+        <div>
+          <span class="metric-label">Draft Slot</span>
+          <strong>${escapeHtml(report.slot)}</strong>
+        </div>
+        <div>
+          <span class="metric-label">Method</span>
+          <p>${escapeHtml(report.method)}</p>
+        </div>
+        <div class="wide-card">
+          <span class="metric-label">First Three Picks</span>
+          <div class="scout-stars">
+            ${report.firstThree.map((player) => `<span>${escapeHtml(player)}</span>`).join("")}
+          </div>
+        </div>
+        <div class="wide-card">
+          <span class="metric-label">Late Picks</span>
+          <div class="scout-stars">
+            ${report.late.map((player) => `<span>${escapeHtml(player)}</span>`).join("")}
+          </div>
+        </div>
+        <div class="wide-card">
+          <span class="metric-label">Read</span>
+          <p>${escapeHtml(report.read)}</p>
+        </div>
+      </div>
+    </section>
+  `;
 }
 
 function renderCountdown(element, valueElement, target, now = currentDate()) {
