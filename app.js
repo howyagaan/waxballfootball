@@ -2,14 +2,19 @@ const API_BASE = "https://api.sleeper.app/v1";
 const CURRENT_LEAGUE_ID = "1312219624808419328";
 const ARCHIVE_2025_LEAGUE_ID = "1253094778665439232";
 const ARCHIVE_2025_DRAFT_ID = "1253094779571421184";
-const AUTO_REFRESH_MS = 120000;
+const AUTO_REFRESH_MS = 60000;
 const WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
 const PAGE = document.body.dataset.page || "current";
 const EASTERN_TIME_ZONE = "America/New_York";
-const PRESEASON_END_DATE_KEY = "2026-09-07";
 const DRAFT_DAY = "2026-09-05T18:00:00-04:00";
 const FIRST_2026_KICKOFF = "2026-09-09T20:20:00-04:00";
 const WAXBALL_AVATAR_SRC = "https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd";
+const SLEEPER_MATCHDAY_SCHEDULE = {
+  "2026-1": [
+    ["2026-w1-wed-ne-sea", "2026-09-09T20:20:00-04:00", "NE", "SEA", "NBC"],
+    ["2026-w1-thu-sf-lar", "2026-09-10T20:35:00-04:00", "SF", "LAR", "Netflix"],
+  ],
+};
 const QUERY_PARAMS = new URLSearchParams(window.location.search);
 const SEASON_PREVIEW = QUERY_PARAMS.get("season");
 const WEEK_PREVIEW = Number(QUERY_PARAMS.get("week"));
@@ -49,6 +54,7 @@ const OWNER_REAL_NAMES = {
   eviandon: "Milo Manheim",
   pigmanbigman: "Nic Hamilton",
   "10w5l": "Jacob Moskovitz",
+  waxobwaxkovitz: "Jacob Moskovitz",
   willyboyp: "Will Price",
   bigdicksenior: "Sam Labovitz",
   darryluvr: "Travis Roy Rogers",
@@ -56,6 +62,18 @@ const OWNER_REAL_NAMES = {
   chrissy511: "Christian Engelhardt",
   papicoop: "Jakob Cooper",
   millsberry27: "Miles Elliot",
+};
+const H2H_SEASON_OUTCOMES = {
+  2024: {
+    champion: "Christian Engelhardt",
+    money: ["Christian Engelhardt", "Erik Ohno Dagoberg", "Travis Roy Rogers"],
+    toiletBowlLoser: "Jacob Moskovitz",
+  },
+  2025: {
+    champion: "Milo Manheim",
+    money: ["Milo Manheim", "Miles Blue", "Jacob Moskovitz"],
+    toiletBowlLoser: "Jakob Cooper",
+  },
 };
 const DRAFT_ORDER_2026 = [
   "Miles Elliot",
@@ -74,158 +92,180 @@ const DRAFT_ORDER_2026 = [
 const DRAFT_SCOUT_2025 = {
   "Jakob Cooper": {
     slot: "1st",
+    finish: "12th / 💩 King",
     method: "Modified Zero RB. He opened WR-WR before taking his first back in round three, then stayed mostly balanced after the receiver-heavy start.",
-    firstThree: ["Ja'Marr Chase (1.1)", "A.J. Brown (2.1)", "Omarion Hampton (3.1)"],
-    late: ["Jayden Reed (R10)", "Rhamondre Stevenson (R11)", "Cameron Dicker (R12)", "Baltimore Ravens D/ST (R13)"],
+    firstThree: ["Ja'Marr Chase (1.01)", "A.J. Brown (2.12)", "Omarion Hampton (3.01)"],
+    rosterPositions: ["5WR", "4RB", "3TE", "2QB", "1K", "1D/ST"],
     read: "Started with two receiver anchors, then balanced running back and tight end depth before taking quarterbacks later.",
   },
   "Sam Labovitz": {
     slot: "2nd",
+    finish: "8th",
     method: "Hero RB with an Elite QB. Bijan was the anchor back, then Sam bought quarterback advantage with Josh Allen in round three.",
-    firstThree: ["Bijan Robinson (1.2)", "Tee Higgins (2.2)", "Josh Allen (3.2)"],
-    late: ["Kyle Pitts (R10)", "Tank Bigsby (R11)", "Philadelphia Eagles D/ST (R12)", "J.J. McCarthy (R13)"],
+    firstThree: ["Bijan Robinson (1.02)", "Tee Higgins (2.11)", "Josh Allen (3.02)"],
+    rosterPositions: ["5WR", "4RB", "3TE", "2QB", "1D/ST", "1K"],
     read: "Grabbed an elite back, a receiver, and quarterback edge early, then filled out depth across every position.",
   },
   "Travis Roy Rogers": {
     slot: "3rd",
+    finish: "11th",
     method: "Balanced RB/WR build. He alternated premium receivers and backs early, then waited on quarterback and tight end.",
-    firstThree: ["CeeDee Lamb (1.3)", "James Cook (2.3)", "Alvin Kamara (3.3)"],
-    late: ["Brandon Aiyuk (R10)", "Dalton Kincaid (R11)", "C.J. Stroud (R12)", "Christian Kirk (R13)"],
+    firstThree: ["CeeDee Lamb (1.03)", "James Cook (2.10)", "Alvin Kamara (3.03)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1K", "1D/ST"],
     read: "Opened with a clear WR/RB build, waited on quarterback, and used the middle rounds to pile up receiver depth.",
   },
   "Erik Ohno Dagoberg": {
     slot: "4th",
+    finish: "6th",
     method: "Robust RB. He started RB-RB, then used the next receiver run to build weekly ceiling around a heavy backfield.",
-    firstThree: ["Jahmyr Gibbs (1.4)", "Kyren Williams (2.4)", "Ladd McConkey (3.4)"],
-    late: ["Jayden Higgins (R10)", "Keenan Allen (R11)", "Braelon Allen (R12)", "Blake Corum (R13)"],
+    firstThree: ["Jahmyr Gibbs (1.04)", "Kyren Williams (2.09)", "Ladd McConkey (3.04)"],
+    rosterPositions: ["6RB", "5WR", "2TE", "1QB", "1D/ST", "1K"],
     read: "Built from running backs first, then stacked receiver options before adding extra back depth late.",
   },
   "Will Price": {
     slot: "5th",
+    finish: "7th",
     method: "Robust RB with an Elite QB. He opened RB-RB-Lamar, then spent the next stretch catching up at receiver.",
-    firstThree: ["Saquon Barkley (1.5)", "Jonathan Taylor (2.5)", "Lamar Jackson (3.5)"],
-    late: ["Darnell Mooney (R10)", "Jake Ferguson (R11)", "Jake Bates (R12)", "Luther Burden (R13)"],
+    firstThree: ["Saquon Barkley (1.05)", "Jonathan Taylor (2.08)", "Lamar Jackson (3.05)"],
+    rosterPositions: ["6WR", "5RB", "2TE", "1QB", "1K", "1D/ST"],
     read: "Took two top backs and Lamar early, then spent most of the next stretch building receiver volume.",
   },
   "Paul Legallet": {
     slot: "6th",
+    finish: "4th",
     method: "Anchor WR build. Jefferson was the first-round anchor, then Paul leaned receiver-heavy while still grabbing two backs in the first six.",
-    firstThree: ["Justin Jefferson (1.6)", "Josh Jacobs (2.6)", "Jaxon Smith-Njigba (3.6)"],
-    late: ["Dak Prescott (R10)", "Nick Chubb (R11)", "Marvin Mims (R12)", "Denver Broncos D/ST (R13)"],
+    firstThree: ["Justin Jefferson (1.06)", "Josh Jacobs (2.07)", "Jaxon Smith-Njigba (3.06)"],
+    rosterPositions: ["6RB", "5WR", "2QB", "1TE", "1D/ST", "1K"],
     read: "Started receiver-heavy, then came back to running back depth and delayed tight end until late.",
   },
   "Jacob Moskovitz": {
     slot: "7th",
+    finish: "3rd",
     method: "Anchor WR with an Elite QB. Amon-Ra started the build, then Jayden Daniels gave him an early quarterback edge.",
-    firstThree: ["Amon-Ra St. Brown (1.7)", "Bucky Irving (2.7)", "Jayden Daniels (3.7)"],
-    late: ["Tucker Kraft (R10)", "Caleb Williams (R11)", "Trey Benson (R12)", "Rachaad White (R13)"],
+    firstThree: ["Amon-Ra St. Brown (1.07)", "Bucky Irving (2.06)", "Jayden Daniels (3.07)"],
+    rosterPositions: ["5WR", "5RB", "2QB", "2TE", "1K", "1D/ST"],
     read: "Added elite quarterback upside early, then kept the roster balanced between receiver and running back.",
   },
   "Nic Hamilton": {
     slot: "8th",
+    finish: "5th",
     method: "Modified Zero RB with an early QB. He started WR-WR, waited until round three for RB, then took quarterback in round four.",
-    firstThree: ["Nico Collins (1.8)", "Drake London (2.8)", "Kenneth Walker (3.8)"],
-    late: ["Jacory Croskey-Merritt (R10)", "Rashod Bateman (R11)", "Tyler Allgeier (R12)", "Romeo Doubs (R13)"],
+    firstThree: ["Nico Collins (1.08)", "Drake London (2.05)", "Kenneth Walker (3.08)"],
+    rosterPositions: ["6WR", "5RB", "2QB", "1TE", "1K", "1D/ST"],
     read: "Went receiver first, found running back starters next, then rounded out with late depth shots.",
   },
   "Christian Engelhardt": {
     slot: "9th",
+    finish: "9th",
     method: "Hero RB with an Elite TE. McCaffrey anchored the build, then Brock Bowers came in round three as the positional advantage swing.",
-    firstThree: ["Christian McCaffrey (1.9)", "Brian Thomas (2.9)", "Brock Bowers (3.9)"],
-    late: ["Justin Fields (R10)", "Najee Harris (R11)", "Cam Ward (R12)", "Zach Ertz (R13)"],
+    firstThree: ["Christian McCaffrey (1.09)", "Brian Thomas (2.04)", "Brock Bowers (3.09)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1D/ST", "1K"],
     read: "Paid up early for an elite tight end after a RB/WR start, then leaned receiver for depth.",
   },
   "Miles Blue": {
     slot: "10th",
+    finish: "Runner-up",
     method: "Hero RB with Elite QB/TE. Derrick Henry anchored the roster before Blue bought Hurts and McBride inside the first four rounds.",
-    firstThree: ["Derrick Henry (1.10)", "Puka Nacua (2.10)", "Jalen Hurts (3.10)"],
-    late: ["Keon Coleman (R10)", "Dallas Goedert (R11)", "Drake Maye (R12)", "Pittsburgh Steelers D/ST (R13)"],
+    firstThree: ["Derrick Henry (1.10)", "Puka Nacua (2.03)", "Jalen Hurts (3.10)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1K", "1D/ST"],
     read: "Used the turn to secure a power RB, elite receiver, quarterback, and tight end inside the first four rounds.",
   },
   "Miles Elliot": {
     slot: "11th",
+    finish: "10th",
     method: "Anchor WR with an Elite QB. Malik Nabers started the build, then Joe Burrow gave him a round-three quarterback anchor.",
-    firstThree: ["Malik Nabers (1.11)", "Chase Brown (2.11)", "Joe Burrow (3.11)"],
-    late: ["Colston Loveland (R10)", "Tyjae Spears (R11)", "Ray Davis (R12)", "Justin Herbert (R13)"],
+    firstThree: ["Malik Nabers (1.11)", "Chase Brown (2.02)", "Joe Burrow (3.11)"],
+    rosterPositions: ["5WR", "5RB", "2QB", "2TE", "1K", "1D/ST"],
     read: "Balanced the board from the back of the round, pairing early QB stability with WR/RB depth.",
   },
   "Milo Manheim": {
     slot: "12th",
+    finish: "Champion",
     method: "Robust RB with an Elite TE. Milo opened RB-RB, then added Trey McBride at the turn before balancing the roster.",
-    firstThree: ["Ashton Jeanty (1.12)", "De'Von Achane (2.12)", "Trey McBride (3.12)"],
-    late: ["Brock Purdy (R10)", "Rashid Shaheed (R11)", "Jaydon Blue (R12)", "Hunter Henry (R13)"],
+    firstThree: ["Ashton Jeanty (1.12)", "De'Von Achane (2.01)", "Trey McBride (3.12)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1K", "1D/ST"],
     read: "Double-tapped running back at the turn, took tight end early, then chased receiver depth through the middle rounds.",
   },
 };
 const DRAFT_SCOUT_2024 = {
   "Nic Hamilton": {
     slot: "1st",
+    finish: "5th",
     method: "Hero RB with an Elite QB. McCaffrey was the lone RB anchor, then Josh Allen came in round three as the quarterback edge.",
-    firstThree: ["Christian McCaffrey (1.1)", "Chris Olave (2.10)", "Josh Allen (3.1)"],
-    late: ["Jakobi Meyers (R13)", "Greg Zuerlein (R14)", "Tua Tagovailoa (R15)", "Bengals D/ST (R16)"],
+    firstThree: ["Christian McCaffrey (1.01)", "Chris Olave (2.10)", "Josh Allen (3.01)"],
+    rosterPositions: ["6WR", "5RB", "2QB", "1TE", "1K", "1D/ST"],
     read: "Paid for the best running back profile immediately, then locked in quarterback advantage early instead of waiting.",
   },
   "Miles Blue": {
     slot: "2nd",
+    finish: "6th",
     method: "Anchor WR with an Elite QB. CeeDee Lamb was the receiver anchor, then Mahomes came in round three.",
-    firstThree: ["CeeDee Lamb (1.2)", "Derrick Henry (2.9)", "Patrick Mahomes (3.2)"],
-    late: ["Harrison Butker (R13)", "Taysom Hill (R14)", "Jared Goff (R15)", "Chiefs D/ST (R16)"],
+    firstThree: ["CeeDee Lamb (1.02)", "Derrick Henry (2.09)", "Patrick Mahomes (3.02)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1K", "1D/ST"],
     read: "Took a top receiver first, paired him with Derrick Henry, then bought quarterback security with Mahomes.",
   },
   "Will Price": {
     slot: "3rd",
+    finish: "7th",
     method: "Zero RB. Will went WR-WR-WR before taking his first back in round four, then added tight end and quarterback after that.",
-    firstThree: ["Tyreek Hill (1.3)", "Davante Adams (2.8)", "Marvin Harrison Jr. (3.3)"],
-    late: ["Jameson Williams (R13)", "Ravens D/ST (R14)", "Younghoe Koo (R15)", "Joshua Palmer (R16)"],
+    firstThree: ["Tyreek Hill (1.03)", "Davante Adams (2.08)", "Marvin Harrison Jr. (3.03)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1D/ST", "1K"],
     read: "Committed hardest to receivers early, which left the roster depending on mid-round backs to become usable starters.",
   },
   "Erik Ohno Dagoberg": {
     slot: "4th",
+    finish: "Runner-up",
     method: "Zero RB. Erik opened WR-WR-WR, then took RB-TE-RB before waiting until round seven for quarterback.",
-    firstThree: ["Amon-Ra St. Brown (1.4)", "Puka Nacua (2.7)", "Mike Evans (3.4)"],
-    late: ["Ty Chandler (R13)", "Curtis Samuel (R14)", "Ka'imi Fairbairn (R15)", "Lions D/ST (R16)"],
+    firstThree: ["Amon-Ra St. Brown (1.04)", "Puka Nacua (2.07)", "Mike Evans (3.04)"],
+    rosterPositions: ["6RB", "6WR", "1TE", "1QB", "1K", "1D/ST"],
     read: "Loaded up on receiver value first, then used the middle rounds to patch running back and tight end.",
   },
   "Jacob Moskovitz": {
     slot: "5th",
+    finish: "10th / 💩 King",
     method: "Robust RB with an Elite TE. He started RB-RB-TE and had three backs inside the first six rounds.",
-    firstThree: ["Breece Hall (1.5)", "Travis Etienne Jr. (2.6)", "Travis Kelce (3.5)"],
-    late: ["Darnell Mooney (R13)", "Cameron Dicker (R14)", "Jets D/ST (R15)", "Aaron Rodgers (R16)"],
+    firstThree: ["Breece Hall (1.05)", "Travis Etienne Jr. (2.06)", "Travis Kelce (3.05)"],
+    rosterPositions: ["7RB", "5WR", "2QB", "1TE", "1K", "1D/ST"],
     read: "Built around running back volume and Kelce, then took Lamar to complete a very position-advantage focused start.",
   },
   "Travis Roy Rogers": {
     slot: "6th",
+    finish: "3rd",
     method: "Robust RB with an Elite QB. He opened RB-RB, grabbed Hurts in round four, and kept hammering receivers through the middle.",
-    firstThree: ["Bijan Robinson (1.6)", "Isiah Pacheco (2.5)", "Nico Collins (3.6)"],
-    late: ["Justin Herbert (R13)", "49ers D/ST (R14)", "Evan McPherson (R15)", "Jaleel McLaughlin (R16)"],
+    firstThree: ["Bijan Robinson (1.06)", "Isiah Pacheco (2.05)", "Nico Collins (3.06)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1D/ST", "1K"],
     read: "Started with two backs, then used Hurts and a long receiver run to build weekly ceiling.",
   },
   "Christian Engelhardt": {
     slot: "7th",
+    finish: "Champion",
     method: "Balanced anchor build. He alternated premium receiver and running back starts, then added quarterback in round six.",
-    firstThree: ["Justin Jefferson (1.7)", "Saquon Barkley (2.4)", "Michael Pittman Jr. (3.7)"],
-    late: ["Dallas Goedert (R13)", "Cowboys D/ST (R14)", "Jake Moody (R15)", "Romeo Doubs (R16)"],
+    firstThree: ["Justin Jefferson (1.07)", "Saquon Barkley (2.04)", "Michael Pittman Jr. (3.07)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1D/ST", "1K"],
     read: "Did not chase one extreme tactic. The draft was built around proven weekly starters across WR and RB.",
   },
   "Sam Labovitz": {
     slot: "8th",
+    finish: "4th",
     method: "Anchor WR with an early TE. Chase anchored the build, then LaPorta came in round four before quarterback in round six.",
-    firstThree: ["Ja'Marr Chase (1.8)", "Kyren Williams (2.3)", "Drake London (3.8)"],
-    late: ["Pat Freiermuth (R13)", "Jake Elliott (R14)", "Browns D/ST (R15)", "Rashid Shaheed (R16)"],
+    firstThree: ["Ja'Marr Chase (1.08)", "Kyren Williams (2.03)", "Drake London (3.08)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1K", "1D/ST"],
     read: "Started with receiver ceiling, took Kyren as the running back anchor, and got tight end out of the way early.",
   },
   "Miles Elliot": {
     slot: "9th",
+    finish: "8th",
     method: "Balanced anchor build. He opened WR-RB-RB-WR, then paired McBride and Kyler in rounds five and six.",
-    firstThree: ["Garrett Wilson (1.9)", "Jahmyr Gibbs (2.2)", "De'Von Achane (3.9)"],
-    late: ["Blake Corum (R13)", "Brandon Aubrey (R14)", "Steelers D/ST (R15)", "Kirk Cousins (R16)"],
+    firstThree: ["Garrett Wilson (1.09)", "Jahmyr Gibbs (2.02)", "De'Von Achane (3.09)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1K", "1D/ST"],
     read: "Used the turn area to grab two explosive backs after a receiver anchor, then paired McBride with Kyler.",
   },
   "Jakob Cooper": {
     slot: "10th",
+    finish: "9th",
     method: "Hero RB / balanced build. Taylor anchored the roster, then Jakob alternated WR, RB, WR, TE, and WR before waiting on quarterback.",
-    firstThree: ["Jonathan Taylor (1.10)", "A.J. Brown (2.1)", "Alvin Kamara (3.10)"],
-    late: ["Justin Tucker (R13)", "Adam Thielen (R14)", "Dolphins D/ST (R15)", "Deshaun Watson (R16)"],
+    firstThree: ["Jonathan Taylor (1.10)", "A.J. Brown (2.01)", "Alvin Kamara (3.10)"],
+    rosterPositions: ["6WR", "4RB", "2QB", "2TE", "1K", "1D/ST"],
     read: "Used the turn to pair Taylor with A.J. Brown, then kept alternating reliable RB/WR pieces before Burrow in round nine.",
   },
 };
@@ -311,6 +351,7 @@ let nflData = null;
 let currentWeek = 1;
 let selectedRosterId = null;
 let playersById = null;
+let playersLoadedAt = 0;
 
 init();
 
@@ -565,13 +606,49 @@ async function loadNflContext() {
     };
   }
 
+  const state = await fetchJson("/state/nfl");
+  const seasonYear = Number(state.season) || new Date().getFullYear();
+  const weekNumber = clampWeek(state.display_week || state.week || 1);
+  const events = sleeperMatchdayEvents(seasonYear, weekNumber);
   return {
-    season: null,
-    week: null,
-    events: [],
+    season: { year: seasonYear },
+    week: { number: weekNumber },
+    events,
     articles: [],
-    mode: detectFootballMode([]),
+    mode: detectFootballMode(events),
   };
+}
+
+function sleeperMatchdayEvents(seasonYear, weekNumber) {
+  return (SLEEPER_MATCHDAY_SCHEDULE[`${seasonYear}-${weekNumber}`] || []).map(([id, date, away, home, broadcast]) => {
+    const state = localGameState(date);
+    return {
+      id,
+      date,
+      shortName: `${away} @ ${home}`,
+      name: `${away} at ${home}`,
+      season: { year: seasonYear, type: 2 },
+      status: { type: { state, description: state === "post" ? "Final" : state === "in" ? "Live" : "Scheduled", shortDetail: state === "post" ? "Final" : formatKickoff(date) } },
+      competitions: [
+        {
+          broadcast,
+          competitors: [
+            { homeAway: "away", team: { abbreviation: away, displayName: away } },
+            { homeAway: "home", team: { abbreviation: home, displayName: home } },
+          ],
+        },
+      ],
+    };
+  });
+}
+
+function localGameState(date) {
+  const now = currentDate();
+  const kickoff = new Date(date);
+  const finalWindow = new Date(kickoff.getTime() + 4.5 * 60 * 60 * 1000);
+  if (now < kickoff) return "pre";
+  if (now < finalWindow) return "in";
+  return "post";
 }
 
 async function loadMatchupsForWeeks(leagueId, weeks) {
@@ -593,7 +670,7 @@ async function loadTransactions(leagueId) {
 }
 
 async function fetchJson(path) {
-  const response = await fetch(`${API_BASE}${path}`);
+  const response = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`Sleeper returned ${response.status} for ${path}.`);
   return response.json();
 }
@@ -721,7 +798,7 @@ function renderDraftScoutReport(manager) {
   els.draftScoutBody.innerHTML = `
     ${draftScoutComparisonHtml(manager)}
     ${draftScoutSeasonHtml("2025", report2025)}
-    ${report2024 ? draftScoutSeasonHtml("2024", report2024) : `<p class="draft-scout-note">${escapeHtml(manager)} was not in the 2024 Waxball league.</p>`}
+    ${draftScoutSeasonHtml("2024", report2024)}
   `;
 }
 
@@ -745,6 +822,7 @@ function draftScoutSeasonHtml(season, report) {
         <div>
           <span class="metric-label">Draft Slot</span>
           <strong>${escapeHtml(report.slot)}</strong>
+          <p>Finished ${escapeHtml(report.finish)}</p>
         </div>
         <div>
           <span class="metric-label">Method</span>
@@ -757,14 +835,10 @@ function draftScoutSeasonHtml(season, report) {
           </div>
         </div>
         <div class="wide-card">
-          <span class="metric-label">Late Picks</span>
+          <span class="metric-label">Roster Composition</span>
           <div class="scout-stars">
-            ${report.late.map((player) => `<span>${escapeHtml(player)}</span>`).join("")}
+            ${report.rosterPositions.map((position) => `<span>${escapeHtml(position)}</span>`).join("")}
           </div>
-        </div>
-        <div class="wide-card">
-          <span class="metric-label">Read</span>
-          <p>${escapeHtml(report.read)}</p>
         </div>
       </div>
     </section>
@@ -942,22 +1016,26 @@ function renderMatchups(matchups, rosters, users, week) {
   }
 
   const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
+  const groups = Array.from(grouped.values());
+  const heatedKeys = heatedRivalryKeys(groups, rosters, users);
   if (isTuesdayMode()) {
     const previousWeek = currentData.matchupsByWeek[currentWeek - 1] || [];
     const previousGrouped = groupBy(previousWeek, (matchup) => matchup.matchup_id || matchup.roster_id);
+    const previousGroups = Array.from(previousGrouped.values());
+    const previousHeatedKeys = heatedRivalryKeys(previousGroups, rosters, users);
     els.matchups.innerHTML = `
       <div class="matchup-subsection">
         <span class="metric-label">Last week recap</span>
-        ${Array.from(previousGrouped.values()).map((pair) => matchupCard(pair, rosters, users, { forceScores: true })).join("")}
+        ${previousGroups.map((pair) => matchupCard(pair, rosters, users, { forceScores: true, heatedRivalry: previousHeatedKeys.has(matchupPairKey(pair)) })).join("")}
       </div>
       <div class="matchup-subsection">
         <span class="metric-label">Week ${week} preview</span>
-        ${Array.from(grouped.values()).map((pair) => matchupCard(pair, rosters, users)).join("")}
+        ${groups.map((pair) => matchupCard(pair, rosters, users, { heatedRivalry: heatedKeys.has(matchupPairKey(pair)) })).join("")}
       </div>
     `;
     return;
   }
-  els.matchups.innerHTML = Array.from(grouped.values()).map((pair) => matchupCard(pair, rosters, users)).join("");
+  els.matchups.innerHTML = groups.map((pair) => matchupCard(pair, rosters, users, { heatedRivalry: heatedKeys.has(matchupPairKey(pair)) })).join("");
 }
 
 function renderTeamSelector(rosters, users) {
@@ -1007,6 +1085,7 @@ async function renderSelectedTeam() {
 
   const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users);
   const opponentRoster = matchup.opponentRoster;
+  const selectedIsHeated = isHeatedSelectedMatchup(matchup, currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users);
   const rosterHasPlayers = [...(matchup.mine?.players || []), ...(roster.players || [])].some((playerId) => playerId !== "0");
   const opponentHasPlayers = [...(matchup.opponent?.players || []), ...(opponentRoster?.players || [])].some((playerId) => playerId !== "0");
   let playerContext = null;
@@ -1032,7 +1111,7 @@ async function renderSelectedTeam() {
 
   els.teamPanel.innerHTML = `
     ${tuesdayLastWeekResult(roster, source.rosters, source.users)}
-    <div class="matchup-focus-card">
+    <div class="matchup-focus-card ${selectedIsHeated ? "heated-rivalry-card" : ""}">
       <div class="matchup-focus-head">
         <div>
           <span class="metric-label">Current matchup</span>
@@ -1041,6 +1120,7 @@ async function renderSelectedTeam() {
         ${matchupScoreBadge(matchup)}
       </div>
       ${matchupVersusShowpiece(roster, opponentRoster, source.users)}
+      ${matchupHistoryPanel(roster, opponentRoster, source.users, { heatedRivalry: selectedIsHeated })}
     </div>
     ${historicalRosterSnapshot}
     ${playersToWatch}
@@ -1334,7 +1414,7 @@ function currentSeasonHasResults() {
 function isPreseasonMode() {
   if (isHistoricalCurrentPreview()) return false;
   if (isDraftCompletePreview()) return false;
-  return PAGE === "current" && !isModePreview() && easternDateKey(currentDate()) <= PRESEASON_END_DATE_KEY;
+  return PAGE === "current" && !isModePreview() && currentDate() < new Date(FIRST_2026_KICKOFF);
 }
 
 function isModePreview() {
@@ -1513,7 +1593,7 @@ function playerSimpleList(players, fallback) {
   if (!players?.length) return `<p class="muted">${escapeHtml(fallback)}</p>`;
   return `
     <ul class="player-list compact-player-list">
-      ${players.map((player) => `<li><strong>${escapeHtml(player.name)}</strong><span>${playerTagHtml(player)}</span></li>`).join("")}
+      ${players.map((player) => `<li>${playerNameHtml(player)}<span>${playerTagHtml(player)}</span></li>`).join("")}
     </ul>
   `;
 }
@@ -1852,7 +1932,7 @@ function modeDefinition(key) {
       key: "midweek",
       label: "Preseason mode",
       title: "Preseason Board",
-      copy: "Draft, schedule, and roster data will unlock this current-season sheet once Sleeper generates the league.",
+      copy: "Draft is complete. Rosters, standings, and Week 1 matchups are live from Sleeper while the league waits for first kickoff.",
       isGameday: false,
     },
     midweek: {
@@ -1960,27 +2040,38 @@ function nextMatchdayGames(events) {
 }
 
 function targetGameWindowEvents(events) {
-  if (PAGE !== "current" || isPreseasonMode()) return [];
-  const today = easternParts();
+  if (PAGE !== "current") return [];
   const todayKey = easternDateKey();
-  const windows = {
-    2: [3, 4],
-    3: [3, 4],
-    4: [4],
-    5: [5, 6, 0],
-    6: [6, 0],
-    0: [0],
-    1: [1],
-  };
-  const targetWeekdays = windows[today.weekday] || [];
+  const targetWeekdays = targetMatchdayWeekdays(events);
   if (!targetWeekdays.length) return [];
+  const earliestKey = targetWeekdays.includes(3) && targetWeekdays.includes(4)
+    ? easternDateKey(fantasyWeekWindowStart())
+    : todayKey;
   return (events || [])
     .filter((event) => {
       const key = easternDateKey(event.date);
       const eventDay = easternParts(event.date).weekday;
-      return key >= todayKey && targetWeekdays.includes(eventDay);
+      return key >= earliestKey && targetWeekdays.includes(eventDay);
     })
     .sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+function targetMatchdayWeekdays(events) {
+  const todayKey = easternDateKey();
+  const upcoming = (events || [])
+    .filter((event) => event.status?.type?.state === "in" || easternDateKey(event.date) >= todayKey)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const referenceDay = isPreseasonMode() && upcoming[0] ? easternParts(upcoming[0].date).weekday : easternParts().weekday;
+  const windows = {
+    2: [3, 4],
+    3: [3, 4],
+    4: [3, 4],
+    5: [6],
+    6: [6],
+    0: [0],
+    1: [1],
+  };
+  return windows[referenceDay] || [];
 }
 
 function isTuesdayMode() {
@@ -2106,8 +2197,7 @@ function matchupResultText(roster, opponentRoster, users, mineScore, opponentSco
 }
 
 function shouldShowPlayersToWatch() {
-  if (isPreseasonMode()) return false;
-  return targetGameWindowEvents(nflData?.events || []).length > 0;
+  return nextMatchdayGames(nflData?.events || []).length > 0;
 }
 
 function matchupScoreBadge(matchup) {
@@ -2120,6 +2210,317 @@ function matchupScoreBadge(matchup) {
       <strong>${escapeHtml(matchup.deltaValue)}</strong>
     </div>
   `;
+}
+
+function matchupHistoryPanel(roster, opponentRoster, users, options = {}) {
+  if (!roster || !opponentRoster) return "";
+  const firstManager = ownerIdentityName(roster, users);
+  const secondManager = ownerIdentityName(opponentRoster, users);
+  const summary = managerMatchupHistory(firstManager, secondManager);
+  const heatLabel = options.heatedRivalry ? `<span class="heated-rivalry-pill">Heated rivalry</span>` : "";
+  if (!summary.games.length) {
+    return `
+      <div class="matchup-history-card ${options.heatedRivalry ? "heated" : ""}">
+        <span class="metric-label">Manager history</span>
+        <strong>First meeting</strong>
+        <p>${escapeHtml(firstManager)} and ${escapeHtml(secondManager)} have no completed Waxball matchup on record.</p>
+      </div>
+    `;
+  }
+  const last = summary.games.at(-1);
+  const waxStats = waxStatHighlightsForSeries(summary);
+  const rivalryUrl = rivalryPageUrl(firstManager, secondManager);
+  return `
+    <div class="matchup-history-card ${options.heatedRivalry ? "heated" : ""}">
+      <span class="metric-label">Manager history</span>${heatLabel}
+      <strong>${escapeHtml(firstManager)} ${escapeHtml(formatH2HRecord(summary))} ${escapeHtml(secondManager)}</strong>
+      <div class="matchup-history-facts">
+        <div>
+          <span>Last meeting</span>
+          <b>${escapeHtml(h2hGameLabel(last))}</b>
+          <em>${escapeHtml(h2hResultText(last))}</em>
+        </div>
+        <div>
+          <span>Rivalry score</span>
+          <a class="matchup-rivalry-link" href="${rivalryUrl}"><b>${rivalryScoreOutOf100(summary)}/100</b></a>
+        </div>
+        ${waxStats.length ? `
+          <div class="matchup-wax-stats">
+            <span>Wax Stats</span>
+            ${waxStats.map((stat) => `<b>${escapeHtml(stat.label)}</b><em>${escapeHtml(stat.detail)}</em>`).join("")}
+          </div>
+        ` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function heatedRivalryKeys(groups, rosters, users) {
+  const scored = groups
+    .map((pair) => ({ key: matchupPairKey(pair), score: rivalryScoreForMatchupPair(pair, rosters, users) }))
+    .filter((item) => item.key && item.score > 0);
+  if (!scored.length) return new Set();
+  const highest = Math.max(...scored.map((item) => item.score));
+  return new Set(scored.filter((item) => item.score === highest).map((item) => item.key));
+}
+
+function isHeatedSelectedMatchup(matchup, matchups, rosters, users) {
+  if (!matchup?.mine || !matchup?.opponent) return false;
+  const grouped = groupBy(matchups, (item) => item.matchup_id || item.roster_id);
+  const groups = Array.from(grouped.values());
+  return heatedRivalryKeys(groups, rosters, users).has(matchupPairKey([matchup.mine, matchup.opponent]));
+}
+
+function matchupPairKey(pair) {
+  if (!pair?.[0] || !pair?.[1]) return "";
+  return pair
+    .map((matchup) => Number(matchup.roster_id))
+    .sort((a, b) => a - b)
+    .join("-");
+}
+
+function rivalryScoreForMatchupPair(pair, rosters, users) {
+  const [first, second] = pair || [];
+  if (!first || !second) return 0;
+  const firstRoster = rosters.find((item) => item.roster_id === first.roster_id);
+  const secondRoster = rosters.find((item) => item.roster_id === second.roster_id);
+  if (!firstRoster || !secondRoster) return 0;
+  const summary = managerMatchupHistory(ownerIdentityName(firstRoster, users), ownerIdentityName(secondRoster, users));
+  return summary.games.length ? rivalryScoreOutOf100(summary) : 0;
+}
+
+function matchupHistoryLine(first, second, rosters, users, options = {}) {
+  if (!first || !second) return "";
+  const firstRoster = rosters.find((item) => item.roster_id === first.roster_id);
+  const secondRoster = rosters.find((item) => item.roster_id === second.roster_id);
+  if (!firstRoster || !secondRoster) return "";
+  const firstManager = ownerIdentityName(firstRoster, users);
+  const secondManager = ownerIdentityName(secondRoster, users);
+  const summary = managerMatchupHistory(firstManager, secondManager);
+  if (!summary.games.length) {
+    return `
+      <div class="matchup-history-line ${options.heatedRivalry ? "heated" : ""}">
+        <div class="matchup-history-record">
+          <span>H2H</span>
+          <strong>First meeting</strong>
+        </div>
+      </div>
+    `;
+  }
+  const rivalryUrl = rivalryPageUrl(firstManager, secondManager);
+  return `
+    <div class="matchup-history-line ${options.heatedRivalry ? "heated" : ""}">
+      <div class="matchup-history-record">
+        <span>H2H</span>
+        <strong>${escapeHtml(compactManagerName(firstManager))} ${escapeHtml(formatH2HRecord(summary))} ${escapeHtml(compactManagerName(secondManager))}</strong>
+      </div>
+      <div class="matchup-history-score">
+        <a class="matchup-rivalry-link" href="${rivalryUrl}"><em>Rivalry score ${rivalryScoreOutOf100(summary)}/100</em></a>
+      </div>
+    </div>
+  `;
+}
+
+function rivalryPageUrl(firstManager, secondManager) {
+  const params = new URLSearchParams({
+    managerA: firstManager,
+    managerB: secondManager,
+    highlight: "rivalry-score",
+  });
+  return `./h2h.html?${params.toString()}#compare`;
+}
+
+function managerMatchupHistory(firstManager, secondManager) {
+  const games = allH2HGames()
+    .filter((game) => game.managers?.includes(firstManager) && game.managers?.includes(secondManager))
+    .sort((a, b) => (Number(a.season) - Number(b.season)) || (Number(a.week) - Number(b.week)) || String(a.id || "").localeCompare(String(b.id || "")));
+  return games.reduce((summary, game) => {
+    const firstIndex = game.managers.indexOf(firstManager);
+    const secondIndex = game.managers.indexOf(secondManager);
+    const firstScore = Number(game.scores?.[firstIndex] || 0);
+    const secondScore = Number(game.scores?.[secondIndex] || 0);
+    summary.firstPoints += firstScore;
+    summary.secondPoints += secondScore;
+    summary.margins.push(Math.abs(firstScore - secondScore));
+    if (firstScore > secondScore) summary.firstWins += 1;
+    else if (secondScore > firstScore) summary.secondWins += 1;
+    else summary.ties += 1;
+    return summary;
+  }, { games, firstWins: 0, secondWins: 0, ties: 0, firstPoints: 0, secondPoints: 0, margins: [] });
+}
+
+function allH2HGames() {
+  const staticGames = window.WAXBALL_H2H_DATA?.matchups || [];
+  return [...staticGames, ...currentSeasonCompletedH2HGames()];
+}
+
+function currentSeasonCompletedH2HGames() {
+  if (PAGE !== "current" || !currentData?.matchupsByWeek) return [];
+  const completedThrough = completedThroughCurrentSeasonWeek();
+  return Object.entries(currentData.matchupsByWeek).flatMap(([week, matchups]) => {
+    if (Number(week) > completedThrough) return [];
+    const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
+    return Array.from(grouped.values()).flatMap((pair, index) => {
+      const [first, second] = pair;
+      if (!first || !second) return [];
+      const firstScore = scoreFor(first);
+      const secondScore = scoreFor(second);
+      if (!firstScore && !secondScore) return [];
+      const firstRoster = currentData.rosters.find((roster) => roster.roster_id === first.roster_id);
+      const secondRoster = currentData.rosters.find((roster) => roster.roster_id === second.roster_id);
+      if (!firstRoster || !secondRoster) return [];
+      return [{
+        id: `2026-w${week}-m${index + 1}`,
+        season: 2026,
+        week: Number(week),
+        stage: "Regular season",
+        managers: [ownerIdentityName(firstRoster, currentData.users), ownerIdentityName(secondRoster, currentData.users)],
+        teams: [teamName(firstRoster, currentData.users), teamName(secondRoster, currentData.users)],
+        scores: [firstScore, secondScore],
+      }];
+    });
+  });
+}
+
+function completedThroughCurrentSeasonWeek() {
+  if (!currentData?.league) return Math.max(0, Number(currentWeek || 1) - 1);
+  return completedThroughWeek(currentData.league, currentData.state);
+}
+
+function formatH2HRecord(summary) {
+  return summary.ties ? `${summary.firstWins}-${summary.secondWins}-${summary.ties}` : `${summary.firstWins}-${summary.secondWins}`;
+}
+
+function rivalryScoreOutOf100(summary) {
+  if (!summary?.games?.length) return 0;
+  const gamesPlayed = summary.games.length;
+  const recordGap = Math.abs(summary.firstWins - summary.secondWins) / gamesPlayed;
+  const recordBalance = 1 - recordGap;
+  const averageMargin = summary.margins.reduce((sum, margin) => sum + margin, 0) / gamesPlayed;
+  const closeness = 86 / (averageMargin + 4);
+  const meetings = gamesPlayed * 5.5;
+  const stakes = summary.games.reduce((sum, game) => sum + gameRivalryWeight(game), 0);
+  const scoringJuice = summary.games.reduce((sum, game) => sum + Number(game.scores[0] || 0) + Number(game.scores[1] || 0), 0) / gamesPlayed / 20;
+  const tiesBonus = summary.ties * 3;
+  return Math.max(1, Math.min(100, Math.round(closeness + meetings + stakes + (recordBalance * 20) + scoringJuice + tiesBonus)));
+}
+
+function waxStatHighlightsForSeries(summary) {
+  const seriesIds = new Set(summary.games.map((game) => game.id));
+  const allGames = allH2HGames();
+  const sideRows = allGames.flatMap((game) => [0, 1].map((index) => {
+    const other = index === 0 ? 1 : 0;
+    const points = Number(game.scores?.[index] || 0);
+    const opponentPoints = Number(game.scores?.[other] || 0);
+    return {
+      game,
+      manager: game.managers?.[index] || "",
+      opponent: game.managers?.[other] || "",
+      points,
+      opponentPoints,
+      margin: points - opponentPoints,
+      result: points === opponentPoints ? "T" : points > opponentPoints ? "W" : "L",
+    };
+  }));
+  const stats = [
+    ...waxSideStat("Highest one-week score", sideRows, (row) => row.points, "max", (row) => `${row.manager} dropped ${row.points.toFixed(2)} in ${h2hGameLabel(row.game)}.`),
+    ...waxSideStat("Lowest one-week score", sideRows, (row) => row.points, "min", (row) => `${row.manager} put up ${row.points.toFixed(2)} in ${h2hGameLabel(row.game)}.`),
+    ...waxSideStat("Lowest score in a win", sideRows.filter((row) => row.result === "W"), (row) => row.points, "min", (row) => `${row.manager} escaped ${row.points.toFixed(2)}-${row.opponentPoints.toFixed(2)} in ${h2hGameLabel(row.game)}.`),
+    ...waxSideStat("Highest score in a loss", sideRows.filter((row) => row.result === "L"), (row) => row.points, "max", (row) => `${row.manager} lost with ${row.points.toFixed(2)} in ${h2hGameLabel(row.game)}.`),
+    ...waxGameStat("Tightest game ever", allGames, (game) => Math.abs(Number(game.scores?.[0] || 0) - Number(game.scores?.[1] || 0)), "min", (game) => `${game.managers?.[0]} ${Number(game.scores?.[0] || 0).toFixed(2)} vs ${game.managers?.[1]} ${Number(game.scores?.[1] || 0).toFixed(2)}.`),
+    ...waxGameStat("Biggest blowout", allGames, (game) => Math.abs(Number(game.scores?.[0] || 0) - Number(game.scores?.[1] || 0)), "max", (game) => `${h2hResultText(game)}.`),
+    ...waxGameStat("Highest-scoring matchup", allGames, (game) => Number(game.scores?.[0] || 0) + Number(game.scores?.[1] || 0), "max", (game) => `${(Number(game.scores?.[0] || 0) + Number(game.scores?.[1] || 0)).toFixed(2)} combined points in ${h2hGameLabel(game)}.`),
+    ...waxGameStat("Lowest-scoring matchup", allGames, (game) => Number(game.scores?.[0] || 0) + Number(game.scores?.[1] || 0), "min", (game) => `${(Number(game.scores?.[0] || 0) + Number(game.scores?.[1] || 0)).toFixed(2)} combined points in ${h2hGameLabel(game)}.`),
+  ];
+  const seen = new Set();
+  return stats
+    .filter((stat) => seriesIds.has(stat.game.id))
+    .filter((stat) => {
+      const key = `${stat.label}-${stat.game.id}-${stat.detail}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function waxSideStat(label, rows, valueFn, mode, detailFn) {
+  return tiedRecords(rows, valueFn, mode).map((row) => ({
+    label,
+    detail: detailFn(row),
+    game: row.game,
+  }));
+}
+
+function waxGameStat(label, games, valueFn, mode, detailFn) {
+  return tiedRecords(games, valueFn, mode).map((game) => ({
+    label,
+    detail: detailFn(game),
+    game,
+  }));
+}
+
+function tiedRecords(items, valueFn, mode) {
+  if (!items.length) return [];
+  const values = items.map(valueFn);
+  const target = mode === "min" ? Math.min(...values) : Math.max(...values);
+  return items.filter((item) => Math.abs(valueFn(item) - target) < 0.005);
+}
+
+function gameRivalryWeight(game) {
+  const stage = game.stage || "";
+  let weight = 0;
+  if (stage === "Championship") weight += 34;
+  else if (stage === "Toilet Bowl final") weight += 32;
+  else if (stage === "3rd-place game") weight += 22;
+  else if (stage === "5th-place game") weight += 16;
+  else if (stage === "Playoffs") weight += 20;
+  else if (stage === "Toilet Bowl") weight += 18;
+  else if (stage === "Toilet Bowl placement") weight += 12;
+  const outcomes = H2H_SEASON_OUTCOMES[Number(game.season)];
+  if (!outcomes) return weight;
+  const winner = h2hWinnerManager(game);
+  const loser = h2hLoserManager(game);
+  if (winner === outcomes.champion) weight += 4;
+  if (outcomes.money.includes(winner)) weight += 2.5;
+  if (loser === outcomes.toiletBowlLoser) weight += 3.5;
+  return weight;
+}
+
+function h2hWinnerManager(game) {
+  const [firstScore, secondScore] = (game.scores || []).map((score) => Number(score || 0));
+  if (firstScore === secondScore) return "";
+  return firstScore > secondScore ? game.managers?.[0] : game.managers?.[1];
+}
+
+function h2hLoserManager(game) {
+  const [firstScore, secondScore] = (game.scores || []).map((score) => Number(score || 0));
+  if (firstScore === secondScore) return "";
+  return firstScore < secondScore ? game.managers?.[0] : game.managers?.[1];
+}
+
+function h2hGameLabel(game) {
+  const stage = game.stage && game.stage !== "Regular season" ? ` ${game.stage}` : "";
+  return `${game.season} Week ${game.week}${stage}`;
+}
+
+function h2hResultText(game) {
+  const [firstManager, secondManager] = game.managers || [];
+  const [firstScore, secondScore] = (game.scores || []).map((score) => Number(score || 0));
+  if (firstScore === secondScore) return `${firstManager} tied ${secondManager} ${firstScore.toFixed(2)}-${secondScore.toFixed(2)}`;
+  const winner = firstScore > secondScore ? firstManager : secondManager;
+  const loser = firstScore > secondScore ? secondManager : firstManager;
+  const winnerScore = Math.max(firstScore, secondScore).toFixed(2);
+  const loserScore = Math.min(firstScore, secondScore).toFixed(2);
+  return `${winner} beat ${loser} ${winnerScore}-${loserScore}`;
+}
+
+function compactManagerName(name) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "";
+  if (parts[0] === "Miles" && parts[1]) return `Miles ${parts[1][0]}`;
+  if (parts[0] === "Travis") return "Travis";
+  if (parts[0] === "Nic") return "Nic";
+  return parts[0];
 }
 
 function scrollToLeagueTable() {
@@ -2174,14 +2575,15 @@ async function teamPlayerContext(roster, events, matchup = null) {
   const bench = benchIds.map((id) => playerSummary(id, players)).filter(Boolean);
   const teamsInNextGames = new Set(nextMatchdayGames(events).flatMap((event) => nflTeamsForEvent(event)));
   const watch = [...starters, ...bench]
-    .filter((player) => teamsInNextGames.has(player.team) || player.injuryStatus)
+    .filter((player) => teamsInNextGames.has(player.team) || isSleeperPlayerInTargetWindow(player) || player.injuryStatus)
     .slice(0, 8);
   return { starters, bench, watch };
 }
 
 async function loadPlayers() {
-  if (playersById) return playersById;
+  if (playersById && Date.now() - playersLoadedAt < 10 * 60 * 1000) return playersById;
   playersById = await fetchJson("/players/nfl");
+  playersLoadedAt = Date.now();
   return playersById;
 }
 
@@ -2194,14 +2596,25 @@ function playerSummary(playerId, players) {
     position: player.position || "",
     team: player.team || "",
     injuryStatus: player.injury_status || "",
+    gameStart: sleeperPlayerGameStart(player),
   };
+}
+
+function sleeperPlayerGameStart(player) {
+  return player.game_start_time
+    || player.game_start
+    || player.game_date
+    || player.metadata?.game_start_time
+    || player.metadata?.game_start
+    || player.metadata?.game_date
+    || "";
 }
 
 function playerList(players, fallback) {
   if (!players?.length) return `<p class="muted">${escapeHtml(fallback)}</p>`;
   return `
     <ul class="player-list">
-      ${players.slice(0, 10).map((player) => `<li><strong>${escapeHtml(player.name)}</strong><span>${escapeHtml([player.position, player.team, player.injuryStatus].filter(Boolean).join(" · ") || "NFL")}</span></li>`).join("")}
+      ${players.slice(0, 10).map((player) => `<li>${playerNameHtml(player)}<span>${escapeHtml([player.position, player.team, player.injuryStatus].filter(Boolean).join(" · ") || "NFL")}</span></li>`).join("")}
     </ul>
   `;
 }
@@ -2249,7 +2662,7 @@ function scoreboardPlayerRow(player, matchup) {
   const meta = [player.position, player.team, game.label].filter(Boolean).join(" · ");
   return `
     <li>
-      <strong>${escapeHtml(player.name)}</strong>
+      ${playerNameHtml(player)}
       <span>${escapeHtml(score || meta || "NFL")}</span>
     </li>
   `;
@@ -2319,7 +2732,7 @@ function contextualPlayerList(players, fallback) {
     <ul class="player-list">
       ${players.map((player) => `
         <li>
-          <strong>${escapeHtml(player.name)}</strong>
+          ${playerNameHtml(player)}
           <span>${escapeHtml([player.position, player.team || "FA"].filter(Boolean).join(" · "))}</span>
         </li>
       `).join("")}
@@ -2355,7 +2768,7 @@ function watchListRows(players, fallback) {
     <ul class="player-list">
       ${players.map((player) => `
         <li>
-          <strong>${escapeHtml(player.name)}</strong>
+          ${playerNameHtml(player)}
           <span>${escapeHtml([player.position, player.team, player.game.label || player.note].filter(Boolean).join(" · "))}</span>
         </li>
       `).join("")}
@@ -2363,9 +2776,21 @@ function watchListRows(players, fallback) {
   `;
 }
 
+function playerNameHtml(player) {
+  return `<strong>${escapeHtml(player.name)}</strong>`;
+}
+
 function playerGameWindow(player) {
   const events = nflData?.events || [];
   const event = events.find((item) => nflTeamsForEvent(item).includes(player.team));
+  if (!event && player.gameStart) {
+    const state = localGameState(player.gameStart);
+    return {
+      label: state === "post" ? "Final" : state === "in" ? "Live" : formatKickoff(player.gameStart),
+      isTarget: isSleeperPlayerInTargetWindow(player),
+      complete: state === "post",
+    };
+  }
   if (!event) return { label: "No game found", isTarget: false, complete: false };
   const state = event.status?.type?.state;
   const isTarget = state === "in" || nextMatchdayGames(events).includes(event);
@@ -2374,6 +2799,13 @@ function playerGameWindow(player) {
     isTarget,
     complete: state === "post",
   };
+}
+
+function isSleeperPlayerInTargetWindow(player) {
+  if (!player?.gameStart) return false;
+  const targetWeekdays = targetMatchdayWeekdays(nflData?.events || []);
+  if (!targetWeekdays.length) return false;
+  return targetWeekdays.includes(easternParts(player.gameStart).weekday);
 }
 
 function playerCompletedScore(player, matchup, game) {
@@ -2402,12 +2834,13 @@ function matchupCard(pair, rosters, users, options = {}) {
   const firstScore = scoreFor(first);
   const secondScore = second ? scoreFor(second) : 0;
   return `
-    <div class="matchup-card">
+    <div class="matchup-card ${options.heatedRivalry ? "heated-rivalry-card" : ""}">
       <div class="matchup-row">
         ${matchupTeam(first, rosters, users, firstScore > secondScore, "", options)}
         <div class="versus">vs</div>
         ${second ? matchupTeam(second, rosters, users, secondScore > firstScore, "away", options) : `<div class="matchup-team away"><span class="avatar">--</span><div class="team-copy"><strong>Bye</strong></div></div>`}
       </div>
+      ${matchupHistoryLine(first, second, rosters, users, options)}
     </div>
   `;
 }
@@ -2712,6 +3145,14 @@ function displayWeek(league, state = {}) {
   if (!league) return 1;
   if (league.status === "complete") return clampWeek(league.settings?.last_scored_leg || league.settings?.leg || 17);
   return clampWeek(state.display_week || state.week || league.settings?.leg || 1);
+}
+
+function completedThroughWeek(league, state = {}) {
+  if (league?.status === "complete") return clampWeek(league.settings?.last_scored_leg || league.settings?.leg || 18);
+  const previousWeek = Number(state?.previous_week || 0);
+  const stateWeek = Number(state?.display_week || state?.week || 1);
+  const leagueWeek = Number(league?.settings?.leg || stateWeek || 1);
+  return Math.max(0, Math.min(18, Math.max(previousWeek, Math.min(stateWeek, leagueWeek) - 1)));
 }
 
 function finalGame(bracket) {

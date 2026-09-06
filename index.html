@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Waxball</title>
+    <title>WAXBALL 2026</title>
     <meta
       name="description"
       content="Waxball 2026 current-season fantasy football dashboard with Sleeper standings, matchups, team rooms, and gameday notes."
     />
     <meta property="og:site_name" content="Waxball" />
-    <meta property="og:title" content="Waxball" />
+    <meta property="og:title" content="WAXBALL 2026" />
     <meta
       property="og:description"
       content="Waxball fantasy football headquarters, live standings, archives, and weekly matchup context."
@@ -22,7 +22,7 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Waxball" />
+    <meta name="twitter:title" content="WAXBALL 2026" />
     <meta
       name="twitter:description"
       content="Waxball fantasy football headquarters, live standings, archives, and weekly matchup context."
@@ -62,8 +62,8 @@
             boys, and happy Waxing.
           </p>
           <div class="hero-actions">
-            <a id="standings-action" class="button primary" href="#standings">Draft Order</a>
-            <a class="button" href="https://sleeper.com/leagues/1312219624808419328/predraft" target="_blank" rel="noreferrer">Open Sleeper</a>
+            <a id="standings-action" class="button primary" href="#standings">League Table</a>
+            <a class="button" href="https://sleeper.com/leagues/1312219624808419328" target="_blank" rel="noreferrer">Open Sleeper</a>
             <div id="draft-countdown" class="preseason-countdown draft-countdown" hidden>
               <span class="metric-label">Draft Day Countdown</span>
               <strong id="draft-countdown-value">--</strong>
@@ -79,7 +79,7 @@
                 </select>
               </div>
               <div id="draft-scout-body" class="draft-scout-body">
-                <p>Select a manager to see his 2025 draft profile.</p>
+                <p>Select a manager to see his draft review.</p>
               </div>
             </article>
             <div id="preseason-countdown" class="preseason-countdown" hidden>
@@ -135,8 +135,8 @@
 
       <section id="standings" class="section-head">
         <div>
-          <p id="standings-eyebrow" class="eyebrow">Draft room</p>
-          <h2 id="standings-title">Draft Order</h2>
+          <p id="standings-eyebrow" class="eyebrow">Sleeper live</p>
+          <h2 id="standings-title">League Table</h2>
         </div>
       </section>
 
@@ -145,8 +145,10 @@
           <thead id="standings-head">
             <tr>
               <th>#</th>
-              <th>Manager</th>
               <th>Team</th>
+              <th>Rec</th>
+              <th>PF</th>
+              <th>PA</th>
             </tr>
           </thead>
           <tbody id="standings-body">
@@ -192,6 +194,7 @@
       <span aria-hidden="true">|</span> <a href="./archive-2024.html">2024 Archive</a>
     </footer>
 
+    <script src="./assets/data/h2h-data.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

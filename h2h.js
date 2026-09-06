@@ -1,6 +1,7 @@
 const H2H_DATA = window.WAXBALL_H2H_DATA || { managers: [], matchups: [] };
 const H2H_API_BASE = "https://api.sleeper.app/v1";
 const H2H_CURRENT_LEAGUE_ID = "1312219624808419328";
+const H2H_REFRESH_MS = 60000;
 const H2H_OWNER_REAL_NAMES = {
   helloimpaul: "Paul Legallet",
   bigboybluey: "Miles Blue",
@@ -8,6 +9,7 @@ const H2H_OWNER_REAL_NAMES = {
   eviandon: "Milo Manheim",
   pigmanbigman: "Nic Hamilton",
   "10w5l": "Jacob Moskovitz",
+  waxobwaxkovitz: "Jacob Moskovitz",
   willyboyp: "Will Price",
   bigdicksenior: "Sam Labovitz",
   darryluvr: "Travis Roy Rogers",
@@ -57,25 +59,54 @@ initH2H();
 refreshH2HLeagueAvatar();
 
 async function initH2H() {
+  await refreshH2HData({ render: false });
+  if (!h2hManagers.length) return;
+  h2hEls.rivalManager?.addEventListener("change", syncRivalManager);
+  h2hEls.rivalVerdict?.addEventListener("click", handleRivalVerdictClick);
+  h2hEls.managerA.addEventListener("change", syncComparison);
+  h2hEls.managerB.addEventListener("change", syncComparison);
+  h2hEls.quirks?.addEventListener("click", handleQuirkClick);
+  const initialSelection = initialH2HSelection();
+  if (initialSelection.managerA && initialSelection.managerB) {
+    selectH2HPair(initialSelection.managerA, initialSelection.managerB, [], initialSelection.highlightTarget);
+  } else {
+    syncComparison();
+  }
+  syncRivalManager();
+  renderH2HQuirks();
+  window.setInterval(() => refreshH2HData({ render: true }), H2H_REFRESH_MS);
+}
+
+async function refreshH2HData({ render = true } = {}) {
+  const selectedRivalManager = h2hEls.rivalManager?.value || "";
+  const selectedManagerA = h2hEls.managerA?.value || "";
+  const selectedManagerB = h2hEls.managerB?.value || "";
   const currentMatchups = await loadCompletedSleeperMatchups();
   h2hMatchups = mergeMatchups(H2H_DATA.matchups || [], currentMatchups);
   managerStats = buildManagerStats(h2hMatchups);
   weekStats = buildWeekStats(h2hMatchups);
   seasonStats = buildSeasonStats(h2hMatchups);
   historicalStats = buildHistoricalStats(h2hMatchups);
-
   h2hManagers = [...new Set([...(H2H_DATA.managers || []), ...h2hMatchups.flatMap((game) => game.managers)])].sort();
-  if (!h2hManagers.length) return;
   populateRivalManagerSelect();
   populateManagerSelects();
-  h2hEls.rivalManager?.addEventListener("change", syncRivalManager);
-  h2hEls.rivalVerdict?.addEventListener("click", handleRivalVerdictClick);
-  h2hEls.managerA.addEventListener("change", syncComparison);
-  h2hEls.managerB.addEventListener("change", syncComparison);
-  h2hEls.quirks?.addEventListener("click", handleQuirkClick);
-  syncComparison();
-  syncRivalManager();
+  if (selectedRivalManager && h2hManagers.includes(selectedRivalManager)) h2hEls.rivalManager.value = selectedRivalManager;
+  if (selectedManagerA && h2hManagers.includes(selectedManagerA)) h2hEls.managerA.value = selectedManagerA;
+  if (selectedManagerB && h2hManagers.includes(selectedManagerB) && selectedManagerB !== h2hEls.managerA.value) h2hEls.managerB.value = selectedManagerB;
+  populateManagerSelects();
+  if (!render) return;
+  renderComparison(h2hEls.managerA?.value || "", h2hEls.managerB?.value || "");
+  renderRivalManager(h2hEls.rivalManager?.value || "");
   renderH2HQuirks();
+}
+
+function initialH2HSelection() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    managerA: params.get("managerA") || params.get("a") || "",
+    managerB: params.get("managerB") || params.get("b") || "",
+    highlightTarget: params.get("highlight") || "",
+  };
 }
 
 async function refreshH2HLeagueAvatar() {
@@ -604,9 +635,10 @@ async function loadCompletedSleeperMatchups() {
 
 function completedThroughWeek(league, state) {
   if (league?.status === "complete") return Number(league.settings?.last_scored_leg || league.settings?.leg || 18);
+  const previousWeek = Number(state?.previous_week || 0);
   const stateWeek = Number(state?.display_week || state?.week || 1);
   const leagueWeek = Number(league?.settings?.leg || stateWeek || 1);
-  return Math.max(0, Math.min(stateWeek, leagueWeek) - 1);
+  return Math.max(0, Math.min(18, Math.max(previousWeek, Math.min(stateWeek, leagueWeek) - 1)));
 }
 
 function sleeperWeekToH2H(league, rosters, users, week, matchups) {
@@ -631,7 +663,7 @@ function sleeperWeekToH2H(league, rosters, users, week, matchups) {
 }
 
 async function h2hFetchJson(path) {
-  const response = await fetch(`${H2H_API_BASE}${path}`);
+  const response = await fetch(`${H2H_API_BASE}${path}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`Sleeper returned ${response.status} for ${path}.`);
   return response.json();
 }
