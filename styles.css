@@ -3017,6 +3017,41 @@ select {
   color: var(--teal);
 }
 
+.bylaws-cosign {
+  border: 1px solid rgba(0, 206, 190, 0.38);
+  border-radius: 18px;
+  margin-top: 0.5rem;
+  padding: clamp(1rem, 3vw, 1.35rem);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 206, 190, 0.14), transparent 32%),
+    rgba(7, 12, 18, 0.52);
+  text-align: center;
+}
+
+.bylaws-cosign span {
+  display: block;
+  color: var(--teal);
+  font-size: 0.76rem;
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bylaws-cosign strong {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--ink);
+  font-size: clamp(1.35rem, 3.2vw, 2.2rem);
+  line-height: 1.1;
+}
+
+.bylaws-cosign p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  font-weight: 650;
+}
+
 .leaders-expanded .leader-toggle {
   margin-top: 0.75rem;
 }
