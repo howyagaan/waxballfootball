@@ -2947,6 +2947,76 @@ select {
   text-transform: uppercase;
 }
 
+.bylaws-hero .hero-main h1 {
+  max-width: 16ch;
+  color: var(--ink);
+  font-size: clamp(2.8rem, 7vw, 5.5rem);
+}
+
+.bylaws-board {
+  display: grid;
+  gap: 1rem;
+  max-width: 980px;
+  margin: clamp(1rem, 3vw, 1.5rem) auto 0;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 206, 190, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(18, 24, 32, 0.98), rgba(12, 18, 26, 0.94));
+  box-shadow: var(--shadow);
+}
+
+.bylaw-section {
+  border-bottom: 1px solid rgba(152, 166, 179, 0.22);
+  padding: clamp(1rem, 2.4vw, 1.35rem) 0;
+}
+
+.bylaw-section:first-child {
+  padding-top: 0;
+}
+
+.bylaw-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.bylaw-section h2 {
+  margin: 0 0 0.8rem;
+  color: var(--teal);
+  font-size: clamp(1.15rem, 2.3vw, 1.55rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.bylaw-section p,
+.bylaw-section li {
+  color: var(--muted);
+  font-size: clamp(1rem, 1.8vw, 1.14rem);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.bylaw-section strong {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.bylaw-section p {
+  margin: 0.65rem 0;
+}
+
+.bylaw-section ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.7rem 0;
+  padding-left: 1.25rem;
+}
+
+.bylaw-section li::marker {
+  color: var(--teal);
+}
+
 .leaders-expanded .leader-toggle {
   margin-top: 0.75rem;
 }
