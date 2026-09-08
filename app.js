@@ -1494,7 +1494,7 @@ async function fridayTnfRecapCopy() {
 async function previousWeekTopPprCopy() {
   const week = Math.max(1, currentWeek - 1);
   const topPlayers = await topPprPlayersForWeek(week, null, 3);
-  if (!topPlayers.length) return nflData?.mode?.copy || "";
+  if (!topPlayers.length) return nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || "";
   const leaders = topPlayers
     .map((item, index) => `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) - ${ownerIdentityName(item.roster, currentData.users)}`)
     .join("; ");
@@ -2048,7 +2048,7 @@ function modeDefinition(key) {
       key: "midweek",
       label: "Tuesday",
       title: "Waiver Tuesday",
-      copy: "Waivers, injury fallout, free-agent scraps, and matchup prep start here.",
+      copy: "Previous-week PPR leaders will appear here once Sleeper has matchup scoring.",
       isGameday: false,
       weekLabelPrefix: "Tuesday",
     },
