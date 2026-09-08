@@ -635,7 +635,8 @@
       document.addEventListener("click", (event) => {
         const shortcut = event.target.closest("[data-team-shortcut-2024]");
         if (shortcut) {
-          const index = Number(shortcut.dataset.teamShortcut2024);
+          const index = Number(shortcut.getAttribute("data-team-shortcut-2024"));
+          if (!Number.isInteger(index) || !teams2024[index]) return;
           if (selector2024) selector2024.value = String(index);
           renderTeam2024(teams2024[index]);
           requestAnimationFrame(() => {
