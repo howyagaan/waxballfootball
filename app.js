@@ -991,7 +991,7 @@ function renderLeagueAvatarRail(rosters, users) {
   if (!els.avatarRail || !["current", "archive"].includes(PAGE)) return;
   const ordered = PAGE === "archive"
     ? archiveRowsForTable(archiveData).map((row) => row.roster).filter(Boolean)
-    : sortRosters(rosters, users);
+    : [...rosters].sort((a, b) => ownerIdentityName(a, users).localeCompare(ownerIdentityName(b, users), undefined, { sensitivity: "base" }));
   document.body.classList.add("has-avatar-rail");
   els.avatarRail.innerHTML = ordered.map((roster) => `
     <button

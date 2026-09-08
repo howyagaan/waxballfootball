@@ -3,6 +3,30 @@
   const games = Array.isArray(data.matchups) ? data.matchups : [];
   const managers = Array.isArray(data.managers) ? data.managers : [];
   const EPSILON = 0.005;
+  const LOYALTY_ARCHIVE_PROFILE_ROWS = [
+    { manager: "Jacob Moskovitz", team: "JacobNoWaxkovitz", season: 2024, kept: 9, drafted: 16 },
+    { manager: "Jakob Cooper", team: "PapiCoop", season: 2024, kept: 9, drafted: 16 },
+    { manager: "Sam Labovitz", team: "DaBigbootylatinas", season: 2024, kept: 9, drafted: 16 },
+    { manager: "Travis Roy Rogers", team: "gaygun", season: 2024, kept: 8, drafted: 16 },
+    { manager: "Miles Blue", team: "blueball", season: 2024, kept: 7, drafted: 16 },
+    { manager: "Christian Engelhardt", team: "Steeler Virginity", season: 2024, kept: 6, drafted: 16 },
+    { manager: "Erik Ohno Dagoberg", team: "Erik's Excellent Entourage", season: 2024, kept: 6, drafted: 16 },
+    { manager: "Miles Elliot", team: "Daddy Campbell", season: 2024, kept: 6, drafted: 16 },
+    { manager: "Will Price", team: "Leaping Jesters", season: 2024, kept: 3, drafted: 16 },
+    { manager: "Nic Hamilton", team: "Balls? Say Less.", season: 2024, kept: 2, drafted: 16 },
+    { manager: "Milo Manheim", team: "EvianDon", season: 2025, kept: 12, drafted: 16 },
+    { manager: "Will Price", team: "Leaping Jesters", season: 2025, kept: 11, drafted: 16 },
+    { manager: "Miles Blue", team: "BlueBalls", season: 2025, kept: 9, drafted: 16 },
+    { manager: "Paul Legallet", team: "helloimpaul", season: 2025, kept: 9, drafted: 16 },
+    { manager: "Sam Labovitz", team: "mistahbigdick", season: 2025, kept: 9, drafted: 16 },
+    { manager: "Christian Engelhardt", team: "Steeler Virginity", season: 2025, kept: 8, drafted: 16 },
+    { manager: "Jakob Cooper", team: "Papi Coop", season: 2025, kept: 8, drafted: 16 },
+    { manager: "Jacob Moskovitz", team: "fantasyboy12345", season: 2025, kept: 7, drafted: 16 },
+    { manager: "Nic Hamilton", team: "Dickless Cameltoe", season: 2025, kept: 7, drafted: 16 },
+    { manager: "Erik Ohno Dagoberg", team: "Ricky McFricky", season: 2025, kept: 5, drafted: 16 },
+    { manager: "Travis Roy Rogers", team: "yumyucker", season: 2025, kept: 5, drafted: 16 },
+    { manager: "Miles Elliot", team: "Daddy Campbell", season: 2025, kept: 4, drafted: 16 },
+  ];
   const FINAL_FINISH = {
     2024: {
       "Christian Engelhardt": "1st",
@@ -33,6 +57,7 @@
   };
 
   const allEl = document.querySelector("#wax-stats-all");
+  const recentEl = document.querySelector("#wax-stats-recent");
 
   const score = (value) => Number(value || 0);
   const fmt = (value) => score(value).toFixed(2);
@@ -101,6 +126,14 @@
       return mode === "min" ? Math.min(best, value) : Math.max(best, value);
     }, getValue(rows[0]));
     return rows.filter((row) => Math.abs(getValue(row) - target) < EPSILON);
+  }
+
+  function chronologicalGames() {
+    return [...games].sort((a, b) => (
+      Number(a.season) - Number(b.season)
+      || Number(a.week) - Number(b.week)
+      || String(a.id || "").localeCompare(String(b.id || ""))
+    ));
   }
 
   function groupByWeek(rows) {
@@ -256,6 +289,16 @@
     `;
   }
 
+  function recentAdjustmentCard(adjustment) {
+    return `
+      <article class="recent-stat-card ${adjustment.tone || ""}">
+        <span>${escapeHtml(adjustment.title)}</span>
+        <strong>${escapeHtml(adjustment.value)}</strong>
+        <p>${adjustment.detail}</p>
+      </article>
+    `;
+  }
+
   function sideDetail(row) {
     return `
       <b>${escapeHtml(row.manager)}</b>
@@ -287,6 +330,14 @@
     `;
   }
 
+  function loyaltyDetail(row) {
+    return `
+      <b>${escapeHtml(row.manager)}</b>
+      <span>${escapeHtml(row.team)} • ${row.season}</span>
+      <em>${row.kept} of ${row.drafted} draft picks kept</em>
+    `;
+  }
+
   function streakDetail(row) {
     return `
       <b>${escapeHtml(row.manager)}</b>
@@ -294,7 +345,148 @@
     `;
   }
 
-  function render() {
+  function recordAdjustmentRows(limit = 5, season = 2026, weekWindow = 4) {
+    const records = [
+      {
+        title: "Highest one-week score",
+        tone: "is-green",
+        mode: "max",
+        value: (row) => row.points,
+        format: (row) => `${fmt(row.points)} pts`,
+        detail: (row) => `${escapeHtml(row.manager)} set it in ${gameLabelHtml(row.game)} for ${escapeHtml(row.team)}.`,
+      },
+      {
+        title: "Lowest one-week score",
+        tone: "is-red",
+        mode: "min",
+        value: (row) => row.points,
+        format: (row) => `${fmt(row.points)} pts`,
+        detail: (row) => `${escapeHtml(row.manager)} reset the floor in ${gameLabelHtml(row.game)} for ${escapeHtml(row.team)}.`,
+      },
+      {
+        title: "Lowest score in win",
+        mode: "min",
+        filter: (row) => row.result === "W",
+        value: (row) => row.points,
+        format: (row) => `${fmt(row.points)} pts`,
+        detail: (row) => `${escapeHtml(row.manager)} escaped ${fmt(row.points)}-${fmt(row.oppPoints)} in ${gameLabelHtml(row.game)}.`,
+      },
+      {
+        title: "Highest score in loss",
+        mode: "max",
+        filter: (row) => row.result === "L",
+        value: (row) => row.points,
+        format: (row) => `${fmt(row.points)} pts`,
+        detail: (row) => `${escapeHtml(row.manager)} lost with ${fmt(row.points)} in ${gameLabelHtml(row.game)}.`,
+      },
+    ];
+    const gameRecords = [
+      {
+        title: "Biggest blowout",
+        mode: "max",
+        value: (game) => Math.abs(score(game.scores?.[0]) - score(game.scores?.[1])),
+        format: (game) => `${fmt(Math.abs(score(game.scores?.[0]) - score(game.scores?.[1])))} pts`,
+        detail: (game) => `${escapeHtml(game.managers?.[0])} vs ${escapeHtml(game.managers?.[1])} in ${gameLabelHtml(game)}.`,
+      },
+      {
+        title: "Tightest game",
+        mode: "min",
+        value: (game) => Math.abs(score(game.scores?.[0]) - score(game.scores?.[1])),
+        format: (game) => `${fmt(Math.abs(score(game.scores?.[0]) - score(game.scores?.[1])))} pts`,
+        detail: (game) => `${escapeHtml(game.managers?.[0])} vs ${escapeHtml(game.managers?.[1])} in ${gameLabelHtml(game)}.`,
+      },
+      {
+        title: "Highest combined score",
+        tone: "is-green",
+        mode: "max",
+        value: (game) => score(game.scores?.[0]) + score(game.scores?.[1]),
+        format: (game) => `${fmt(score(game.scores?.[0]) + score(game.scores?.[1]))} pts`,
+        detail: (game) => `${escapeHtml(game.managers?.[0])} and ${escapeHtml(game.managers?.[1])} combined in ${gameLabelHtml(game)}.`,
+      },
+      {
+        title: "Lowest combined score",
+        tone: "is-red",
+        mode: "min",
+        value: (game) => score(game.scores?.[0]) + score(game.scores?.[1]),
+        format: (game) => `${fmt(score(game.scores?.[0]) + score(game.scores?.[1]))} pts`,
+        detail: (game) => `${escapeHtml(game.managers?.[0])} and ${escapeHtml(game.managers?.[1])} combined in ${gameLabelHtml(game)}.`,
+      },
+    ];
+    const adjustments = [];
+    const sideRecords = records.map((record) => ({ ...record, best: null, seen: false }));
+    const matchupRecords = gameRecords.map((record) => ({ ...record, best: null, seen: false }));
+
+    chronologicalGames().forEach((game) => {
+      const winner = winnerIndex(game);
+      const gameRows = [0, 1].map((index) => {
+        const other = index === 0 ? 1 : 0;
+        const points = score(game.scores?.[index]);
+        const oppPoints = score(game.scores?.[other]);
+        return {
+          game,
+          manager: game.managers?.[index],
+          team: game.teams?.[index],
+          opponent: game.managers?.[other],
+          points,
+          oppPoints,
+          result: winner === -1 ? "T" : winner === index ? "W" : "L",
+        };
+      });
+
+      sideRecords.forEach((record) => {
+        gameRows.filter((row) => !record.filter || record.filter(row)).forEach((row) => {
+          const value = record.value(row);
+          const brokeRecord = record.seen && (record.mode === "min" ? value < record.best - EPSILON : value > record.best + EPSILON);
+          if (brokeRecord) adjustments.push({
+            title: record.title,
+            value: record.format(row),
+            detail: record.detail(row),
+            tone: record.tone,
+            game,
+          });
+          if (!record.seen || (record.mode === "min" ? value < record.best : value > record.best)) {
+            record.best = value;
+            record.seen = true;
+          }
+        });
+      });
+
+      matchupRecords.forEach((record) => {
+        const value = record.value(game);
+        const brokeRecord = record.seen && (record.mode === "min" ? value < record.best - EPSILON : value > record.best + EPSILON);
+        if (brokeRecord) adjustments.push({
+          title: record.title,
+          value: record.format(game),
+          detail: record.detail(game),
+          tone: record.tone,
+          game,
+        });
+        if (!record.seen || (record.mode === "min" ? value < record.best : value > record.best)) {
+          record.best = value;
+          record.seen = true;
+        }
+      });
+    });
+
+    const recentSeasonWeeks = chronologicalGames()
+      .filter((game) => Number(game.season) === season)
+      .map((game) => Number(game.week))
+      .filter(Number.isFinite);
+    const latestWeek = recentSeasonWeeks.length ? Math.max(...recentSeasonWeeks) : null;
+    if (latestWeek === null) return [];
+    const earliestWeek = latestWeek - weekWindow + 1;
+
+    return adjustments
+      .filter((adjustment) => Number(adjustment.game.season) === season && Number(adjustment.game.week) >= earliestWeek)
+      .sort((a, b) => (
+        Number(b.game.season) - Number(a.game.season)
+        || Number(b.game.week) - Number(a.game.week)
+        || String(b.game.id || "").localeCompare(String(a.game.id || ""))
+      ))
+      .slice(0, limit);
+  }
+
+  function render(loyaltyRows = LOYALTY_ARCHIVE_PROFILE_ROWS) {
     const rows = sideRows();
     const wins = rows.filter((row) => row.result === "W");
     const losses = rows.filter((row) => row.result === "L");
@@ -325,6 +517,14 @@
     const bestPlayoffPerformer = playoffPerformerRows();
     const topThreeFinishes = weeklyTopThreeRows();
     const bottomThreeFinishes = weeklyBottomThreeRows();
+    const mostLoyal = tiedRows(loyaltyRows, (row) => row.kept, "max");
+    const leastLoyal = tiedRows(loyaltyRows, (row) => row.kept, "min");
+    const recentAdjustments = recordAdjustmentRows();
+
+    if (recentEl) {
+      recentEl.closest(".recent-stat-adjustments").hidden = !recentAdjustments.length;
+      recentEl.innerHTML = recentAdjustments.map(recentAdjustmentCard).join("");
+    }
 
     allEl.innerHTML = [
       statCard({
@@ -422,6 +622,18 @@
         value: `${fmt(bestPlayoffPerformer[0]?.average)} pts avg.`,
         details: bestPlayoffPerformer.map(playoffDetail),
         tone: "is-green",
+      }),
+      statCard({
+        title: "Most loyal manager",
+        value: `${mostLoyal[0]?.kept || 0} kept`,
+        details: mostLoyal.map(loyaltyDetail),
+        tone: "is-green",
+      }),
+      statCard({
+        title: "Least loyal manager",
+        value: `${leastLoyal[0]?.kept || 0} kept`,
+        details: leastLoyal.map(loyaltyDetail),
+        tone: "is-red",
       }),
       statCard({
         title: "Most weekly top-three finishes",

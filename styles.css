@@ -2900,6 +2900,84 @@ select {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.recent-stat-adjustments {
+  border-color: rgba(255, 184, 77, 0.34);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 184, 77, 0.16), transparent 36%),
+    radial-gradient(circle at 88% 12%, rgba(255, 93, 120, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(18, 24, 32, 0.98), rgba(11, 15, 20, 0.96));
+}
+
+.recent-stat-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.recent-stat-head h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.5vw, 2.65rem);
+  line-height: 0.95;
+}
+
+.recent-stat-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.recent-stat-card {
+  min-height: 10rem;
+  border: 1px solid rgba(255, 184, 77, 0.2);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 184, 77, 0.14), transparent 42%),
+    rgba(7, 12, 18, 0.58);
+  padding: 0.85rem;
+}
+
+.recent-stat-card > span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.recent-stat-card > strong {
+  display: block;
+  margin: 0.45rem 0;
+  color: #ffb84d;
+  font-size: clamp(1.45rem, 2.7vw, 2.15rem);
+  line-height: 0.95;
+}
+
+.recent-stat-card.is-green > strong {
+  color: #27e47b;
+}
+
+.recent-stat-card.is-red > strong {
+  color: #ff5d78;
+}
+
+.recent-stat-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.recent-stat-card a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-thickness: 0.09em;
+  text-underline-offset: 0.16em;
+}
+
 .wax-stat-card {
   display: flex;
   min-height: 13rem;
@@ -4011,6 +4089,10 @@ footer {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .recent-stat-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .wax-stats-suggestions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4172,6 +4254,14 @@ footer {
 
   .wax-stats-grid,
   .wax-stats-grid-extra {
+    grid-template-columns: 1fr;
+  }
+
+  .recent-stat-head {
+    display: block;
+  }
+
+  .recent-stat-list {
     grid-template-columns: 1fr;
   }
 
