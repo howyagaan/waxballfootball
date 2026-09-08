@@ -47,6 +47,8 @@
       </nav>
     </header>
 
+    <nav id="league-avatar-rail" class="league-avatar-rail" aria-label="2024 team shortcuts"></nav>
+
     <main id="top">
       <section class="hero archive-hero">
         <div class="hero-main">
@@ -581,6 +583,44 @@
             </article>
           </div>
         `;
+        renderAvatarRail2024(teams2024.indexOf(team));
+      }
+
+      function renderAvatarRail2024(activeIndex = 0) {
+        const rail = document.querySelector("#league-avatar-rail");
+        if (!rail) return;
+        document.body.classList.add("has-avatar-rail");
+        rail.innerHTML = teams2024.map((team, index) => `
+          <button
+            class="league-avatar-shortcut ${index === activeIndex ? "active" : ""}"
+            type="button"
+            data-team-shortcut-2024="${index}"
+            aria-label="Open ${team.manager}"
+            title="${team.manager}"
+          >
+            <span class="avatar">${team.avatar || initials2024(team.manager)}</span>
+            <span>${compactManagerName2024(team.manager)}</span>
+          </button>
+        `).join("");
+      }
+
+      function initials2024(name) {
+        return String(name || "")
+          .trim()
+          .split(/\s+/)
+          .map((part) => part[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase() || "--";
+      }
+
+      function compactManagerName2024(name) {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return "";
+        if (parts[0] === "Miles" && parts[1]) return `Miles ${parts[1][0]}`;
+        if (parts[0] === "Travis") return "Travis";
+        if (parts[0] === "Nic") return "Nic";
+        return parts[0];
       }
 
       const selector2024 = document.querySelector("#team-select-2024");
@@ -593,6 +633,17 @@
       }
 
       document.addEventListener("click", (event) => {
+        const shortcut = event.target.closest("[data-team-shortcut-2024]");
+        if (shortcut) {
+          const index = Number(shortcut.dataset.teamShortcut2024);
+          if (selector2024) selector2024.value = String(index);
+          renderTeam2024(teams2024[index]);
+          requestAnimationFrame(() => {
+            document.querySelector(".archive-team-lab")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+          return;
+        }
+
         const toggle = event.target.closest("[data-leader-toggle]");
         if (!toggle) return;
         const expanded = !document.body.classList.contains("leaders-expanded");

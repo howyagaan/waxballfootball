@@ -276,6 +276,80 @@ main {
   margin: 0 auto;
 }
 
+body.has-avatar-rail main,
+body.has-avatar-rail footer {
+  width: min(1180px, calc(100% - 11rem));
+}
+
+.league-avatar-rail {
+  display: none;
+}
+
+.league-avatar-shortcut {
+  display: grid;
+  gap: 0.25rem;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.58rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.league-avatar-shortcut .avatar {
+  width: 2.85rem;
+  height: 2.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.league-avatar-shortcut.active,
+.league-avatar-shortcut:hover,
+.league-avatar-shortcut:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
+.league-avatar-shortcut.active .avatar {
+  border-color: var(--teal);
+  box-shadow:
+    0 0 0 3px rgba(0, 206, 184, 0.16),
+    0 12px 30px rgba(0, 0, 0, 0.32);
+}
+
+@media (min-width: 821px) {
+  .league-avatar-rail {
+    position: fixed;
+    top: 5.6rem;
+    left: 0.95rem;
+    z-index: 15;
+    display: grid;
+    gap: 0.5rem;
+    justify-items: center;
+    max-height: calc(100vh - 6.5rem);
+    overflow: visible;
+    padding: 0.45rem;
+  }
+
+  .league-avatar-shortcut {
+    transform-origin: left center;
+  }
+
+  .league-avatar-shortcut:hover .avatar,
+  .league-avatar-shortcut:focus-visible .avatar {
+    transform: scale(1.35) translateX(0.16rem);
+  }
+}
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
@@ -3543,6 +3617,39 @@ footer {
   nav {
     margin-inline: -0.2rem;
     padding-bottom: 0.1rem;
+  }
+
+  body.has-avatar-rail main,
+  body.has-avatar-rail footer {
+    width: min(100% - 0.8rem, 1180px);
+  }
+
+  .league-avatar-rail {
+    position: sticky;
+    top: 0;
+    z-index: 19;
+    display: flex;
+    gap: 0.65rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    border-bottom: 1px solid var(--line);
+    background: rgba(11, 15, 20, 0.94);
+    padding: 0.65rem max(0.7rem, env(safe-area-inset-left)) 0.55rem;
+    scrollbar-width: none;
+  }
+
+  .league-avatar-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .league-avatar-shortcut {
+    flex: 0 0 auto;
+    min-width: 3.5rem;
+  }
+
+  .league-avatar-shortcut .avatar {
+    width: 2.7rem;
+    height: 2.7rem;
   }
 
   main {

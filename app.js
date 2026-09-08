@@ -305,6 +305,7 @@ const els = {
   draftScoutPanel: document.querySelector("#draft-scout-panel"),
   draftScoutSelect: document.querySelector("#draft-scout-select"),
   draftScoutBody: document.querySelector("#draft-scout-body"),
+  avatarRail: document.querySelector("#league-avatar-rail"),
   countdown: document.querySelector("#preseason-countdown"),
   countdownValue: document.querySelector("#countdown-value"),
   teamSelect: document.querySelector("#team-select"),
@@ -374,6 +375,8 @@ function init() {
       selectedRosterId = els.teamSelect.value === "league" ? "league" : Number(els.teamSelect.value);
       renderSelectedTeam();
       if (currentData) renderStandings(currentData.rosters, currentData.users);
+      if (PAGE === "current" && currentData) renderLeagueAvatarRail(currentData.rosters, currentData.users);
+      if (PAGE === "archive" && archiveData) renderLeagueAvatarRail(archiveData.rosters, archiveData.users);
       if (selectedRosterId !== "league") scrollToLeagueTable();
     });
   }
@@ -391,11 +394,7 @@ function init() {
 
     const rosterTarget = event.target.closest("[data-roster-link]");
     if (rosterTarget) {
-      selectedRosterId = Number(rosterTarget.dataset.rosterLink);
-      if (els.teamSelect) els.teamSelect.value = String(selectedRosterId);
-      renderSelectedTeam();
-      if (currentData) renderStandings(currentData.rosters, currentData.users);
-      scrollToLeagueTable();
+      selectRosterFromShortcut(Number(rosterTarget.dataset.rosterLink), { scroll: rosterTarget.hasAttribute("data-avatar-shortcut") ? "profile" : "table" });
       return;
     }
 
@@ -717,6 +716,7 @@ function renderCurrentPage() {
   }
   renderPreseasonCountdown();
   renderDraftScoutPanel(shouldShowDraftOrderMock(rosters));
+  renderLeagueAvatarRail(rosters, users);
   renderMidweekArticleAction();
   renderStandings(rosters, users);
   renderMatchups(currentData.matchupsByWeek[currentWeek] || [], rosters, users, currentWeek);
@@ -852,6 +852,7 @@ function renderArchivePage() {
 
   renderArchiveTable(archiveData);
   renderArchiveLeaderPanels(archiveData);
+  renderLeagueAvatarRail(archiveData.rosters, archiveData.users);
   renderTeamSelector(archiveData.rosters, archiveData.users);
   renderSelectedTeam();
 }
@@ -984,6 +985,41 @@ function renderDraftOrderMock(rosters, users) {
     `)
     .join("");
   els.standings.innerHTML = rows || `<tr><td colspan="3">Draft order will appear here.</td></tr>`;
+}
+
+function renderLeagueAvatarRail(rosters, users) {
+  if (!els.avatarRail || !["current", "archive"].includes(PAGE)) return;
+  const ordered = PAGE === "archive"
+    ? archiveRowsForTable(archiveData).map((row) => row.roster).filter(Boolean)
+    : sortRosters(rosters, users);
+  document.body.classList.add("has-avatar-rail");
+  els.avatarRail.innerHTML = ordered.map((roster) => `
+    <button
+      class="league-avatar-shortcut ${Number(selectedRosterId) === Number(roster.roster_id) ? "active" : ""}"
+      type="button"
+      data-roster-link="${escapeHtml(roster.roster_id)}"
+      data-avatar-shortcut
+      aria-label="Open ${escapeHtml(ownerIdentityName(roster, users))}"
+      title="${escapeHtml(ownerIdentityName(roster, users))}"
+    >
+      ${avatar(roster, users, { initialsSource: ownerIdentityName(roster, users) })}
+      <span>${escapeHtml(compactManagerName(ownerIdentityName(roster, users)))}</span>
+    </button>
+  `).join("");
+}
+
+function selectRosterFromShortcut(rosterId, options = {}) {
+  selectedRosterId = Number(rosterId);
+  if (els.teamSelect) els.teamSelect.value = String(selectedRosterId);
+  renderSelectedTeam();
+  if (PAGE === "current" && currentData) renderStandings(currentData.rosters, currentData.users);
+  if (PAGE === "archive" && archiveData) renderLeagueAvatarRail(archiveData.rosters, archiveData.users);
+  if (PAGE === "current" && currentData) renderLeagueAvatarRail(currentData.rosters, currentData.users);
+  if (options.scroll === "profile") {
+    scrollToSelectedTeamPanel();
+  } else {
+    scrollToLeagueTable();
+  }
 }
 
 function renderMatchups(matchups, rosters, users, week) {
@@ -1172,7 +1208,7 @@ async function renderArchiveSelectedTeam(roster) {
 }
 
 function renderArchiveTable(data) {
-  els.archiveBody.innerHTML = data.history.rows
+  els.archiveBody.innerHTML = archiveRowsForTable(data)
     .map((row) => `
       <tr>
         <td class="rank">${row.rank}</td>
@@ -1183,6 +1219,10 @@ function renderArchiveTable(data) {
       </tr>
     `)
     .join("");
+}
+
+function archiveRowsForTable(data) {
+  return data?.history?.rows || [];
 }
 
 function renderArchiveLeaderPanels(data) {
@@ -2666,6 +2706,13 @@ function scrollToLeagueTable() {
   });
 }
 
+function scrollToSelectedTeamPanel() {
+  requestAnimationFrame(() => {
+    const target = PAGE === "archive" ? document.querySelector(".archive-team-lab") : document.querySelector("#team-panel-section");
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 function matchupVersusShowpiece(roster, opponentRoster, users) {
   return `
     <div class="matchup-versus-showpiece">
@@ -3267,12 +3314,12 @@ function managerCell(roster, users, options = {}) {
   `;
 }
 
-function avatar(roster, users) {
+function avatar(roster, users, options = {}) {
   if (!roster) return `<span class="avatar">--</span>`;
   const user = userForRoster(roster, users);
   const avatarUrl = user?.metadata?.avatar;
   const avatarId = user?.avatar;
-  const initials = initialsFor(teamName(roster, users));
+  const initials = initialsFor(options.initialsSource || teamName(roster, users));
   if (avatarUrl) return `<span class="avatar"><img alt="" src="${escapeHtml(avatarUrl)}" loading="lazy" /></span>`;
   if (!avatarId) return `<span class="avatar">${escapeHtml(initials)}</span>`;
   return `<span class="avatar"><img alt="" src="https://sleepercdn.com/avatars/thumbs/${avatarId}" loading="lazy" /></span>`;
