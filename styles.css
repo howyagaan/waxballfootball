@@ -60,14 +60,18 @@ body[data-theme="midweek"] {
 }
 
 body[data-theme="midweekend"] {
-  --bg: #090d13;
-  --panel: #111923;
-  --panel-2: #172330;
-  --panel-3: #1e2d3c;
-  --line: #2a3c4f;
-  --teal: #00ceb8;
-  --teal-2: #0aa79a;
-  --blue: #34a8ff;
+  --bg: #0b0d10;
+  --panel: #13171c;
+  --panel-2: #1b2027;
+  --panel-3: #252c35;
+  --line: #3a424d;
+  --teal: #c3ccd6;
+  --teal-2: #8d99a6;
+  --blue: #d8dee6;
+  background:
+    radial-gradient(circle at 16% -10%, rgba(195, 204, 214, 0.2), transparent 28rem),
+    radial-gradient(circle at 100% 5%, rgba(216, 222, 230, 0.12), transparent 24rem),
+    linear-gradient(180deg, rgba(11, 13, 16, 0.97), var(--bg));
 }
 
 body[data-presentation="saturday"] {
@@ -422,6 +426,16 @@ body[data-theme="midweek"] .things-watch-panel {
   box-shadow: 0 18px 60px rgba(0, 206, 184, 0.08);
 }
 
+body[data-theme="midweekend"] .hero-card,
+body[data-theme="midweekend"] .mobile-table-card,
+body[data-theme="midweekend"] .matchup-focus-card,
+body[data-theme="midweekend"] .things-watch-panel,
+body[data-theme="midweekend"] .matchup-card {
+  box-shadow:
+    0 18px 62px rgba(195, 204, 214, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 body[data-theme="snf"] {
   background:
     radial-gradient(circle at 18% -12%, rgba(255, 77, 109, 0.3), transparent 30rem),
@@ -447,6 +461,7 @@ body[data-theme="snf"] .matchup-card {
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+body[data-presentation="wednesday"] .hero,
 body[data-presentation="tnf"] .hero,
 body[data-presentation="friday"] .hero,
 body[data-presentation="saturday"] .hero,
@@ -456,6 +471,7 @@ body[data-presentation="snf"] .hero {
   padding: clamp(2rem, 5vw, 3.25rem) 0 0.75rem;
 }
 
+body[data-presentation="wednesday"] .hero-main h1,
 body[data-presentation="tnf"] .hero-main h1,
 body[data-presentation="friday"] .hero-main h1,
 body[data-presentation="saturday"] .hero-main h1,
@@ -463,6 +479,7 @@ body[data-presentation="snf"] .hero-main h1 {
   font-size: clamp(4rem, 9vw, 7rem);
 }
 
+body[data-presentation="wednesday"] .hero-main p:not(.eyebrow),
 body[data-presentation="tnf"] .hero-main p:not(.eyebrow),
 body[data-presentation="friday"] .hero-main p:not(.eyebrow),
 body[data-presentation="saturday"] .hero-main p:not(.eyebrow),
@@ -470,6 +487,7 @@ body[data-presentation="snf"] .hero-main p:not(.eyebrow) {
   max-width: 45rem;
 }
 
+body[data-presentation="wednesday"] .hero-card,
 body[data-presentation="tnf"] .hero-card,
 body[data-presentation="friday"] .hero-card,
 body[data-presentation="saturday"] .hero-card,
@@ -477,6 +495,7 @@ body[data-presentation="snf"] .hero-card {
   margin-top: 0;
 }
 
+body[data-presentation="wednesday"] .section-head,
 body[data-presentation="tnf"] .section-head,
 body[data-presentation="friday"] .section-head,
 body[data-presentation="saturday"] .section-head,
@@ -3695,6 +3714,7 @@ footer {
     margin: 1.8rem 0 1.25rem;
   }
 
+  body[data-presentation="wednesday"] .hero-main h1,
   body[data-presentation="tnf"] .hero-main h1,
   body[data-presentation="friday"] .hero-main h1,
   body[data-presentation="saturday"] .hero-main h1,

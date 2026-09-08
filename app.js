@@ -700,30 +700,10 @@ function renderCurrentPage() {
     els.sleeperLink.href = sleeperLeagueUrl(league);
     els.sleeperLink.textContent = "Open Sleeper";
   }
-  els.heroCopy.textContent =
-    heroLeagueCopy(league);
+  els.heroCopy.textContent = heroLeagueCopy(league);
+  renderModeHeroCopy(league);
   els.season.textContent = league.season || "2026";
-  els.week.textContent = isModePreview() && nflData.mode?.key === "tnf"
-    ? `Thursday Week ${currentWeek}`
-    : isModePreview() && nflData.mode?.key === "snf"
-      ? `Sunday Week ${currentWeek}`
-    : isModePreview() && nflData.mode?.key === "mnf"
-      ? `Monday Week ${currentWeek}`
-    : isModePreview()
-      ? `Week ${currentWeek}`
-    : isPreseasonMode()
-    ? "Preseason"
-    : isMatchupPreviewMode() && nflData.mode?.key === "tnf"
-    ? `Thursday Week ${currentWeek}`
-    : isMatchupPreviewMode() && nflData.mode?.key === "snf"
-      ? `Sunday Week ${currentWeek}`
-    : isMatchupPreviewMode() && nflData.mode?.key === "mnf"
-      ? `Monday Week ${currentWeek}`
-    : isMatchupPreviewMode()
-      ? `Week ${currentWeek}`
-      : league.status === "pre_draft"
-        ? "Pre-draft"
-        : `Week ${currentWeek}`;
+  els.week.textContent = modeWeekLabel(nflData.mode, league);
   els.toiletLabel.textContent = showCurrentLeader ? "Last Place" : "Prevailing 💩 King";
   els.teamMetric.textContent = showCurrentLeader
     ? ownerIdentityName(lastPlaceRoster(rosters), users)
@@ -849,6 +829,8 @@ function renderCountdown(element, valueElement, target, now = currentDate()) {
   if (!element || !valueElement) return;
   const show = PAGE === "current" && isPreseasonMode() && now < target;
   element.toggleAttribute("hidden", !show);
+  const label = element.querySelector("p");
+  if (label) label.textContent = formatCountdownTarget(target);
   if (!show) return;
   const diff = Math.max(target - now, 0);
   const days = Math.floor(diff / 86400000);
@@ -1384,6 +1366,11 @@ function heroLeagueCopy(league) {
   if (isPreseasonMode()) {
     return "Waxball is back for its 3rd season. This site will update automatically throughout the year and act as an archive for previous seasons. Godspeed boys, and happy Waxing.";
   }
+  const modeCopy = syncModeHeroCopy();
+  if (modeCopy) return modeCopy;
+  if (!currentSeasonHasResults()) {
+    return nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || nflData?.mode?.copy;
+  }
   if (currentSeasonHasResults()) {
     const leader = sortRosters(currentData.rosters, currentData.users)[0];
     const last = lastPlaceRoster(currentData.rosters);
@@ -1393,6 +1380,152 @@ function heroLeagueCopy(league) {
     return "Waxball is back for its 3rd season. This site will update automatically throughout the year and act as an archive for previous seasons. Godspeed boys, and happy Waxing.";
   }
   return "Waxball is live. League table, matchups, roster windows, and weekly pressure points will update as the season moves.";
+}
+
+async function renderModeHeroCopy(league) {
+  if (!els.heroCopy || PAGE !== "current" || isPreseasonMode() || isDraftCompletePreview() || isHistoricalCurrentPreview()) return;
+  try {
+    const modeCopy = await asyncModeHeroCopy();
+    if (modeCopy) els.heroCopy.textContent = modeCopy;
+  } catch (error) {
+    console.warn("Mode hero copy unavailable.", error);
+  }
+}
+
+function syncModeHeroCopy() {
+  const label = nflData?.mode?.label;
+  if (label === "Wednesday" || label === "Thursday") {
+    return nextScheduledGameCopy(nflData?.events || [], nflData?.mode);
+  }
+  if (label === "Saturday") {
+    return saturdayFootballCopy(nflData?.events || []);
+  }
+  return "";
+}
+
+async function asyncModeHeroCopy() {
+  const label = nflData?.mode?.label;
+  if (label === "Tuesday") {
+    return previousWeekTopPprCopy();
+  }
+  if (label === "Friday") {
+    return fridayTnfRecapCopy();
+  }
+  return "";
+}
+
+function modeWeekLabel(mode, league) {
+  if (isPreseasonMode()) return "Preseason";
+  if (league?.status === "pre_draft") return "Pre-draft";
+  if (mode?.weekLabelPrefix) return `${mode.weekLabelPrefix} Week ${currentWeek}`;
+  return `Week ${currentWeek}`;
+}
+
+function nextScheduledGameCopy(events, mode) {
+  const game = prioritizedGameForMode(events, mode);
+  if (!game) return "";
+  const parsed = parseGame(game);
+  return `Next NFL game: ${parsed.shortName} - ${parsed.kickoff}${parsed.broadcast ? ` on ${parsed.broadcast}` : ""}.`;
+}
+
+function prioritizedGameForMode(events, mode) {
+  if (mode?.label === "Sunday" || mode?.label === "Saturday") {
+    return sundayNightGame(events) || nextScheduledGame(events);
+  }
+  if (mode?.label === "Wednesday" || mode?.label === "Thursday") {
+    return thursdayNightGame(events) || nextScheduledGame(events);
+  }
+  return nextScheduledGame(events);
+}
+
+function nextScheduledGame(events) {
+  const now = currentDate();
+  return [...events]
+    .filter((event) => event.status?.type?.state !== "post" && new Date(event.date) >= now)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))[0] || null;
+}
+
+function thursdayNightGame(events) {
+  return [...events]
+    .filter((event) => {
+      const kickoff = new Date(event.date);
+      const parts = easternParts(kickoff);
+      return parts.weekday === 4 && event.status?.type?.state !== "post" && kickoff >= currentDate();
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date))[0] || null;
+}
+
+function sundayNightGame(events) {
+  return [...events]
+    .filter((event) => {
+      const kickoff = new Date(event.date);
+      const parts = easternParts(kickoff);
+      return parts.weekday === 0 && event.status?.type?.state !== "post" && kickoff >= currentDate();
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date))[0] || null;
+}
+
+function latestCompletedGameForWeekday(events, weekday) {
+  return [...events]
+    .filter((event) => event.status?.type?.state === "post" && easternParts(event.date).weekday === weekday)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))[0] || null;
+}
+
+function saturdayFootballCopy(events) {
+  const game = sundayNightGame(events) || nextScheduledGame(events);
+  if (!game) return "";
+  const parsed = parseGame(game);
+  return `SNF game: ${parsed.shortName} - ${parsed.kickoff}${parsed.broadcast ? ` on ${parsed.broadcast}` : ""}.`;
+}
+
+async function fridayTnfRecapCopy() {
+  const tnf = latestCompletedGameForWeekday(nflData?.events || [], 4);
+  if (!tnf) return nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || nflData?.mode?.copy || "";
+  const parsed = parseGame(tnf);
+  const topPlayer = await topPprPlayersForWeek(currentWeek, new Set(nflTeamsForEvent(tnf)), 1);
+  const score = finalGameScore(tnf);
+  const scoreText = score ? ` ${score}.` : ".";
+  const leaderText = topPlayer.length
+    ? ` Top PPR player: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
+    : " Top PPR player will appear once Sleeper scores the rostered TNF players.";
+  return `TNF final: ${parsed.shortName}${scoreText}${leaderText}`;
+}
+
+async function previousWeekTopPprCopy() {
+  const week = Math.max(1, currentWeek - 1);
+  const topPlayers = await topPprPlayersForWeek(week, null, 3);
+  if (!topPlayers.length) return nflData?.mode?.copy || "";
+  const leaders = topPlayers
+    .map((item, index) => `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) - ${ownerIdentityName(item.roster, currentData.users)}`)
+    .join("; ");
+  return `Previous week top PPR players: ${leaders}.`;
+}
+
+async function topPprPlayersForWeek(week, teamFilter = null, limit = 3) {
+  const players = await loadPlayers();
+  const matchups = currentData?.matchupsByWeek?.[week] || [];
+  return matchups.flatMap((matchup) => {
+    const roster = currentData.rosters.find((item) => Number(item.roster_id) === Number(matchup.roster_id));
+    if (!roster) return [];
+    return Object.entries(matchup.players_points || {}).map(([playerId, points]) => {
+      const player = playerSummary(playerId, players);
+      return player ? { roster, player, points: Number(points) || 0 } : null;
+    }).filter(Boolean);
+  })
+    .filter((item) => item.points > 0)
+    .filter((item) => !teamFilter || teamFilter.has(item.player.team))
+    .sort((a, b) => b.points - a.points)
+    .slice(0, limit);
+}
+
+function finalGameScore(event) {
+  const competitors = event.competitions?.[0]?.competitors || [];
+  const away = competitors.find((competitor) => competitor.homeAway === "away");
+  const home = competitors.find((competitor) => competitor.homeAway === "home");
+  const awayScore = Number(away?.score);
+  const homeScore = Number(home?.score);
+  if (!Number.isFinite(awayScore) || !Number.isFinite(homeScore)) return "";
+  return `${away?.team?.abbreviation || "Away"} ${awayScore}, ${home?.team?.abbreviation || "Home"} ${homeScore}`;
 }
 
 function teamNameChanges(current, archive) {
@@ -1414,7 +1547,7 @@ function currentSeasonHasResults() {
 function isPreseasonMode() {
   if (isHistoricalCurrentPreview()) return false;
   if (isDraftCompletePreview()) return false;
-  return PAGE === "current" && !isModePreview() && currentDate() < new Date(FIRST_2026_KICKOFF);
+  return PAGE === "current" && !isModePreview() && currentDate() < new Date(DRAFT_DAY);
 }
 
 function isModePreview() {
@@ -1804,45 +1937,14 @@ function detectFootballMode(events) {
       isGameday: true,
     };
   }
-  if (day === 4) {
-    return modeDefinition("tnf");
-  }
-  if (day === 1) {
-    return modeDefinition("mnf");
-  }
-  if ((day === 2 || day === 3) && liveOrToday.length) {
-    return {
-      key: "tnf",
-      label: "Weeknight game mode",
-      title: "Weeknight Football Board",
-      copy: "A rare weekday game means lineup locks, inactives, and early matchup pressure take over the board.",
-      isGameday: true,
-    };
-  }
-  if ((day === 5 || day === 6) && liveOrToday.length) {
-    return {
-      key: "midweekend",
-      label: "Midweekend game mode",
-      title: "Saturday Football Board",
-      copy: "A Friday or Saturday game shifts the week early. Track locks, injury pivots, and Sunday setup together.",
-      isGameday: true,
-    };
-  }
-  if (day === 5 || day === 6) {
-    return modeDefinition("midweekend");
-  }
-  if (day === 0 || liveOrToday.length) {
-    return modeDefinition("snf");
-  }
-  if (day === 2 || day === 3) {
-    return modeDefinition("midweek");
-  }
-  return modeDefinition("snf-preview");
+  return modeDefinition(["snf", "mnf", "tuesday", "wednesday", "tnf", "friday", "saturday"][day] || "midweek");
 }
 
 function previewModeDefinition() {
+  if (PRESENTATION_PREVIEW === "wednesday") return modeDefinition("wednesday");
   if (PRESENTATION_PREVIEW === "tnf") return modeDefinition("tnf");
-  if (["friday", "saturday"].includes(PRESENTATION_PREVIEW)) return modeDefinition("midweekend");
+  if (PRESENTATION_PREVIEW === "friday") return modeDefinition("friday");
+  if (PRESENTATION_PREVIEW === "saturday") return modeDefinition("saturday");
   if (PRESENTATION_PREVIEW === "snf") return modeDefinition("snf");
   return null;
 }
@@ -1861,7 +1963,7 @@ function historicalPreviewNflEvents() {
         shortName: "MIN @ LAC",
         name: "Minnesota Vikings at Los Angeles Chargers",
         season: { year: 2025, type: 2 },
-        status: { type: { state: "pre", description: "Scheduled", shortDetail: "Thu 8:15 PM ET" } },
+        status: { type: { state: "pre", description: "Scheduled", shortDetail: formatKickoff("2025-10-24T00:15:00Z") } },
         competitions: [
           {
             broadcast: "Prime Video",
@@ -1942,12 +2044,45 @@ function modeDefinition(key) {
       copy: "Waivers, injuries, trade chatter, and matchup setup live here before the week locks in.",
       isGameday: false,
     },
+    tuesday: {
+      key: "midweek",
+      label: "Tuesday",
+      title: "Waiver Tuesday",
+      copy: "Waivers, injury fallout, free-agent scraps, and matchup prep start here.",
+      isGameday: false,
+      weekLabelPrefix: "Tuesday",
+    },
+    wednesday: {
+      key: "midweek",
+      label: "Wednesday",
+      title: "Wednesday Football Board",
+      copy: "Wednesday football means the week starts early. Check lineup locks, first-game exposure, and matchup pressure before kickoff.",
+      isGameday: true,
+      weekLabelPrefix: "Wednesday",
+    },
     tnf: {
       key: "tnf",
       label: "Thursday",
       title: "TNF Preview",
       copy: "Thursday night is about lineup locks, inactives, and whether anyone wants to start the week hate-watching.",
       isGameday: true,
+      weekLabelPrefix: "Thursday",
+    },
+    friday: {
+      key: "midweekend",
+      label: "Friday",
+      title: "Friday Reset",
+      copy: "Thursday is in the books. Use Friday to process the damage, sort injury pivots, and set up the weekend slate.",
+      isGameday: false,
+      weekLabelPrefix: "Friday",
+    },
+    saturday: {
+      key: "midweekend",
+      label: "Saturday",
+      title: "Saturday Setup",
+      copy: "Saturday is for final injury checks, stash decisions, and Sunday lineup pressure.",
+      isGameday: false,
+      weekLabelPrefix: "Saturday",
     },
     midweekend: {
       key: "midweekend",
@@ -1962,6 +2097,7 @@ function modeDefinition(key) {
       title: "Sunday War Room",
       copy: "Every Sunday window is live: early explosions, late-window leverage, night-game sweats, and what each swing means for Waxball matchups.",
       isGameday: true,
+      weekLabelPrefix: "Sunday",
     },
     mnf: {
       key: "mnf",
@@ -1969,6 +2105,7 @@ function modeDefinition(key) {
       title: "MNF Sweat",
       copy: "Monday night is for final margins, miracle paths, and the last players left to swing a matchup.",
       isGameday: true,
+      weekLabelPrefix: "Monday",
     },
     "snf-preview": {
       key: "snf",
@@ -3268,12 +3405,43 @@ function clampWeek(week) {
 }
 
 function formatTime() {
-  return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZone: EASTERN_TIME_ZONE }).format(currentDate());
+  return `${new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(currentDate())} ${localTimezoneLabel()}`;
 }
 
 function formatKickoff(value) {
   if (!value) return "TBD";
-  return new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  return `${new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(value))} ${localTimezoneLabel()}`;
+}
+
+function formatCountdownTarget(value) {
+  return `${new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value))} ${localTimezoneLabel()}`;
+}
+
+function localTimezoneLabel(date = new Date()) {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  const mapped = {
+    "America/New_York": "ET",
+    "America/Detroit": "ET",
+    "America/Indiana/Indianapolis": "ET",
+    "America/Kentucky/Louisville": "ET",
+    "America/Chicago": "CT",
+    "America/Winnipeg": "CT",
+    "America/Denver": "MT",
+    "America/Phoenix": "MT",
+    "America/Los_Angeles": "PT",
+    "America/Vancouver": "PT",
+  }[zone];
+  if (mapped) return mapped;
+  return offsetTimezoneLabel(date);
+}
+
+function offsetTimezoneLabel(date = new Date()) {
+  const minutes = -date.getTimezoneOffset();
+  const sign = minutes >= 0 ? "+" : "-";
+  const absolute = Math.abs(minutes);
+  const hours = String(Math.floor(absolute / 60)).padStart(2, "0");
+  const mins = String(absolute % 60).padStart(2, "0");
+  return `UTC${sign}${hours}:${mins}`;
 }
 
 function transactionDate(ms) {
@@ -3294,6 +3462,7 @@ function isToday(value) {
 }
 
 function currentDate() {
+  if (PRESENTATION_PREVIEW === "wednesday") return new Date("2026-09-09T12:00:00-04:00");
   if (PRESENTATION_PREVIEW === "tnf") return new Date("2025-10-23T12:00:00-04:00");
   if (PRESENTATION_PREVIEW === "friday") return new Date("2025-10-24T12:00:00-04:00");
   if (PRESENTATION_PREVIEW === "saturday") return new Date("2025-10-25T12:00:00-04:00");
