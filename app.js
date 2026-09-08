@@ -1008,10 +1008,10 @@ function renderLeagueAvatarRail(rosters, users) {
   `).join("");
 }
 
-function selectRosterFromShortcut(rosterId, options = {}) {
+async function selectRosterFromShortcut(rosterId, options = {}) {
   selectedRosterId = Number(rosterId);
   if (els.teamSelect) els.teamSelect.value = String(selectedRosterId);
-  renderSelectedTeam();
+  await renderSelectedTeam();
   if (PAGE === "current" && currentData) renderStandings(currentData.rosters, currentData.users);
   if (PAGE === "archive" && archiveData) renderLeagueAvatarRail(archiveData.rosters, archiveData.users);
   if (PAGE === "current" && currentData) renderLeagueAvatarRail(currentData.rosters, currentData.users);

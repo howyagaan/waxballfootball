@@ -276,6 +276,12 @@ main {
   margin: 0 auto;
 }
 
+#standings,
+#team-panel-section,
+.archive-team-lab {
+  scroll-margin-top: 6.5rem;
+}
+
 body.has-avatar-rail main,
 body.has-avatar-rail footer {
   width: min(1180px, calc(100% - 11rem));
@@ -3626,10 +3632,11 @@ footer {
 
   .league-avatar-rail {
     position: sticky;
-    top: 0;
+    top: 6.6rem;
     z-index: 19;
     display: flex;
     gap: 0.65rem;
+    justify-content: safe center;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     border-bottom: 1px solid var(--line);
@@ -3650,6 +3657,12 @@ footer {
   .league-avatar-shortcut .avatar {
     width: 2.7rem;
     height: 2.7rem;
+  }
+
+  #standings,
+  #team-panel-section,
+  .archive-team-lab {
+    scroll-margin-top: 11rem;
   }
 
   main {
