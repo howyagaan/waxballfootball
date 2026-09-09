@@ -3709,8 +3709,7 @@ footer {
   }
 
   .league-avatar-rail {
-    position: sticky;
-    top: 6.6rem;
+    position: static;
     z-index: 19;
     display: flex;
     gap: 0.65rem;
@@ -3740,7 +3739,7 @@ footer {
   #standings,
   #team-panel-section,
   .archive-team-lab {
-    scroll-margin-top: 11rem;
+    scroll-margin-top: 6.5rem;
   }
 
   main {
