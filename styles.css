@@ -285,6 +285,7 @@ main {
 body.has-avatar-rail main,
 body.has-avatar-rail footer {
   width: min(1180px, calc(100% - 11rem));
+  margin-inline: auto;
 }
 
 .league-avatar-rail {
