@@ -453,8 +453,9 @@ body[data-theme="midweek"] .hero {
 
 .hero-team-control {
   display: flex;
-  grid-column: 1 / -1;
+  grid-column: 1;
   justify-content: flex-start;
+  margin-top: -0.25rem;
   order: 4;
 }
 
