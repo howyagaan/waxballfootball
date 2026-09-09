@@ -891,7 +891,7 @@ function renderArchiveShowpiece(data) {
           <span class="metric-label">💩 King</span>
           <strong>${escapeHtml(ownerIdentityName(poopKing.roster, data.users))}</strong>
           <span class="username">${escapeHtml(poopKing.team)}</span>
-          <p class="result-reward punishment">Calendar Spread</p>
+          <a class="result-reward punishment punishment-link" href="./calendar-reveal.html">Calendar Spread</a>
         </div>
       </header>
       <p>${escapeHtml(poopFinal.text)}</p>
