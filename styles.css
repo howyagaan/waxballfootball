@@ -134,6 +134,15 @@ body[data-theme="playoffs"] {
   --blue: #a78bfa;
 }
 
+body.calendar-video-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% -10%, rgba(0, 206, 184, 0.2), transparent 28rem),
+    radial-gradient(circle at 100% 0%, rgba(79, 140, 255, 0.16), transparent 24rem),
+    linear-gradient(180deg, #0b0f14 0%, #0b0f14 100%);
+  background-attachment: fixed;
+}
+
 a {
   color: inherit;
 }
@@ -3760,6 +3769,20 @@ footer {
 }
 
 @media (max-width: 820px) {
+  .calendar-video-page main {
+    min-height: calc(100svh - 5rem);
+    align-content: start;
+    padding-top: 1rem;
+  }
+
+  .calendar-video-page h1 {
+    font-size: clamp(2.1rem, 10vw, 3.6rem);
+  }
+
+  .calendar-video-page video {
+    max-height: none;
+  }
+
   .topbar {
     align-items: stretch;
     flex-direction: column;
