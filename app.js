@@ -6,6 +6,23 @@ const AUTO_REFRESH_MS = 60000;
 const WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
 const PAGE = document.body.dataset.page || "current";
 const EASTERN_TIME_ZONE = "America/New_York";
+const TIME_ZONE_LABELS = {
+  "America/New_York": "ET",
+  "America/Detroit": "ET",
+  "America/Indiana/Indianapolis": "ET",
+  "America/Kentucky/Louisville": "ET",
+  "America/Chicago": "CT",
+  "America/Mexico_City": "CT",
+  "America/Monterrey": "CT",
+  "America/Winnipeg": "CT",
+  "America/Denver": "MT",
+  "America/Phoenix": "MT",
+  "America/Edmonton": "MT",
+  "America/Mazatlan": "MT",
+  "America/Los_Angeles": "PT",
+  "America/Tijuana": "PT",
+  "America/Vancouver": "PT",
+};
 const DRAFT_DAY = "2026-09-05T18:00:00-04:00";
 const FIRST_2026_KICKOFF = "2026-09-09T20:20:00-04:00";
 const WAXBALL_AVATAR_SRC = "https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd";
@@ -1153,7 +1170,7 @@ function tuesdayLastWeekResult(roster, rosters, users) {
   return `
     <article class="matchup-focus-card last-week-result-card">
       <span class="metric-label">Last week result</span>
-      <h3>${escapeHtml(matchupResultText(roster, matchup.opponentRoster, users, scoreFor(matchup.mine), scoreFor(matchup.opponent)))}</h3>
+      <h3>${escapeHtml(matchupResultText(roster, matchup.opponentRoster, users, scoreFor(matchup.mine), scoreFor(matchup.opponent), { final: true }))}</h3>
       ${matchupScoreLine(matchup, roster, matchup.opponentRoster, users)}
     </article>
   `;
@@ -1975,7 +1992,7 @@ function detectFootballMode(events) {
   const preview = previewModeDefinition();
   if (preview) return preview;
   if (isPreseasonMode()) return modeDefinition("preseason");
-  const today = easternParts();
+  const today = modeRolloverParts();
   const month = today.month - 1;
   const day = today.weekday;
   const isThanksgiving = month === 10 && day === 4 && today.day >= 22 && today.day <= 28;
@@ -2241,27 +2258,30 @@ function nextMatchdayGames(events) {
 
 function targetGameWindowEvents(events) {
   if (PAGE !== "current") return [];
-  const todayKey = easternDateKey();
+  const todayKey = modeDateKey();
   const targetWeekdays = targetMatchdayWeekdays(events);
   if (!targetWeekdays.length) return [];
   const earliestKey = targetWeekdays.includes(3) && targetWeekdays.includes(4)
-    ? easternDateKey(fantasyWeekWindowStart())
+    ? displayDateKey(fantasyWeekWindowStart())
     : todayKey;
   return (events || [])
     .filter((event) => {
-      const key = easternDateKey(event.date);
-      const eventDay = easternParts(event.date).weekday;
+      const key = displayDateKey(event.date);
+      if (event.status?.type?.state === "post" && key !== todayKey) return false;
+      const eventDay = datePartsForZone(event.date, displayTimeZone()).weekday;
       return key >= earliestKey && targetWeekdays.includes(eventDay);
     })
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
 function targetMatchdayWeekdays(events) {
-  const todayKey = easternDateKey();
+  const todayKey = modeDateKey();
   const upcoming = (events || [])
-    .filter((event) => event.status?.type?.state === "in" || easternDateKey(event.date) >= todayKey)
+    .filter((event) => event.status?.type?.state === "in" || displayDateKey(event.date) >= todayKey)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
-  const referenceDay = isPreseasonMode() && upcoming[0] ? easternParts(upcoming[0].date).weekday : easternParts().weekday;
+  const referenceDay = isPreseasonMode() && upcoming[0]
+    ? datePartsForZone(upcoming[0].date, displayTimeZone()).weekday
+    : modeRolloverParts().weekday;
   const windows = {
     2: [3, 4],
     3: [3, 4],
@@ -2275,11 +2295,11 @@ function targetMatchdayWeekdays(events) {
 }
 
 function isTuesdayMode() {
-  return PAGE === "current" && !isPreseasonMode() && easternParts().weekday === 2;
+  return PAGE === "current" && !isPreseasonMode() && modeRolloverParts().weekday === 2;
 }
 
 function weekdayName(value = currentDate()) {
-  return new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: EASTERN_TIME_ZONE }).format(new Date(value));
+  return new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: displayTimeZone() }).format(modeRolloverDate(value));
 }
 
 function isFantasyRelevantArticle(article) {
@@ -2347,7 +2367,7 @@ function selectedTeamMatchup(roster, matchups, rosters, users, options = {}) {
   return {
     title: `${teamName(roster, users)} vs ${teamName(opponentRoster, users)}`,
     detail: showScores
-      ? matchupResultText(roster, opponentRoster, users, mineScore, opponentScore)
+      ? matchupResultText(roster, opponentRoster, users, mineScore, opponentScore, { final: isDisplayedMatchupFinal() })
       : "",
     mine,
     opponent,
@@ -2385,14 +2405,24 @@ function fantasyWeekWindowStart() {
   return start;
 }
 
-function matchupResultText(roster, opponentRoster, users, mineScore, opponentScore) {
+function isDisplayedMatchupFinal() {
+  if (PAGE !== "current" || isHistoricalCurrentPreview()) return true;
+  const lastScored = Number(currentData?.league?.settings?.last_scored_leg || 0);
+  if (lastScored >= currentWeek) return true;
+  return Number(currentWeek) < Number(currentData?.week || currentWeek);
+}
+
+function matchupResultText(roster, opponentRoster, users, mineScore, opponentScore, options = {}) {
   const margin = Math.abs(mineScore - opponentScore).toFixed(2);
   if (mineScore > opponentScore) {
+    if (!options.final) return `${teamName(roster, users)} leads ${teamName(opponentRoster, users)} by ${margin}.`;
     return `${teamName(roster, users)} won by ${margin}.`;
   }
   if (mineScore < opponentScore) {
+    if (!options.final) return `${teamName(roster, users)} is behind ${teamName(opponentRoster, users)} by ${margin}.`;
     return `${teamName(roster, users)} lost to ${teamName(opponentRoster, users)} by ${margin}.`;
   }
+  if (!options.final) return `${teamName(roster, users)} is tied with ${teamName(opponentRoster, users)}.`;
   return `${teamName(roster, users)} tied ${teamName(opponentRoster, users)}.`;
 }
 
@@ -2782,7 +2812,7 @@ async function teamPlayerContext(roster, events, matchup = null) {
   const bench = benchIds.map((id) => playerSummary(id, players)).filter(Boolean);
   const teamsInNextGames = new Set(nextMatchdayGames(events).flatMap((event) => nflTeamsForEvent(event)));
   const watch = [...starters, ...bench]
-    .filter((player) => teamsInNextGames.has(player.team) || isSleeperPlayerInTargetWindow(player) || player.injuryStatus)
+    .filter((player) => teamsInNextGames.has(player.team) || isSleeperPlayerInTargetWindow(player))
     .slice(0, 8);
   return { starters, bench, watch };
 }
@@ -2878,17 +2908,15 @@ function scoreboardPlayerRow(player, matchup) {
 function thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, users) {
   const mine = watchPlayers(playerContext, false);
   const theirs = watchPlayers(opponentContext, true);
-  const pace = shouldShowMatchupScores() ? matchupScoreLine(matchup, roster, opponentRoster, users) : "";
   return `
-    ${pace}
     <div class="watch-columns">
       <div class="watch-team-column">
         <header>${avatar(roster, users)}<div><span class="metric-label">Your players</span><strong>${escapeHtml(teamName(roster, users))}</strong></div></header>
-        ${watchListRows(mine, "No rostered players are tied to the current or next game window.")}
+        ${watchListRows(mine, watchFallbackText("No players from this roster"))}
       </div>
       <div class="watch-team-column hate-watch">
         <header>${avatar(opponentRoster, users)}<div><span class="metric-label">Hate-watch</span><strong>${escapeHtml(opponentRoster ? teamName(opponentRoster, users) : "Opponent")}</strong></div></header>
-        ${watchListRows(theirs, "No opponent players are tied to the current or next game window.")}
+        ${watchListRows(theirs, watchFallbackText("No opponent players"))}
       </div>
     </div>
   `;
@@ -2983,6 +3011,30 @@ function watchListRows(players, fallback) {
   `;
 }
 
+function watchFallbackText(prefix) {
+  const games = nextMatchdayGames(nflData?.events || []);
+  if (!games.length) return `${prefix} are tied to an active or upcoming NFL window.`;
+  return `${prefix} are scheduled to play in this window: ${watchWindowLabel(games)}.`;
+}
+
+function watchWindowLabel(games) {
+  const sorted = [...games].sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (sorted.length <= 2) {
+    return sorted.map((event) => {
+      const parsed = parseGame(event);
+      return `${parsed.shortName} (${parsed.kickoff})`;
+    }).join("; ");
+  }
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const sameDay = displayDateKey(first.date) === displayDateKey(last.date);
+  const firstLabel = formatKickoff(first.date);
+  const lastLabel = sameDay
+    ? new Intl.DateTimeFormat(undefined, { timeZone: displayTimeZone(), hour: "numeric", minute: "2-digit" }).format(new Date(last.date))
+    : formatKickoff(last.date);
+  return `${sorted.length} games from ${firstLabel} to ${lastLabel}`;
+}
+
 function playerNameHtml(player) {
   return `<strong>${escapeHtml(player.name)}</strong>`;
 }
@@ -3010,9 +3062,10 @@ function playerGameWindow(player) {
 
 function isSleeperPlayerInTargetWindow(player) {
   if (!player?.gameStart) return false;
+  if (localGameState(player.gameStart) === "post" && displayDateKey(player.gameStart) !== modeDateKey()) return false;
   const targetWeekdays = targetMatchdayWeekdays(nflData?.events || []);
   if (!targetWeekdays.length) return false;
-  return targetWeekdays.includes(easternParts(player.gameStart).weekday);
+  return targetWeekdays.includes(datePartsForZone(player.gameStart, displayTimeZone()).weekday);
 }
 
 function playerCompletedScore(player, matchup, game) {
@@ -3475,43 +3528,25 @@ function clampWeek(week) {
 }
 
 function formatTime() {
-  return `${new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(currentDate())} ${localTimezoneLabel()}`;
+  return `${new Intl.DateTimeFormat(undefined, { timeZone: displayTimeZone(), hour: "numeric", minute: "2-digit" }).format(currentDate())} ${localTimezoneLabel()}`;
 }
 
 function formatKickoff(value) {
   if (!value) return "TBD";
-  return `${new Intl.DateTimeFormat(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(value))} ${localTimezoneLabel()}`;
+  return `${new Intl.DateTimeFormat(undefined, { timeZone: displayTimeZone(), weekday: "short", hour: "numeric", minute: "2-digit" }).format(new Date(value))} ${localTimezoneLabel()}`;
 }
 
 function formatCountdownTarget(value) {
-  return `${new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value))} ${localTimezoneLabel()}`;
+  return `${new Intl.DateTimeFormat(undefined, { timeZone: displayTimeZone(), weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value))} ${localTimezoneLabel()}`;
 }
 
-function localTimezoneLabel(date = new Date()) {
+function localTimezoneLabel() {
+  return TIME_ZONE_LABELS[displayTimeZone()] || "ET";
+}
+
+function displayTimeZone() {
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-  const mapped = {
-    "America/New_York": "ET",
-    "America/Detroit": "ET",
-    "America/Indiana/Indianapolis": "ET",
-    "America/Kentucky/Louisville": "ET",
-    "America/Chicago": "CT",
-    "America/Winnipeg": "CT",
-    "America/Denver": "MT",
-    "America/Phoenix": "MT",
-    "America/Los_Angeles": "PT",
-    "America/Vancouver": "PT",
-  }[zone];
-  if (mapped) return mapped;
-  return offsetTimezoneLabel(date);
-}
-
-function offsetTimezoneLabel(date = new Date()) {
-  const minutes = -date.getTimezoneOffset();
-  const sign = minutes >= 0 ? "+" : "-";
-  const absolute = Math.abs(minutes);
-  const hours = String(Math.floor(absolute / 60)).padStart(2, "0");
-  const mins = String(absolute % 60).padStart(2, "0");
-  return `UTC${sign}${hours}:${mins}`;
+  return TIME_ZONE_LABELS[zone] ? zone : EASTERN_TIME_ZONE;
 }
 
 function transactionDate(ms) {
@@ -3542,8 +3577,29 @@ function currentDate() {
 }
 
 function easternParts(value = currentDate()) {
+  return datePartsForZone(value, EASTERN_TIME_ZONE);
+}
+
+function modeRolloverDate(value = currentDate()) {
+  return new Date(new Date(value).getTime() - 3 * 60 * 60 * 1000);
+}
+
+function modeRolloverParts(value = currentDate()) {
+  return datePartsForZone(modeRolloverDate(value), displayTimeZone());
+}
+
+function displayDateKey(value = currentDate()) {
+  const parts = datePartsForZone(value, displayTimeZone());
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+}
+
+function modeDateKey(value = currentDate()) {
+  return displayDateKey(modeRolloverDate(value));
+}
+
+function datePartsForZone(value = currentDate(), timeZone = EASTERN_TIME_ZONE) {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: EASTERN_TIME_ZONE,
+    timeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
