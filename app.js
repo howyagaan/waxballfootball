@@ -2414,15 +2414,15 @@ function isDisplayedMatchupFinal() {
 
 function matchupResultText(roster, opponentRoster, users, mineScore, opponentScore, options = {}) {
   const margin = Math.abs(mineScore - opponentScore).toFixed(2);
+  if (!options.final) {
+    return `${teamName(roster, users)} ${mineScore.toFixed(2)} - ${teamName(opponentRoster, users)} ${opponentScore.toFixed(2)}.`;
+  }
   if (mineScore > opponentScore) {
-    if (!options.final) return `${teamName(roster, users)} leads ${teamName(opponentRoster, users)} by ${margin}.`;
     return `${teamName(roster, users)} won by ${margin}.`;
   }
   if (mineScore < opponentScore) {
-    if (!options.final) return `${teamName(roster, users)} is behind ${teamName(opponentRoster, users)} by ${margin}.`;
     return `${teamName(roster, users)} lost to ${teamName(opponentRoster, users)} by ${margin}.`;
   }
-  if (!options.final) return `${teamName(roster, users)} is tied with ${teamName(opponentRoster, users)}.`;
   return `${teamName(roster, users)} tied ${teamName(opponentRoster, users)}.`;
 }
 
