@@ -3,6 +3,42 @@
   const games = Array.isArray(data.matchups) ? data.matchups : [];
   const managers = Array.isArray(data.managers) ? data.managers : [];
   const EPSILON = 0.005;
+  const API_BASE = "https://api.sleeper.app/v1";
+  const SLEEPER_PLAYER_LEAGUES = [
+    { season: 2025, leagueId: "1253094778665439232" },
+    { season: 2026, leagueId: "1312219624808419328" },
+  ];
+  const SLEEPER_WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
+  const OWNER_REAL_NAMES = {
+    "10w5l": "Jacob Moskovitz",
+    bigboybluey: "Miles Blue",
+    bigdicksenior: "Sam Labovitz",
+    chrissy511: "Christian Engelhardt",
+    darryluvr: "Travis Roy Rogers",
+    darryluvr3000: "Travis Roy Rogers",
+    erikohno: "Erik Ohno Dagoberg",
+    eviandon: "Milo Manheim",
+    helloimpaul: "Paul Legallet",
+    millsberry27: "Miles Elliot",
+    papicoop: "Jakob Cooper",
+    pigmanbigman: "Nic Hamilton",
+    waxobwaxkovitz: "Jacob Moskovitz",
+    willyboyp: "Will Price",
+  };
+  const ARCHIVE_PLAYER_PPR_ROWS = [
+    {
+      manager: "Sam Labovitz",
+      team: "DaBigbootylatinas",
+      season: 2024,
+      week: 10,
+      date: "2024-11-07",
+      points: 55.4,
+      playerName: "Ja'Marr Chase",
+      playerTeam: "CIN",
+      position: "WR",
+      game: { season: 2024, week: 10, stage: "Regular season" },
+    },
+  ];
   const LOYALTY_ARCHIVE_PROFILE_ROWS = [
     { manager: "Jacob Moskovitz", team: "JacobNoWaxkovitz", season: 2024, kept: 9, drafted: 16 },
     { manager: "Jakob Cooper", team: "PapiCoop", season: 2024, kept: 9, drafted: 16 },
@@ -58,6 +94,8 @@
 
   const allEl = document.querySelector("#wax-stats-all");
   const recentEl = document.querySelector("#wax-stats-recent");
+  const filterEl = document.querySelector("#wax-stats-manager-filter");
+  let playerPprRows = null;
 
   const score = (value) => Number(value || 0);
   const fmt = (value) => score(value).toFixed(2);
@@ -89,6 +127,72 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  const managerList = (items, keys = ["manager"]) => [...new Set(
+    items.flatMap((item) => keys.map((key) => item?.[key]).filter(Boolean)),
+  )];
+  const gameManagers = (items) => [...new Set(
+    items.flatMap((item) => item.game?.managers || item.managers || []),
+  )].filter(Boolean);
+  const canonicalManagerName = (user = {}) => {
+    const handle = String(user.display_name || user.username || "").toLowerCase();
+    return OWNER_REAL_NAMES[handle] || user.metadata?.real_name || user.display_name || user.username || "Unknown manager";
+  };
+  const teamName = (user = {}) => user.metadata?.team_name || user.display_name || user.username || "Unknown team";
+
+  async function fetchJson(path) {
+    const response = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Sleeper request failed: ${path}`);
+    return response.json();
+  }
+
+  async function fetchOptionalJson(path, fallback) {
+    try {
+      return await fetchJson(path);
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  async function fetchSleeperPlayerPprRows() {
+    const players = await fetchJson("/players/nfl");
+    const seasonRows = await Promise.all(SLEEPER_PLAYER_LEAGUES.map(async ({ season, leagueId }) => {
+      const [users, rosters, weeklyMatchups] = await Promise.all([
+        fetchOptionalJson(`/league/${leagueId}/users`, []),
+        fetchOptionalJson(`/league/${leagueId}/rosters`, []),
+        Promise.all(SLEEPER_WEEKS.map(async (week) => ({
+          week,
+          matchups: await fetchOptionalJson(`/league/${leagueId}/matchups/${week}`, []),
+        }))),
+      ]);
+      const usersById = new Map(users.map((user) => [user.user_id, user]));
+      const rostersById = new Map(rosters.map((roster) => [Number(roster.roster_id), roster]));
+      return weeklyMatchups.flatMap(({ week, matchups }) => matchups.flatMap((matchup) => {
+        const roster = rostersById.get(Number(matchup.roster_id));
+        const user = usersById.get(roster?.owner_id);
+        const manager = canonicalManagerName(user);
+        const team = teamName(user);
+        return Object.entries(matchup.players_points || {}).map(([playerId, points]) => {
+          const player = players[playerId] || {};
+          const position = player.position || "";
+          if (position === "DEF") return null;
+          const playerPoints = Number(points);
+          if (!Number.isFinite(playerPoints)) return null;
+          return {
+            manager,
+            team,
+            season,
+            week,
+            points: playerPoints,
+            playerName: player.full_name || player.search_full_name || playerId,
+            playerTeam: player.team || "FA",
+            position,
+            game: { season, week, stage: "Regular season" },
+          };
+        }).filter(Boolean);
+      }));
+    }));
+    return seasonRows.flat();
+  }
 
   function winnerIndex(game) {
     const a = score(game.scores?.[0]);
@@ -345,6 +449,14 @@
     `;
   }
 
+  function playerPprDetail(row) {
+    return `
+      <b>${escapeHtml(row.playerName)}</b>
+      <span>${escapeHtml(row.position || "Player")} • ${escapeHtml(row.playerTeam)} • rostered by ${escapeHtml(row.manager)}</span>
+      <em>${fmt(row.points)} pts • ${gameLabelHtml(row.game)}</em>
+    `;
+  }
+
   function recordAdjustmentRows(limit = 5, season = 2026, weekWindow = 4) {
     const records = [
       {
@@ -443,6 +555,7 @@
             detail: record.detail(row),
             tone: record.tone,
             game,
+            managers: [row.manager, row.opponent].filter(Boolean),
           });
           if (!record.seen || (record.mode === "min" ? value < record.best : value > record.best)) {
             record.best = value;
@@ -460,6 +573,7 @@
           detail: record.detail(game),
           tone: record.tone,
           game,
+          managers: [...(game.managers || [])].filter(Boolean),
         });
         if (!record.seen || (record.mode === "min" ? value < record.best : value > record.best)) {
           record.best = value;
@@ -486,7 +600,43 @@
       .slice(0, limit);
   }
 
+  function playerPprAdjustmentRows(season = 2026, weekWindow = 4) {
+    if (!Array.isArray(playerPprRows) || !playerPprRows.length) return [];
+    const ordered = [...playerPprRows].sort((a, b) => (
+      Number(a.season) - Number(b.season)
+      || Number(a.week) - Number(b.week)
+      || String(a.playerName || "").localeCompare(String(b.playerName || ""))
+    ));
+    let best = null;
+    const adjustments = [];
+    ordered.forEach((row) => {
+      const brokeRecord = best !== null && row.points > best + EPSILON;
+      if (brokeRecord) adjustments.push({
+        title: "Highest rostered-player PPR week",
+        value: `${fmt(row.points)} pts`,
+        detail: `${escapeHtml(row.playerName)} hit ${fmt(row.points)} for ${escapeHtml(row.manager)} in ${gameLabelHtml(row.game)}.`,
+        tone: "is-green",
+        game: row.game,
+        managers: [row.manager].filter(Boolean),
+      });
+      if (best === null || row.points > best) best = row.points;
+    });
+
+    const recentSeasonWeeks = ordered
+      .filter((row) => Number(row.season) === season)
+      .map((row) => Number(row.week))
+      .filter(Number.isFinite);
+    const latestWeek = recentSeasonWeeks.length ? Math.max(...recentSeasonWeeks) : null;
+    if (latestWeek === null) return [];
+    const earliestWeek = latestWeek - weekWindow + 1;
+    return adjustments.filter((adjustment) => (
+      Number(adjustment.game.season) === season
+      && Number(adjustment.game.week) >= earliestWeek
+    ));
+  }
+
   function render(loyaltyRows = LOYALTY_ARCHIVE_PROFILE_ROWS) {
+    const selectedManager = filterEl?.value || "";
     const rows = sideRows();
     const wins = rows.filter((row) => row.result === "W");
     const losses = rows.filter((row) => row.result === "L");
@@ -519,135 +669,202 @@
     const bottomThreeFinishes = weeklyBottomThreeRows();
     const mostLoyal = tiedRows(loyaltyRows, (row) => row.kept, "max");
     const leastLoyal = tiedRows(loyaltyRows, (row) => row.kept, "min");
-    const recentAdjustments = recordAdjustmentRows();
-
-    if (recentEl) {
-      recentEl.closest(".recent-stat-adjustments").hidden = !recentAdjustments.length;
-      recentEl.innerHTML = recentAdjustments.map(recentAdjustmentCard).join("");
-    }
-
-    allEl.innerHTML = [
-      statCard({
+    const recentAdjustments = [...recordAdjustmentRows(), ...playerPprAdjustmentRows()]
+      .sort((a, b) => (
+        Number(b.game.season) - Number(a.game.season)
+        || Number(b.game.week) - Number(a.game.week)
+        || String(b.title || "").localeCompare(String(a.title || ""))
+      ))
+      .slice(0, 5);
+    const playerRows = Array.isArray(playerPprRows) ? [...ARCHIVE_PLAYER_PPR_ROWS, ...playerPprRows] : ARCHIVE_PLAYER_PPR_ROWS;
+    const highestPlayerPpr = Array.isArray(playerRows) ? tiedRows(playerRows, (row) => row.points, "max") : [];
+    const statItems = [
+      {
         title: "Highest one-week score",
         value: `${fmt(highestScore[0]?.points)} pts`,
         details: highestScore.map(sideDetail),
         tone: "is-green",
-      }),
-      statCard({
+        managers: managerList(highestScore, ["manager", "opponent"]),
+      },
+      {
         title: "Lowest one-week score",
         value: `${fmt(lowestScore[0]?.points)} pts`,
         details: lowestScore.map(sideDetail),
         tone: "is-red",
-      }),
-      statCard({
+        managers: managerList(lowestScore, ["manager", "opponent"]),
+      },
+      {
         title: "Lowest score in win",
         value: `${fmt(lowestWin[0]?.points)} pts`,
         details: lowestWin.map(sideDetail),
-      }),
-      statCard({
+        managers: managerList(lowestWin, ["manager", "opponent"]),
+      },
+      {
         title: "Highest score in loss",
         value: `${fmt(highestLoss[0]?.points)} pts`,
         details: highestLoss.map(sideDetail),
-      }),
-      statCard({
+        managers: managerList(highestLoss, ["manager", "opponent"]),
+      },
+      {
+        title: "Highest rostered-player PPR week",
+        value: highestPlayerPpr.length ? `${fmt(highestPlayerPpr[0]?.points)} pts` : "Unavailable",
+        details: highestPlayerPpr.length
+          ? highestPlayerPpr.map(playerPprDetail)
+          : ["No player-week scoring is available yet."],
+        tone: "is-green",
+        managers: managerList(highestPlayerPpr),
+      },
+      {
         title: "Longest win streak",
         value: `${winStreak[0]?.count || 0} wins`,
         details: winStreak.map(streakDetail),
         tone: "is-green",
-      }),
-      statCard({
+        managers: managerList(winStreak),
+      },
+      {
         title: "Longest losing streak",
         value: `${lossStreak[0]?.count || 0} losses`,
         details: lossStreak.map(streakDetail),
         tone: "is-red",
-      }),
-      statCard({
+        managers: managerList(lossStreak),
+      },
+      {
         title: "Biggest blowout",
         value: `${fmt(biggestBlowout[0]?.margin)} pts`,
         details: biggestBlowout.map((row) => gameDetail(row.game)),
-      }),
-      statCard({
+        managers: gameManagers(biggestBlowout),
+      },
+      {
         title: "Tightest game",
         value: `${fmt(tightestGame[0]?.margin)} pts`,
         details: tightestGame.map((row) => gameDetail(row.game)),
-      }),
-      statCard({
+        managers: gameManagers(tightestGame),
+      },
+      {
         title: "Highest combined score",
         value: `${fmt(highestCombined[0]?.total)} pts`,
         details: highestCombined.map((row) => gameDetail(row.game)),
-      }),
-      statCard({
+        managers: gameManagers(highestCombined),
+      },
+      {
         title: "Lowest combined score",
         value: `${fmt(lowestCombined[0]?.total)} pts`,
         details: lowestCombined.map((row) => gameDetail(row.game)),
-      }),
-      statCard({
+        managers: gameManagers(lowestCombined),
+      },
+      {
         title: "Most weekly high scores",
         value: `${weeklyHighs[0]?.count || 0}`,
         details: weeklyHighs.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.count} weekly high ${row.count === 1 ? "score" : "scores"}</span>`),
         tone: "is-green",
-      }),
-      statCard({
+        managers: managerList(weeklyHighs),
+      },
+      {
         title: "Most weekly low scores",
         value: `${weeklyLows[0]?.count || 0}`,
         details: weeklyLows.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.count} weekly low ${row.count === 1 ? "score" : "scores"}</span>`),
         tone: "is-red",
-      }),
-      statCard({
+        managers: managerList(weeklyLows),
+      },
+      {
         title: "Best average score",
         value: `${fmt(bestAverage[0]?.average)} pts`,
         details: bestAverage.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.games} recorded games</span>`),
         tone: "is-green",
-      }),
-      statCard({
+        managers: managerList(bestAverage),
+      },
+      {
         title: "Worst average score",
         value: `${fmt(worstAverage[0]?.average)} pts`,
         details: worstAverage.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.games} recorded games</span>`),
         tone: "is-red",
-      }),
-      statCard({
+        managers: managerList(worstAverage),
+      },
+      {
         title: "Most brutal schedule",
         value: `${fmt(mostBrutalSchedule[0]?.pointsAgainst)} PA`,
         details: mostBrutalSchedule.map(scheduleDetail),
         tone: "is-red",
-      }),
-      statCard({
+        managers: managerList(mostBrutalSchedule),
+      },
+      {
         title: "Easiest schedule",
         value: `${fmt(easiestSchedule[0]?.pointsAgainst)} PA`,
         details: easiestSchedule.map(scheduleDetail),
         tone: "is-green",
-      }),
-      statCard({
+        managers: managerList(easiestSchedule),
+      },
+      {
         title: "Best playoff performer",
         value: `${fmt(bestPlayoffPerformer[0]?.average)} pts avg.`,
         details: bestPlayoffPerformer.map(playoffDetail),
         tone: "is-green",
-      }),
-      statCard({
+        managers: managerList(bestPlayoffPerformer),
+      },
+      {
         title: "Most loyal manager",
         value: `${mostLoyal[0]?.kept || 0} kept`,
         details: mostLoyal.map(loyaltyDetail),
         tone: "is-green",
-      }),
-      statCard({
+        managers: managerList(mostLoyal),
+      },
+      {
         title: "Least loyal manager",
         value: `${leastLoyal[0]?.kept || 0} kept`,
         details: leastLoyal.map(loyaltyDetail),
         tone: "is-red",
-      }),
-      statCard({
+        managers: managerList(leastLoyal),
+      },
+      {
         title: "Most weekly top-three finishes",
         value: `${topThreeFinishes[0]?.count || 0}`,
         details: topThreeFinishes.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.count} weekly top-three ${row.count === 1 ? "finish" : "finishes"}</span>`),
-      }),
-      statCard({
+        managers: managerList(topThreeFinishes),
+      },
+      {
         title: "Most weekly bottom-three finishes",
         value: `${bottomThreeFinishes[0]?.count || 0}`,
         details: bottomThreeFinishes.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.count} weekly bottom-three ${row.count === 1 ? "finish" : "finishes"}</span>`),
         tone: "is-red",
-      }),
-    ].join("");
+        managers: managerList(bottomThreeFinishes),
+      },
+    ];
+    const shownStats = selectedManager ? statItems.filter((stat) => stat.managers.includes(selectedManager)) : statItems;
+    const shownAdjustments = selectedManager
+      ? recentAdjustments.filter((adjustment) => (adjustment.managers || []).includes(selectedManager))
+      : recentAdjustments;
+
+    if (recentEl) {
+      recentEl.closest(".recent-stat-adjustments").hidden = !shownAdjustments.length;
+      recentEl.innerHTML = shownAdjustments.map(recentAdjustmentCard).join("");
+    }
+
+    allEl.innerHTML = shownStats.length
+      ? shownStats.map(statCard).join("")
+      : `<p class="wax-stats-empty">No Wax Stats involve ${escapeHtml(selectedManager)} yet.</p>`;
   }
 
-  if (allEl) render();
+  function populateManagerFilter() {
+    if (!filterEl) return;
+    const options = [...managers].sort((a, b) => a.localeCompare(b));
+    filterEl.innerHTML = `<option value="">All managers</option>${options.map((manager) => (
+      `<option value="${escapeHtml(manager)}">${escapeHtml(manager)}</option>`
+    )).join("")}`;
+    filterEl.addEventListener("change", () => render());
+  }
+
+  async function loadPlayerPprStat() {
+    try {
+      playerPprRows = await fetchSleeperPlayerPprRows();
+    } catch (error) {
+      playerPprRows = [];
+    }
+    render();
+  }
+
+  if (allEl) {
+    populateManagerFilter();
+    render();
+    loadPlayerPprStat();
+  }
 })();
