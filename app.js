@@ -1437,6 +1437,9 @@ function heroLeagueCopy(league) {
   if (isPreseasonMode()) {
     return "Waxball is back for its 3rd season. This site will update automatically throughout the year and act as an archive for previous seasons. Godspeed boys, and happy Waxing.";
   }
+  if (hideHeroSubtitleForMode()) {
+    return "";
+  }
   const modeCopy = syncModeHeroCopy();
   if (modeCopy) return modeCopy;
   if (!currentSeasonHasResults()) {
@@ -1455,6 +1458,7 @@ function heroLeagueCopy(league) {
 
 async function renderModeHeroCopy(league) {
   if (!els.heroCopy || PAGE !== "current" || isPreseasonMode() || isDraftCompletePreview() || isHistoricalCurrentPreview()) return;
+  if (hideHeroSubtitleForMode()) return;
   try {
     const modeCopy = await asyncModeHeroCopy();
     if (modeCopy) setHeroCopy(modeCopy);
@@ -1470,13 +1474,14 @@ function setHeroCopy(copy) {
   els.heroCopy.hidden = !text;
 }
 
+function hideHeroSubtitleForMode() {
+  return ["Friday", "Saturday", "Sunday"].includes(nflData?.mode?.label);
+}
+
 function syncModeHeroCopy() {
   const label = nflData?.mode?.label;
   if (label === "Wednesday") {
     return nextScheduledGameCopy(nflData?.events || [], nflData?.mode);
-  }
-  if (label === "Thursday") {
-    return thursdayGameCopy(nflData?.events || [], nflData?.mode);
   }
   if (label === "Saturday") {
     return saturdayFootballCopy(nflData?.events || []);
@@ -1570,13 +1575,12 @@ function saturdayFootballCopy(events) {
 }
 
 async function thursdayGameWithWednesdayRecapCopy() {
-  const tnfText = thursdayGameCopy(nflData?.events || [], nflData?.mode) || nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || nflData?.mode?.copy || "";
   const wednesdayGame = latestCompletedGameForWeekday(nflData?.events || [], 3);
-  if (!wednesdayGame) return tnfText;
+  if (!wednesdayGame) return "";
   const topPlayer = await topPprPlayersForWeek(currentWeek, new Set(nflTeamsForEvent(wednesdayGame)), 1);
-  if (!topPlayer.length) return tnfText;
+  if (!topPlayer.length) return "";
   const leader = topPlayer[0];
-  return `${tnfText} Wednesday top PPR player: ${leader.player.name} (${leader.points.toFixed(2)}) for ${ownerIdentityName(leader.roster, currentData.users)}.`;
+  return `Wednesday top PPR player: ${leader.player.name} (${leader.points.toFixed(2)}) for ${ownerIdentityName(leader.roster, currentData.users)}.`;
 }
 
 async function fridayTnfRecapCopy() {
