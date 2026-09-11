@@ -379,7 +379,7 @@
         <h3>${escapeHtml(board.title)}</h3>
         <ol class="manager-rank-list">
           ${board.rows.map((row) => `
-            <li class="${row.manager === activeManager ? "is-active" : ""}">
+            <li class="${row.manager === activeManager ? "is-active" : ""}" style="${managerStyle(row.manager)}">
               <span>#${row.rank}</span>
               <strong>${escapeHtml(row.manager)}</strong>
               <em>${escapeHtml(row.display)}</em>

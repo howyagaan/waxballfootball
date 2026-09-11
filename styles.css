@@ -3481,24 +3481,31 @@ select {
 }
 
 .manager-rank-list li {
+  --manager-color-rgb: 0, 206, 184;
+  --manager-color: rgb(var(--manager-color-rgb));
+  --manager-readable-color: var(--manager-color);
   display: grid;
   grid-template-columns: 3.2rem minmax(0, 1fr);
   gap: 0.2rem 0.65rem;
   align-items: center;
-  border: 1px solid rgba(0, 206, 190, 0.12);
+  border: 1px solid rgba(var(--manager-color-rgb), 0.28);
   border-radius: 14px;
-  background: rgba(7, 12, 18, 0.48);
+  background:
+    radial-gradient(circle at 0% 50%, rgba(var(--manager-color-rgb), 0.16), transparent 34%),
+    rgba(7, 12, 18, 0.48);
   padding: 0.65rem;
 }
 
 .manager-rank-list li.is-active {
-  border-color: rgba(0, 206, 190, 0.68);
-  background: rgba(0, 206, 190, 0.12);
+  border-color: rgba(var(--manager-color-rgb), 0.82);
+  background:
+    radial-gradient(circle at 0% 50%, rgba(var(--manager-color-rgb), 0.28), transparent 36%),
+    rgba(var(--manager-color-rgb), 0.12);
 }
 
 .manager-rank-list span {
   grid-row: span 2;
-  color: var(--teal);
+  color: var(--manager-readable-color);
   font-weight: 1000;
 }
 
