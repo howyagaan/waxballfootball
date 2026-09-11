@@ -4177,6 +4177,19 @@ footer {
     padding-bottom: 0.1rem;
   }
 
+  .nav-archives div {
+    left: 0;
+    right: auto;
+    width: min(15rem, calc(100vw - 1.4rem));
+    max-width: calc(100vw - 1.4rem);
+  }
+
+  .topbar nav .nav-archives:first-of-type div,
+  .topbar nav .nav-stats div {
+    left: 0;
+    right: auto;
+  }
+
   body.has-avatar-rail main,
   body.has-avatar-rail footer {
     width: min(100% - 0.8rem, 1180px);
