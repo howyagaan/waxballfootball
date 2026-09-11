@@ -1458,7 +1458,7 @@ function heroLeagueCopy(league) {
 
 async function renderModeHeroCopy(league) {
   if (!els.heroCopy || PAGE !== "current" || isPreseasonMode() || isDraftCompletePreview() || isHistoricalCurrentPreview()) return;
-  if (hideHeroSubtitleForMode()) return;
+  if (hideHeroSubtitleForMode() && nflData?.mode?.label !== "Friday") return;
   try {
     const modeCopy = await asyncModeHeroCopy();
     if (modeCopy) setHeroCopy(modeCopy);
@@ -1494,11 +1494,8 @@ async function asyncModeHeroCopy() {
   if (label === "Tuesday") {
     return previousWeekTopPprCopy();
   }
-  if (label === "Thursday") {
-    return thursdayGameWithWednesdayRecapCopy();
-  }
-  if (label === "Friday") {
-    return fridayTnfRecapCopy();
+  if (label === "Thursday" || label === "Friday") {
+    return thursdayTopPprCopy();
   }
   return "";
 }
@@ -1574,13 +1571,13 @@ function saturdayFootballCopy(events) {
   return `SNF game: ${parsed.shortName} - ${parsed.kickoff}${parsed.broadcast ? ` on ${parsed.broadcast}` : ""}.`;
 }
 
-async function thursdayGameWithWednesdayRecapCopy() {
-  const wednesdayGame = latestCompletedGameForWeekday(nflData?.events || [], 3);
-  if (!wednesdayGame) return "";
-  const topPlayer = await topPprPlayersForWeek(currentWeek, new Set(nflTeamsForEvent(wednesdayGame)), 1);
+async function thursdayTopPprCopy() {
+  const thursdayGame = latestCompletedGameForWeekday(nflData?.events || [], 4);
+  if (!thursdayGame) return "";
+  const topPlayer = await topPprPlayersForWeek(currentWeek, new Set(nflTeamsForEvent(thursdayGame)), 1);
   if (!topPlayer.length) return "";
   const leader = topPlayer[0];
-  return `Wednesday top PPR player: ${leader.player.name} (${leader.points.toFixed(2)}) for ${ownerIdentityName(leader.roster, currentData.users)}.`;
+  return `Thursday top PPR player: ${leader.player.name} (${leader.points.toFixed(2)}) for ${ownerIdentityName(leader.roster, currentData.users)}.`;
 }
 
 async function fridayTnfRecapCopy() {
