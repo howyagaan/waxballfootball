@@ -30,6 +30,20 @@ const SLEEPER_MATCHDAY_SCHEDULE = {
   "2026-1": [
     ["2026-w1-wed-ne-sea", "2026-09-09T20:20:00-04:00", "NE", "SEA", "NBC"],
     ["2026-w1-thu-sf-lar", "2026-09-10T20:35:00-04:00", "SF", "LAR", "Netflix"],
+    ["2026-w1-sun-chi-car", "2026-09-13T13:00:00-04:00", "CHI", "CAR", "FOX"],
+    ["2026-w1-sun-tb-cin", "2026-09-13T13:00:00-04:00", "TB", "CIN", "FOX"],
+    ["2026-w1-sun-no-det", "2026-09-13T13:00:00-04:00", "NO", "DET", "FOX"],
+    ["2026-w1-sun-buf-hou", "2026-09-13T13:00:00-04:00", "BUF", "HOU", "CBS"],
+    ["2026-w1-sun-bal-ind", "2026-09-13T13:00:00-04:00", "BAL", "IND", "CBS"],
+    ["2026-w1-sun-cle-jax", "2026-09-13T13:00:00-04:00", "CLE", "JAX", "CBS"],
+    ["2026-w1-sun-atl-pit", "2026-09-13T13:00:00-04:00", "ATL", "PIT", "FOX"],
+    ["2026-w1-sun-nyj-ten", "2026-09-13T13:00:00-04:00", "NYJ", "TEN", "CBS"],
+    ["2026-w1-sun-ari-lac", "2026-09-13T16:25:00-04:00", "ARI", "LAC", "CBS"],
+    ["2026-w1-sun-mia-lv", "2026-09-13T16:25:00-04:00", "MIA", "LV", "FOX"],
+    ["2026-w1-sun-gb-min", "2026-09-13T16:25:00-04:00", "GB", "MIN", "CBS"],
+    ["2026-w1-sun-was-phi", "2026-09-13T16:25:00-04:00", "WAS", "PHI", "FOX"],
+    ["2026-w1-sun-dal-nyg", "2026-09-13T20:20:00-04:00", "DAL", "NYG", "NBC"],
+    ["2026-w1-mon-den-kc", "2026-09-14T20:15:00-04:00", "DEN", "KC", "ESPN"],
   ],
 };
 const QUERY_PARAMS = new URLSearchParams(window.location.search);
@@ -716,7 +730,7 @@ function renderCurrentPage() {
     els.sleeperLink.href = sleeperLeagueUrl(league);
     els.sleeperLink.textContent = "Open Sleeper";
   }
-  els.heroCopy.textContent = heroLeagueCopy(league);
+  setHeroCopy(heroLeagueCopy(league));
   renderModeHeroCopy(league);
   els.season.textContent = league.season || "2026";
   els.week.textContent = modeWeekLabel(nflData.mode, league);
@@ -1436,17 +1450,24 @@ function heroLeagueCopy(league) {
   if (league.status === "pre_draft" || isMatchupPreviewMode()) {
     return "Waxball is back for its 3rd season. This site will update automatically throughout the year and act as an archive for previous seasons. Godspeed boys, and happy Waxing.";
   }
-  return "Waxball is live. League table, matchups, roster windows, and weekly pressure points will update as the season moves.";
+  return "";
 }
 
 async function renderModeHeroCopy(league) {
   if (!els.heroCopy || PAGE !== "current" || isPreseasonMode() || isDraftCompletePreview() || isHistoricalCurrentPreview()) return;
   try {
     const modeCopy = await asyncModeHeroCopy();
-    if (modeCopy) els.heroCopy.textContent = modeCopy;
+    if (modeCopy) setHeroCopy(modeCopy);
   } catch (error) {
     console.warn("Mode hero copy unavailable.", error);
   }
+}
+
+function setHeroCopy(copy) {
+  if (!els.heroCopy) return;
+  const text = String(copy || "").trim();
+  els.heroCopy.textContent = text;
+  els.heroCopy.hidden = !text;
 }
 
 function syncModeHeroCopy() {
@@ -2004,7 +2025,7 @@ function detectFootballMode(events) {
       key: "thanksgiving",
       label: "Thanksgiving mode",
       title: "Thanksgiving Football Board",
-      copy: "Track early lineup locks, short-week injury surprises, and afternoon/evening game exposure.",
+      copy: "",
       isGameday: true,
     };
   }
@@ -2013,7 +2034,7 @@ function detectFootballMode(events) {
       key: "playoffs",
       label: "Playoff mode",
       title: "Win-or-Go-Home Watch",
-      copy: "Prioritize high-leverage snap counts, weather, inactive lists, and teams resting nobody.",
+      copy: "",
       isGameday: true,
     };
   }
@@ -2114,21 +2135,21 @@ function modeDefinition(key) {
       key: "midweek",
       label: "Preseason mode",
       title: "Preseason Board",
-      copy: "Draft is complete. Rosters, standings, and Week 1 matchups are live from Sleeper while the league waits for first kickoff.",
+      copy: "",
       isGameday: false,
     },
     midweek: {
       key: "midweek",
       label: "Midweek mode",
       title: "Midweek Board",
-      copy: "Waivers, injuries, trade chatter, and matchup setup live here before the week locks in.",
+      copy: "",
       isGameday: false,
     },
     tuesday: {
       key: "midweek",
       label: "Tuesday",
       title: "Waiver Tuesday",
-      copy: "Previous-week PPR leaders will appear here once Sleeper has matchup scoring.",
+      copy: "",
       isGameday: false,
       weekLabelPrefix: "Tuesday",
     },
@@ -2136,7 +2157,7 @@ function modeDefinition(key) {
       key: "midweek",
       label: "Wednesday",
       title: "Wednesday Football Board",
-      copy: "Wednesday football means the week starts early. Check lineup locks, first-game exposure, and matchup pressure before kickoff.",
+      copy: "",
       isGameday: true,
       weekLabelPrefix: "Wednesday",
     },
@@ -2144,7 +2165,7 @@ function modeDefinition(key) {
       key: "tnf",
       label: "Thursday",
       title: "TNF Preview",
-      copy: "Thursday night is about lineup locks, inactives, and whether anyone wants to start the week hate-watching.",
+      copy: "",
       isGameday: true,
       weekLabelPrefix: "Thursday",
     },
@@ -2152,7 +2173,7 @@ function modeDefinition(key) {
       key: "midweekend",
       label: "Friday",
       title: "Friday Reset",
-      copy: "Thursday is in the books. Use Friday to process the damage, sort injury pivots, and set up the weekend slate.",
+      copy: "",
       isGameday: false,
       weekLabelPrefix: "Friday",
     },
@@ -2160,7 +2181,7 @@ function modeDefinition(key) {
       key: "midweekend",
       label: "Saturday",
       title: "Saturday Setup",
-      copy: "Saturday is for final injury checks, stash decisions, and Sunday lineup pressure.",
+      copy: "",
       isGameday: false,
       weekLabelPrefix: "Saturday",
     },
@@ -2168,14 +2189,14 @@ function modeDefinition(key) {
       key: "midweekend",
       label: "Midweekend mode",
       title: "Midweekend Mode",
-      copy: "Thursday is in the books. Use Friday and Saturday to sort injuries, pivots, Sunday exposure, and hate-watch targets.",
+      copy: "",
       isGameday: false,
     },
     snf: {
       key: "snf",
       label: "Sunday",
       title: "Sunday War Room",
-      copy: "Every Sunday window is live: early explosions, late-window leverage, night-game sweats, and what each swing means for Waxball matchups.",
+      copy: "",
       isGameday: true,
       weekLabelPrefix: "Sunday",
     },
@@ -2183,7 +2204,7 @@ function modeDefinition(key) {
       key: "mnf",
       label: "Monday",
       title: "MNF Sweat",
-      copy: "Monday night is for final margins, miracle paths, and the last players left to swing a matchup.",
+      copy: "",
       isGameday: true,
       weekLabelPrefix: "Monday",
     },
@@ -2191,7 +2212,7 @@ function modeDefinition(key) {
       key: "snf",
       label: "SNF preview",
       title: "SNF Preview",
-      copy: "Look ahead to the Sunday night swing players, late-swap decisions, and matchup leverage.",
+      copy: "",
       isGameday: false,
     },
   };
@@ -2245,6 +2266,7 @@ function nextMatchdayGames(events) {
   if (targetEvents.length) {
     return targetEvents;
   }
+  if (PAGE === "current" && targetMatchdayWeekdays(events).length) return [];
   const todayKey = easternDateKey();
   const upcoming = events
     .filter((event) => event.status?.type?.state === "in" || easternDateKey(event.date) >= todayKey)
@@ -2286,7 +2308,7 @@ function targetMatchdayWeekdays(events) {
     2: [3, 4],
     3: [3, 4],
     4: [3, 4],
-    5: [6],
+    5: [0],
     6: [6],
     0: [0],
     1: [1],
@@ -3013,8 +3035,20 @@ function watchListRows(players, fallback) {
 
 function watchFallbackText(prefix) {
   const games = nextMatchdayGames(nflData?.events || []);
-  if (!games.length) return `${prefix} are tied to an active or upcoming NFL window.`;
+  if (!games.length) return `${prefix} are scheduled to play in this window: ${targetWindowFallbackLabel()}.`;
   return `${prefix} are scheduled to play in this window: ${watchWindowLabel(games)}.`;
+}
+
+function targetWindowFallbackLabel() {
+  const targetWeekdays = targetMatchdayWeekdays(nflData?.events || []);
+  const labels = {
+    0: "Sunday's games",
+    1: "Monday night's game",
+    3: "Wednesday/Thursday games",
+    4: "Wednesday/Thursday games",
+    6: "Saturday's games",
+  };
+  return targetWeekdays.map((weekday) => labels[weekday]).filter(Boolean)[0] || "the next NFL window";
 }
 
 function watchWindowLabel(games) {
