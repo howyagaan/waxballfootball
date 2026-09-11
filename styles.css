@@ -3386,6 +3386,16 @@ select {
   line-height: 0.95;
 }
 
+.manager-season-card > strong.is-gold {
+  color: var(--gold);
+  text-shadow: 0 0 24px rgba(255, 184, 77, 0.18);
+}
+
+.manager-season-card > strong.is-brown {
+  color: #9a5a2e;
+  text-shadow: 0 0 18px rgba(154, 90, 46, 0.16);
+}
+
 .manager-rank-button {
   border: 1px solid rgba(0, 206, 190, 0.36);
   border-radius: 999px;

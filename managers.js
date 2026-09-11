@@ -5,7 +5,7 @@
 
   const FINAL_FINISH = {
     2024: {
-      "Christian Engelhardt": "1st",
+      "Christian Engelhardt": "Champion",
       "Erik Ohno Dagoberg": "2nd",
       "Travis Roy Rogers": "3rd",
       "Sam Labovitz": "4th",
@@ -17,7 +17,7 @@
       "Jacob Moskovitz": "Shit King",
     },
     2025: {
-      "Milo Manheim": "1st",
+      "Milo Manheim": "Champion",
       "Miles Blue": "2nd",
       "Jacob Moskovitz": "3rd",
       "Paul Legallet": "4th",
@@ -312,6 +312,12 @@
     `;
   }
 
+  function finishClass(finish) {
+    if (finish === "Champion") return "is-gold";
+    if (finish === "Shit King") return "is-brown";
+    return "";
+  }
+
   function renderBubbles() {
     bubbleGrid.innerHTML = managers.map((manager) => {
       const profile = buildProfile(manager);
@@ -331,7 +337,7 @@
     const seasonCards = profile.seasons.map((season) => `
       <article class="manager-season-card">
         <span>${season.season}</span>
-        <strong>${escapeHtml(season.finalFinish)}</strong>
+        <strong class="${finishClass(season.finalFinish)}">${escapeHtml(season.finalFinish)}</strong>
         <dl>
           <div><dt>Regular</dt><dd>${season.regularWins}-${season.regularLosses}, ${season.regularFinish}</dd></div>
           <div><dt>Playoffs</dt><dd>${season.playoffWins}-${season.playoffLosses}</dd></div>
