@@ -14,7 +14,7 @@
       "Will Price": "7th",
       "Miles Elliot": "8th",
       "Jakob Cooper": "9th",
-      "Jacob Moskovitz": "Toilet King",
+      "Jacob Moskovitz": "Shit King",
     },
     2025: {
       "Milo Manheim": "1st",
@@ -28,7 +28,7 @@
       "Christian Engelhardt": "9th",
       "Miles Elliot": "10th",
       "Travis Roy Rogers": "11th",
-      "Jakob Cooper": "Toilet King",
+      "Jakob Cooper": "Shit King",
     },
   };
 
