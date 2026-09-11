@@ -239,6 +239,25 @@
           display: pts(profile.pa),
         }))),
       },
+      avgPa: {
+        title: "Average Points Against",
+        rows: rankRows(profiles.map((profile) => ({
+          manager: profile.manager,
+          value: profile.games ? profile.pa / profile.games : 0,
+          display: pts(profile.games ? profile.pa / profile.games : 0),
+        }))),
+      },
+      pointDiff: {
+        title: "All-Time Point Difference",
+        rows: rankRows(profiles.map((profile) => {
+          const diff = profile.pf - profile.pa;
+          return {
+            manager: profile.manager,
+            value: diff,
+            display: `${diff >= 0 ? "+" : "-"}${pts(Math.abs(diff))}`,
+          };
+        })),
+      },
       playoff: {
         title: "Playoff/Toilet Bowl Record",
         rows: rankRows(profiles.map((profile) => {
@@ -333,6 +352,8 @@
           ${statCard("Average score", pts(profile.average), leaderboards, "average", manager)}
           ${statCard("Points for", pts(profile.pf), leaderboards, "pf", manager)}
           ${statCard("Points against", pts(profile.pa), leaderboards, "pa", manager)}
+          ${statCard("Average points against", pts(profile.games ? profile.pa / profile.games : 0), leaderboards, "avgPa", manager)}
+          ${statCard("Point difference", `${profile.pf >= profile.pa ? "+" : "-"}${pts(Math.abs(profile.pf - profile.pa))}`, leaderboards, "pointDiff", manager)}
           ${statCard("Playoff record", profile.playoffRecord, leaderboards, "playoff", manager)}
         </section>
 
@@ -377,6 +398,7 @@
         <button class="manager-rank-close" type="button" aria-label="Close stat standings">×</button>
         <p class="eyebrow">League Rank</p>
         <h3>${escapeHtml(board.title)}</h3>
+        ${board.note ? `<p class="manager-rank-note">${escapeHtml(board.note)}</p>` : ""}
         <ol class="manager-rank-list">
           ${board.rows.map((row) => `
             <li class="${row.manager === activeManager ? "is-active" : ""}" style="${managerStyle(row.manager)}">

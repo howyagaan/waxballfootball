@@ -3346,7 +3346,7 @@ select {
 }
 
 .manager-stat-strip {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
 }
 
 .manager-high-low,
@@ -3453,6 +3453,13 @@ select {
   margin: 0.2rem 2.4rem 1rem 0;
   font-size: clamp(1.8rem, 5vw, 3rem);
   line-height: 0.95;
+}
+
+.manager-rank-note {
+  margin: -0.35rem 2.4rem 1rem 0;
+  color: var(--muted);
+  font-weight: 850;
+  line-height: 1.35;
 }
 
 .manager-rank-close {
