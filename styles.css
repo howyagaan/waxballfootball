@@ -3537,6 +3537,12 @@ select {
   line-height: 1.25;
 }
 
+.manager-section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--manager-color-rgb), 0.62), transparent);
+  opacity: 0.72;
+}
+
 .manager-high-low p,
 .manager-season-card p {
   margin: 0.45rem 0 0;

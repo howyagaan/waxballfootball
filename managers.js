@@ -383,6 +383,8 @@
           </article>
         </section>
 
+        <div class="manager-section-divider" aria-hidden="true"></div>
+
         <section class="manager-season-grid" aria-label="${escapeHtml(manager)} season history">
           ${seasonCards}
         </section>
