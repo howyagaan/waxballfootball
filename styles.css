@@ -262,6 +262,11 @@ nav a:hover,
   color: var(--ink);
 }
 
+.nav-stats[open] summary {
+  border-color: rgba(0, 206, 190, 0.45);
+  color: var(--teal);
+}
+
 .nav-archives div {
   position: absolute;
   right: 0;
@@ -278,6 +283,10 @@ nav a:hover,
 
 .nav-archives div a {
   padding: 0.5rem 0.65rem;
+}
+
+.nav-stats div {
+  min-width: 8.4rem;
 }
 
 main {
@@ -3205,6 +3214,338 @@ select {
   text-transform: uppercase;
 }
 
+.managers-hero .hero-main h1 {
+  background: linear-gradient(135deg, var(--teal), #27e47b 52%, #ff5d78 100%);
+  background-clip: text;
+  color: transparent;
+  line-height: 1.12;
+  overflow: visible;
+  padding-bottom: 0.16em;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.manager-bubble-board,
+.manager-database {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  margin-top: clamp(1rem, 3vw, 1.5rem);
+  padding: clamp(1rem, 3vw, 1.35rem);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 206, 190, 0.13), transparent 34%),
+    linear-gradient(145deg, rgba(18, 24, 32, 0.98), rgba(12, 18, 26, 0.94));
+  box-shadow: var(--shadow);
+}
+
+.manager-database {
+  --manager-color-rgb: 0, 206, 184;
+  --manager-color: rgb(var(--manager-color-rgb));
+  --manager-readable-color: var(--manager-color);
+  border-color: rgba(var(--manager-color-rgb), 0.34);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(var(--manager-color-rgb), 0.16), transparent 34%),
+    linear-gradient(145deg, rgba(18, 24, 32, 0.98), rgba(12, 18, 26, 0.94));
+}
+
+.manager-bubble-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.manager-bubble {
+  --manager-color-rgb: 0, 206, 184;
+  --manager-color: rgb(var(--manager-color-rgb));
+  --manager-readable-color: var(--manager-color);
+  display: grid;
+  min-height: 9rem;
+  place-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(var(--manager-color-rgb), 0.24);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 16%, rgba(var(--manager-color-rgb), 0.25), transparent 42%),
+    rgba(7, 12, 18, 0.6);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  padding: 1rem 0.7rem;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.manager-bubble:hover,
+.manager-bubble:focus-visible,
+.manager-bubble.is-active {
+  border-color: rgba(var(--manager-color-rgb), 0.72);
+  outline: none;
+  transform: translateY(-3px);
+  background:
+    radial-gradient(circle at 50% 16%, rgba(var(--manager-color-rgb), 0.42), transparent 42%),
+    rgba(var(--manager-color-rgb), 0.11);
+}
+
+.manager-bubble span,
+.manager-profile-avatar {
+  display: grid;
+  width: 4.5rem;
+  height: 4.5rem;
+  place-items: center;
+  border: 2px solid rgba(var(--manager-color-rgb), 0.46);
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(var(--manager-color-rgb), 0.24), rgba(var(--manager-color-rgb), 0.09));
+  color: var(--manager-readable-color);
+  font-size: 1.35rem;
+  font-weight: 1000;
+  letter-spacing: 0.04em;
+}
+
+.manager-bubble strong {
+  font-size: 0.85rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.manager-profile-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.manager-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.manager-profile-head h2 {
+  margin: 0.1rem 0 0;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 0.92;
+}
+
+.manager-profile-head p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.manager-rank-hint {
+  margin: -0.2rem 0 0;
+  color: var(--manager-readable-color);
+  font-size: 0.82rem;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.manager-stat-strip,
+.manager-high-low,
+.manager-season-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.manager-stat-strip {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.manager-high-low,
+.manager-season-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.manager-stat-strip article,
+.manager-high-low article,
+.manager-season-card {
+  border: 1px solid rgba(var(--manager-color-rgb), 0.18);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(var(--manager-color-rgb), 0.09), transparent 40%),
+    rgba(7, 12, 18, 0.5);
+  padding: 0.9rem;
+}
+
+.manager-stat-strip span,
+.manager-high-low span,
+.manager-season-card > span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.manager-stat-strip strong,
+.manager-high-low strong,
+.manager-season-card > strong {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--manager-readable-color);
+  font-size: clamp(1.45rem, 3vw, 2.25rem);
+  line-height: 0.95;
+}
+
+.manager-rank-button {
+  border: 1px solid rgba(0, 206, 190, 0.36);
+  border-radius: 999px;
+  background: rgba(0, 206, 190, 0.1);
+  color: var(--teal);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  margin-top: 0.55rem;
+  padding: 0.38rem 0.6rem;
+  text-transform: uppercase;
+}
+
+.manager-rank-button:hover,
+.manager-rank-button:focus-visible {
+  border-color: rgba(0, 206, 190, 0.8);
+  color: var(--ink);
+  outline: none;
+}
+
+.manager-rank-button.is-gold {
+  border-color: rgba(255, 184, 77, 0.8);
+  background: rgba(255, 184, 77, 0.16);
+  color: var(--gold);
+  box-shadow: 0 0 24px rgba(255, 184, 77, 0.16);
+}
+
+.manager-rank-button.is-red {
+  border-color: rgba(255, 93, 120, 0.72);
+  background: rgba(255, 93, 120, 0.14);
+  color: #ff5d78;
+}
+
+.manager-rank-popover {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 6, 10, 0.68);
+  padding: 1rem;
+}
+
+.manager-rank-popover[hidden] {
+  display: none;
+}
+
+.manager-rank-dialog {
+  position: relative;
+  width: min(34rem, 100%);
+  max-height: min(78vh, 44rem);
+  overflow: auto;
+  border: 1px solid rgba(0, 206, 190, 0.38);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 206, 190, 0.18), transparent 34%),
+    linear-gradient(145deg, rgba(18, 24, 32, 0.98), rgba(7, 12, 18, 0.98));
+  box-shadow: var(--shadow);
+  padding: 1.1rem;
+}
+
+.manager-rank-dialog h3 {
+  margin: 0.2rem 2.4rem 1rem 0;
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  line-height: 0.95;
+}
+
+.manager-rank-close {
+  position: absolute;
+  right: 0.85rem;
+  top: 0.85rem;
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.manager-rank-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.manager-rank-list li {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr);
+  gap: 0.2rem 0.65rem;
+  align-items: center;
+  border: 1px solid rgba(0, 206, 190, 0.12);
+  border-radius: 14px;
+  background: rgba(7, 12, 18, 0.48);
+  padding: 0.65rem;
+}
+
+.manager-rank-list li.is-active {
+  border-color: rgba(0, 206, 190, 0.68);
+  background: rgba(0, 206, 190, 0.12);
+}
+
+.manager-rank-list span {
+  grid-row: span 2;
+  color: var(--teal);
+  font-weight: 1000;
+}
+
+.manager-rank-list strong {
+  color: var(--ink);
+}
+
+.manager-rank-list em {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.manager-high-low p,
+.manager-season-card p {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.manager-season-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0.85rem 0 0;
+}
+
+.manager-season-card div {
+  min-width: 0;
+}
+
+.manager-season-card dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.manager-season-card dd {
+  margin: 0.12rem 0 0;
+  color: var(--ink);
+  font-weight: 950;
+}
+
 .bylaws-hero .hero-main h1 {
   max-width: 16ch;
   color: var(--ink);
@@ -3862,6 +4203,33 @@ footer {
   .league-avatar-shortcut {
     flex: 0 0 auto;
     min-width: 3.5rem;
+  }
+
+  .manager-bubble-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .manager-bubble {
+    min-height: 7rem;
+    border-radius: 24px;
+  }
+
+  .manager-bubble span,
+  .manager-profile-avatar {
+    width: 3.6rem;
+    height: 3.6rem;
+    font-size: 1.05rem;
+  }
+
+  .manager-profile-head {
+    align-items: flex-start;
+  }
+
+  .manager-stat-strip,
+  .manager-high-low,
+  .manager-season-grid {
+    grid-template-columns: 1fr;
   }
 
   .league-avatar-shortcut .avatar {

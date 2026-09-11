@@ -316,6 +316,20 @@
     return tiedRows(rows, (row) => row.pointsAgainst, mode);
   }
 
+  function seasonPfRows(mode) {
+    const rows = [];
+    regularSeasonRows(sideRows()).forEach((row) => {
+      let record = rows.find((item) => item.manager === row.manager && item.season === row.game.season);
+      if (!record) {
+        record = { manager: row.manager, team: row.team, season: row.game.season, pointsFor: 0, games: 0 };
+        rows.push(record);
+      }
+      record.pointsFor += row.points;
+      record.games += 1;
+    });
+    return tiedRows(rows, (row) => row.pointsFor, mode);
+  }
+
   function playoffPerformerRows() {
     const rows = sideRows().filter((row) => row.game.stage !== "Regular season");
     const byManager = managers.map((manager) => {
@@ -423,6 +437,14 @@
     return `
       <b>${escapeHtml(row.manager)}</b>
       <span>${row.season} • Regular season ${escapeHtml(row.regularFinish)} • Final ${escapeHtml(row.finalFinish)}</span>
+    `;
+  }
+
+  function seasonPfDetail(row) {
+    return `
+      <b>${escapeHtml(row.manager)}</b>
+      <span>${escapeHtml(row.team)} • ${row.season} regular season</span>
+      <em>${row.games} games</em>
     `;
   }
 
@@ -662,6 +684,8 @@
     const averages = managerAverages(rows);
     const bestAverage = tiedRows(averages, (row) => row.average, "max");
     const worstAverage = tiedRows(averages, (row) => row.average, "min");
+    const mostSeasonPf = seasonPfRows("max");
+    const leastSeasonPf = seasonPfRows("min");
     const mostBrutalSchedule = scheduleRows("max");
     const easiestSchedule = scheduleRows("min");
     const bestPlayoffPerformer = playoffPerformerRows();
@@ -779,6 +803,20 @@
         details: worstAverage.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.games} recorded games</span>`),
         tone: "is-red",
         managers: managerList(worstAverage),
+      },
+      {
+        title: "Most PF in a regular season",
+        value: `${fmt(mostSeasonPf[0]?.pointsFor)} PF`,
+        details: mostSeasonPf.map(seasonPfDetail),
+        tone: "is-green",
+        managers: managerList(mostSeasonPf),
+      },
+      {
+        title: "Least PF in a regular season",
+        value: `${fmt(leastSeasonPf[0]?.pointsFor)} PF`,
+        details: leastSeasonPf.map(seasonPfDetail),
+        tone: "is-red",
+        managers: managerList(leastSeasonPf),
       },
       {
         title: "Most brutal schedule",

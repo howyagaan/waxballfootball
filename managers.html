@@ -3,35 +3,35 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Waxball Wax Stats</title>
+    <title>Waxball Managers</title>
     <meta
       name="description"
-      content="All-time Waxball records from the imported 2024 ESPN and 2025 Sleeper matchup logs."
+      content="Every Waxball manager's historical matchup database, season finishes, averages, records, and team history."
     />
-    <meta property="og:title" content="Waxball Wax Stats" />
+    <meta property="og:title" content="Waxball Managers" />
     <meta
       property="og:description"
-      content="League records, streaks, weird wins, brutal losses, and more Waxball history."
+      content="Personalized Waxball databases for every manager across the 2024 ESPN and 2025 Sleeper archives."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://waxballfootball.com/wax-stats.html" />
+    <meta property="og:url" content="https://waxballfootball.com/managers.html" />
     <meta property="og:image" content="https://waxballfootball.com/assets/social/waxball-wax-stats-preview.jpg" />
     <meta property="og:image:secure_url" content="https://waxballfootball.com/assets/social/waxball-wax-stats-preview.jpg" />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Waxball Wax Stats" />
+    <meta name="twitter:title" content="Waxball Managers" />
     <meta
       name="twitter:description"
-      content="League records, streaks, weird wins, brutal losses, and more Waxball history."
+      content="Personalized Waxball databases for every manager across the 2024 ESPN and 2025 Sleeper archives."
     />
     <meta name="twitter:image" content="https://waxballfootball.com/assets/social/waxball-wax-stats-preview.jpg" />
     <link rel="icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" type="image/png" />
     <link rel="apple-touch-icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-page="wax-stats">
+  <body data-page="managers">
     <header class="topbar">
       <a class="brand" href="./index.html" aria-label="Waxball home">
         <span class="brand-mark has-image" id="league-brand-mark"><img alt="" src="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" /></span>
@@ -60,50 +60,32 @@
     </header>
 
     <main id="top">
-      <section class="hero archive-hero h2h-hero wax-stats-hero">
+      <section class="hero archive-hero h2h-hero managers-hero">
         <div class="hero-main">
-          <p class="eyebrow">Records room</p>
-          <h1>Wax Stats</h1>
+          <p class="eyebrow">Personal database</p>
+          <h1>Managers</h1>
           <p>
-            All-time stats from every Waxball matchup ever.
+            Every Waxball manager's record, scoring profile, season finishes, and historical nonsense in one place.
           </p>
         </div>
       </section>
 
-      <section class="wax-stats-filter" aria-label="Filter Wax Stats by manager">
-        <label for="wax-stats-manager-filter">Filter by manager</label>
-        <select id="wax-stats-manager-filter">
-          <option value="">All managers</option>
-        </select>
+      <section class="manager-bubble-board" aria-label="Waxball manager selector">
+        <div class="manager-bubble-grid" id="manager-bubble-grid"></div>
       </section>
 
-      <section class="wax-stats-board recent-stat-adjustments" aria-label="Most recent stat adjustments">
-        <div class="recent-stat-head">
-          <p class="eyebrow">Most Recent Stat Adjustments</p>
-          <h2>Records Recently Broken</h2>
-        </div>
-        <div id="wax-stats-recent" class="recent-stat-list"></div>
-      </section>
-
-      <section class="wax-stats-board" aria-label="Waxball records">
-        <div id="wax-stats-all" class="wax-stats-grid wax-stats-grid-extra"></div>
-      </section>
-
-      <section class="wax-stats-board wax-stats-note wax-stats-request" aria-label="Request a stat">
-        <p class="eyebrow">Request a stat</p>
-        <p>
-          Want a specific stat? Text your resident stat-fag Nic and he'll pull it for you!
-        </p>
+      <section class="manager-database" id="manager-database" aria-live="polite">
+        <p class="wax-stats-empty">Choose a manager to open his Waxball database.</p>
       </section>
     </main>
 
     <footer>
-      Waxball Wax Stats <span aria-hidden="true">|</span>
+      Waxball Managers <span aria-hidden="true">|</span>
       <a href="./index.html">Return to 2026</a>
       <span aria-hidden="true">|</span> <a href="./bylaws.html">Bylaws</a>
     </footer>
 
     <script src="./assets/data/h2h-data.js"></script>
-    <script src="./wax-stats.js"></script>
+    <script src="./managers.js"></script>
   </body>
 </html>
