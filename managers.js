@@ -293,7 +293,12 @@
     const board = leaderboards[key];
     const row = board?.rows.find((item) => item.manager === manager);
     if (!row) return "";
-    const rankClass = row.rank === 1 ? " is-gold" : row.rank === managers.length ? " is-red" : "";
+    const inverted = key === "pa" || key === "avgPa";
+    const rankClass = row.rank === 1
+      ? (inverted ? " is-red" : " is-gold")
+      : row.rank === managers.length
+        ? (inverted ? " is-gold" : " is-red")
+        : "";
     return `<button class="manager-rank-button${rankClass}" type="button" data-rank-key="${key}">Rank #${row.rank}</button>`;
   }
 
@@ -331,7 +336,7 @@
           <div><dt>Regular</dt><dd>${season.regularWins}-${season.regularLosses}, ${season.regularFinish}</dd></div>
           <div><dt>Playoffs</dt><dd>${season.playoffWins}-${season.playoffLosses}</dd></div>
           <div><dt>Avg</dt><dd>${pts(season.average)}</dd></div>
-          <div><dt>PF / PA</dt><dd>${pts(season.pf)} / ${pts(season.pa)}</dd></div>
+          <div><dt>Point Differential</dt><dd>${season.pf >= season.pa ? "+" : "-"}${pts(Math.abs(season.pf - season.pa))}</dd></div>
         </dl>
       </article>
     `).join("");
