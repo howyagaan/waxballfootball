@@ -2842,7 +2842,7 @@ async function teamPlayerContext(roster, events, matchup = null) {
     const teamsInNextGames = new Set(nextMatchdayGames(events).flatMap((event) => nflTeamsForEvent(event)));
     const watch = [...starters, ...bench]
       .filter((player) => teamsInNextGames.has(player.team))
-      .slice(0, 8);
+      .sort((a, b) => playerEventSortValue(a, events) - playerEventSortValue(b, events) || a.name.localeCompare(b.name));
     return { starters, bench, watch };
   }
   const players = await loadPlayers();
@@ -2855,7 +2855,7 @@ async function teamPlayerContext(roster, events, matchup = null) {
   const teamsInNextGames = new Set(nextMatchdayGames(events).flatMap((event) => nflTeamsForEvent(event)));
   const watch = [...starters, ...bench]
     .filter((player) => teamsInNextGames.has(player.team) || isSleeperPlayerInTargetWindow(player))
-    .slice(0, 8);
+    .sort((a, b) => playerEventSortValue(a, events) - playerEventSortValue(b, events) || a.name.localeCompare(b.name));
   return { starters, bench, watch };
 }
 
@@ -3032,7 +3032,7 @@ function watchPlayers(context, hateWatch) {
   const players = [...(context?.starters || []), ...(context?.bench || [])]
     .map((player) => ({ ...player, game: playerGameWindow(player) }))
     .filter((player) => player.game.isTarget)
-    .slice(0, 8);
+    .sort((a, b) => playerGameSortValue(a) - playerGameSortValue(b) || a.name.localeCompare(b.name));
   return players.map((player) => ({
     ...player,
     note: hateWatch ? `Hate-watch ${player.position || "player"} usage` : `${player.position || "Player"} usage watch`,
@@ -3093,6 +3093,17 @@ function playerNameHtml(player) {
   return `<strong>${escapeHtml(player.name)}</strong>`;
 }
 
+function playerGameSortValue(player) {
+  const time = Number(player?.game?.sortTime);
+  return Number.isFinite(time) ? time : Number.MAX_SAFE_INTEGER;
+}
+
+function playerEventSortValue(player, events = nflData?.events || []) {
+  const event = events.find((item) => nflTeamsForEvent(item).includes(player.team));
+  const time = new Date(event?.date || player.gameStart || "").getTime();
+  return Number.isFinite(time) ? time : Number.MAX_SAFE_INTEGER;
+}
+
 function playerGameWindow(player) {
   const events = nflData?.events || [];
   const event = events.find((item) => nflTeamsForEvent(item).includes(player.team));
@@ -3102,6 +3113,7 @@ function playerGameWindow(player) {
       label: state === "post" ? "Final" : state === "in" ? "Live" : formatKickoff(player.gameStart),
       isTarget: isSleeperPlayerInTargetWindow(player),
       complete: state === "post",
+      sortTime: new Date(player.gameStart).getTime(),
     };
   }
   if (!event) return { label: "No game found", isTarget: false, complete: false };
@@ -3111,6 +3123,7 @@ function playerGameWindow(player) {
     label: state === "post" ? "Final" : state === "in" ? "Live" : formatKickoff(event.date),
     isTarget,
     complete: state === "post",
+    sortTime: new Date(event.date).getTime(),
   };
 }
 
