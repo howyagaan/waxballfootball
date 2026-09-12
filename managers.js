@@ -414,7 +414,14 @@
         ${board.note ? `<p class="manager-rank-note">${escapeHtml(board.note)}</p>` : ""}
         <ol class="manager-rank-list">
           ${board.rows.map((row) => `
-            <li class="${row.manager === activeManager ? "is-active" : ""}" style="${managerStyle(row.manager)}">
+            <li
+              class="${row.manager === activeManager ? "is-active" : ""}"
+              style="${managerStyle(row.manager)}"
+              data-manager-profile="${escapeHtml(row.manager)}"
+              role="button"
+              tabindex="0"
+              aria-label="Open ${escapeHtml(row.manager)} database"
+            >
               <span>#${row.rank}</span>
               <strong>${escapeHtml(row.manager)}</strong>
               <em>${escapeHtml(row.display)}</em>
@@ -453,8 +460,24 @@
   document.addEventListener("click", (event) => {
     const popover = document.querySelector("#manager-rank-popover");
     if (!popover || popover.hasAttribute("hidden")) return;
+    const managerPanel = event.target.closest("[data-manager-profile]");
+    if (managerPanel) {
+      popover.setAttribute("hidden", "");
+      openManager(managerPanel.dataset.managerProfile);
+      return;
+    }
     if (event.target.closest(".manager-rank-close") || event.target === popover) {
       popover.setAttribute("hidden", "");
     }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const popover = document.querySelector("#manager-rank-popover");
+    if (!popover || popover.hasAttribute("hidden")) return;
+    const managerPanel = event.target.closest("[data-manager-profile]");
+    if (!managerPanel || !["Enter", " "].includes(event.key)) return;
+    event.preventDefault();
+    popover.setAttribute("hidden", "");
+    openManager(managerPanel.dataset.managerProfile);
   });
 })();

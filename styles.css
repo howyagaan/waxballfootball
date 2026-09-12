@@ -3510,7 +3510,12 @@ select {
   background:
     radial-gradient(circle at 0% 50%, rgba(var(--manager-color-rgb), 0.16), transparent 34%),
     rgba(7, 12, 18, 0.48);
+  cursor: pointer;
   padding: 0.65rem;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .manager-rank-list li.is-active {
@@ -3518,6 +3523,16 @@ select {
   background:
     radial-gradient(circle at 0% 50%, rgba(var(--manager-color-rgb), 0.28), transparent 36%),
     rgba(var(--manager-color-rgb), 0.12);
+}
+
+.manager-rank-list li:hover,
+.manager-rank-list li:focus-visible {
+  border-color: rgba(var(--manager-color-rgb), 0.78);
+  background:
+    radial-gradient(circle at 0% 50%, rgba(var(--manager-color-rgb), 0.24), transparent 36%),
+    rgba(var(--manager-color-rgb), 0.09);
+  outline: none;
+  transform: translateY(-1px);
 }
 
 .manager-rank-list span {
