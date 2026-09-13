@@ -1458,7 +1458,7 @@ function heroLeagueCopy(league) {
 
 async function renderModeHeroCopy(league) {
   if (!els.heroCopy || PAGE !== "current" || isPreseasonMode() || isDraftCompletePreview() || isHistoricalCurrentPreview()) return;
-  if (hideHeroSubtitleForMode() && !["Friday", "Saturday", "Sunday"].includes(nflData?.mode?.label)) return;
+  if (hideHeroSubtitleForMode() && !["Friday", "Saturday", "Sunday", "Monday"].includes(nflData?.mode?.label)) return;
   try {
     const modeCopy = await asyncModeHeroCopy();
     if (modeCopy) setHeroCopy(modeCopy);
@@ -1475,7 +1475,7 @@ function setHeroCopy(copy) {
 }
 
 function hideHeroSubtitleForMode() {
-  return ["Friday", "Saturday", "Sunday"].includes(nflData?.mode?.label);
+  return ["Friday", "Saturday", "Sunday", "Monday"].includes(nflData?.mode?.label);
 }
 
 function syncModeHeroCopy() {
@@ -1502,6 +1502,9 @@ async function asyncModeHeroCopy() {
   }
   if (label === "Sunday") {
     return sundayTopPprAndSnfCopy();
+  }
+  if (label === "Monday") {
+    return mondayTopPprAndMnfCopy();
   }
   return "";
 }
@@ -1564,6 +1567,16 @@ function sundayNightGame(events) {
     .sort((a, b) => new Date(b.date) - new Date(a.date))[0] || null;
 }
 
+function mondayNightGame(events) {
+  return [...events]
+    .filter((event) => {
+      const kickoff = new Date(event.date);
+      const parts = easternParts(kickoff);
+      return parts.weekday === 1 && event.status?.type?.state !== "post" && kickoff >= currentDate();
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date))[0] || null;
+}
+
 function latestCompletedGameForWeekday(events, weekday) {
   return [...events]
     .filter((event) => event.status?.type?.state === "post" && easternParts(event.date).weekday === weekday)
@@ -1575,6 +1588,13 @@ function saturdayFootballCopy(events) {
   if (!game) return "";
   const parsed = parseGame(game);
   return `SNF game: ${parsed.shortName} - ${parsed.kickoff}${parsed.broadcast ? ` on ${parsed.broadcast}` : ""}.`;
+}
+
+function mondayFootballCopy(events) {
+  const game = mondayNightGame(events) || nextScheduledGame(events);
+  if (!game) return "";
+  const parsed = parseGame(game);
+  return `MNF game: ${parsed.shortName} - ${parsed.kickoff}${parsed.broadcast ? ` on ${parsed.broadcast}` : ""}.`;
 }
 
 async function thursdayTopPprCopy() {
@@ -1606,9 +1626,18 @@ async function sundayTopPprAndSnfCopy() {
   const topPlayer = await topPprPlayersForWeek(currentWeek, null, 1);
   const snfText = saturdayFootballCopy(nflData?.events || []);
   const topPlayerText = topPlayer.length
-    ? `This week's top PPR player so far: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
+    ? `Top Week ${currentWeek} Player So Far: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
     : "";
   return [topPlayerText, snfText].filter(Boolean).join("\n");
+}
+
+async function mondayTopPprAndMnfCopy() {
+  const topPlayer = await topPprPlayersForWeek(currentWeek, null, 1);
+  const mnfText = mondayFootballCopy(nflData?.events || []);
+  const topPlayerText = topPlayer.length
+    ? `Top Week ${currentWeek} Player So Far: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
+    : "";
+  return [topPlayerText, mnfText].filter(Boolean).join("\n");
 }
 
 async function fridayTnfRecapCopy() {
