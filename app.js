@@ -1599,7 +1599,7 @@ async function saturdayTopPprAndSnfCopy() {
       topPlayerText = `${day} top PPR player: ${leader.player.name} (${leader.points.toFixed(2)}) for ${ownerIdentityName(leader.roster, currentData.users)}.`;
     }
   }
-  return [topPlayerText, snfText].filter(Boolean).join(" ");
+  return [topPlayerText, snfText].filter(Boolean).join("\n");
 }
 
 async function sundayTopPprAndSnfCopy() {
@@ -1608,7 +1608,7 @@ async function sundayTopPprAndSnfCopy() {
   const topPlayerText = topPlayer.length
     ? `This week's top PPR player so far: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
     : "";
-  return [topPlayerText, snfText].filter(Boolean).join(" ");
+  return [topPlayerText, snfText].filter(Boolean).join("\n");
 }
 
 async function fridayTnfRecapCopy() {

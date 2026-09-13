@@ -406,6 +406,7 @@ body[data-theme="midweek"] .hero {
   color: var(--muted);
   font-size: clamp(1rem, 2vw, 1.22rem);
   line-height: 1.55;
+  white-space: pre-line;
 }
 
 .eyebrow {
