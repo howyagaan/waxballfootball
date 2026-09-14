@@ -52,6 +52,7 @@ const WEEK_PREVIEW = Number(QUERY_PARAMS.get("week"));
 const DATE_PREVIEW = QUERY_PARAMS.get("date");
 const PRESENTATION_PREVIEW = QUERY_PARAMS.get("presentation") || document.body.dataset.presentation || "";
 const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
+const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
 const ARTICLES_2026 = [
   /*
   {
@@ -329,7 +330,9 @@ const els = {
   week: document.querySelector("#week-metric"),
   teamMetric: document.querySelector("#team-metric"),
   toiletLabel: document.querySelector("#toilet-label"),
+  lastPlacePanel: document.querySelector("#last-place-panel"),
   leaderLabel: document.querySelector("#leader-label"),
+  leagueLeaderPanel: document.querySelector("#league-leader-panel"),
   champion: document.querySelector("#champion-metric"),
   draftCountdown: document.querySelector("#draft-countdown"),
   draftCountdownValue: document.querySelector("#draft-countdown-value"),
@@ -357,6 +360,7 @@ const els = {
   standingsHead: document.querySelector("#standings-head"),
   standingsNote: document.querySelector("#standings-note"),
   refreshStamp: document.querySelector("#refresh-stamp"),
+  weeklySlateStamp: document.querySelector("#weekly-slate-stamp"),
   standings: document.querySelector("#standings-body"),
   weekSelect: document.querySelector("#week-select"),
   matchups: document.querySelector("#matchups-list"),
@@ -384,6 +388,8 @@ let currentWeek = 1;
 let selectedRosterId = null;
 let playersById = null;
 let playersLoadedAt = 0;
+let previewedWeek = null;
+let weekCompleteThrough = null;
 
 init();
 
@@ -392,6 +398,7 @@ function init() {
     buildWeekOptions();
     els.weekSelect.addEventListener("change", async () => {
       currentWeek = Number(els.weekSelect.value);
+      previewedWeek = currentWeek;
       if (currentData && !currentData.matchupsByWeek[currentWeek]) {
         currentData.matchupsByWeek[currentWeek] = await fetchOptionalJson(
           `/league/${currentData.league.league_id}/matchups/${currentWeek}`,
@@ -429,12 +436,25 @@ function init() {
       return;
     }
 
+    const weekPreviewTarget = event.target.closest("[data-week-preview]");
+    if (weekPreviewTarget) {
+      currentWeek = Number(weekPreviewTarget.dataset.weekPreview);
+      previewedWeek = currentWeek;
+      if (els.weekSelect) els.weekSelect.value = String(currentWeek);
+      renderMatchups(currentData?.matchupsByWeek[currentWeek] || [], currentData?.rosters || [], currentData?.users || [], currentWeek);
+      requestAnimationFrame(() => els.matchups?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      return;
+    }
+
     const target = event.target.closest("[data-league-view]");
     if (!target) return;
     selectedRosterId = "league";
     if (els.teamSelect) els.teamSelect.value = "league";
     renderSelectedTeam();
-    if (currentData) renderStandings(currentData.rosters, currentData.users);
+    if (currentData) {
+      renderStandings(currentData.rosters, currentData.users);
+      renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
+    }
     requestAnimationFrame(() => document.querySelector("#top")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   });
 
@@ -471,6 +491,9 @@ async function loadAll() {
       currentData.week = previewWeek();
     }
     currentWeek = previewWeek() || currentData.week;
+    if (isWeekCompletePreview()) {
+      applyWeekCompletePreview(currentData, currentWeek);
+    }
     if (els.weekSelect) els.weekSelect.value = String(currentWeek);
 
     if (PAGE === "archive") renderArchivePage();
@@ -539,6 +562,21 @@ function applyDraftCompletePreview(data) {
     events: draftCompletePreviewEvents(),
     mode: modeDefinition("tnf"),
   };
+}
+
+function applyWeekCompletePreview(data, week) {
+  if (!data || !week) return;
+  weekCompleteThrough = Number(week);
+  data.previewMode = "week-complete";
+  data.league = {
+    ...data.league,
+    status: "in_season",
+    settings: {
+      ...data.league.settings,
+      last_scored_leg: week,
+    },
+  };
+  data.rosters = standingsThroughWeek(data.rosters, data.matchupsByWeek, week);
 }
 
 function draftPreviewRosterPatch(roster, users) {
@@ -735,15 +773,20 @@ function renderCurrentPage() {
   els.season.textContent = league.season || "2026";
   els.week.textContent = modeWeekLabel(nflData.mode, league);
   els.toiletLabel.textContent = showCurrentLeader ? "Last Place" : "Prevailing 💩 King";
+  els.lastPlacePanel?.classList.toggle("snapshot-tile-loss", showCurrentLeader);
   els.teamMetric.textContent = showCurrentLeader
     ? ownerIdentityName(lastPlaceRoster(rosters), users)
     : archiveRowManagerName(history.biggestLoser, archiveData) || "--";
   els.leaderLabel.textContent = showCurrentLeader ? "League Leader" : "Defending Champ";
+  els.leagueLeaderPanel?.classList.toggle("snapshot-tile-win", showCurrentLeader);
   els.champion.textContent = showCurrentLeader && leader
     ? ownerIdentityName(leader, users)
     : archiveRowManagerName(history.champion, archiveData) || "--";
   if (els.refreshStamp) {
     els.refreshStamp.textContent = `Updated ${formatTime()}`;
+  }
+  if (els.weeklySlateStamp) {
+    els.weeklySlateStamp.textContent = `as of ${formatRefreshStamp()}`;
   }
   renderPreseasonCountdown();
   renderDraftScoutPanel(shouldShowDraftOrderMock(rosters));
@@ -962,9 +1005,10 @@ function renderStandings(rosters, users) {
     .map((roster, index) => {
       const record = `${stat(roster, "wins")}-${stat(roster, "losses")}`;
       const selected = Number(selectedRosterId) === Number(roster.roster_id);
+      const movement = standingMovement(roster, rosters, users);
       return `
         <tr class="${selected ? "selected-row" : ""}">
-          <td class="rank">${index + 1}</td>
+          <td class="rank">${index + 1}${movement}</td>
           <td>${teamCell(roster, users)}</td>
           <td>${record}</td>
           <td>${shortPoints(roster, "fpts")}</td>
@@ -974,6 +1018,18 @@ function renderStandings(rosters, users) {
     })
     .join("");
   els.standings.innerHTML = rows || `<tr><td colspan="5">No standings available.</td></tr>`;
+}
+
+function standingMovement(roster, rosters, users) {
+  const completedWeek = completedThroughCurrentSeasonWeek();
+  if (!isDisplayedMatchupFinal() || completedWeek <= 1 || !currentData?.matchupsByWeek?.[completedWeek - 1]) return "";
+  const previousRosters = standingsThroughWeek(rosters, currentData.matchupsByWeek, completedWeek - 1);
+  const beforeRank = sortRosters(previousRosters, users).findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
+  const afterRank = sortRosters(rosters, users).findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
+  if (!beforeRank || !afterRank || beforeRank === afterRank) return `<span class="standings-movement neutral">-</span>`;
+  const movement = beforeRank - afterRank;
+  const direction = movement > 0 ? "up" : "down";
+  return `<span class="standings-movement ${direction}">${movement > 0 ? "+" : ""}${movement}</span>`;
 }
 
 function renderStandingsHeader(isDraftOrder) {
@@ -1044,6 +1100,7 @@ async function selectRosterFromShortcut(rosterId, options = {}) {
   if (els.teamSelect) els.teamSelect.value = String(selectedRosterId);
   await renderSelectedTeam();
   if (PAGE === "current" && currentData) renderStandings(currentData.rosters, currentData.users);
+  if (PAGE === "current" && currentData) renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
   if (PAGE === "archive" && archiveData) renderLeagueAvatarRail(archiveData.rosters, archiveData.users);
   if (PAGE === "current" && currentData) renderLeagueAvatarRail(currentData.rosters, currentData.users);
   if (options.scroll === "profile") {
@@ -1067,24 +1124,31 @@ function renderMatchups(matchups, rosters, users, week) {
   const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
   const groups = Array.from(grouped.values());
   const heatedKeys = heatedRivalryKeys(groups, rosters, users);
-  if (isTuesdayMode()) {
-    const previousWeek = currentData.matchupsByWeek[currentWeek - 1] || [];
-    const previousGrouped = groupBy(previousWeek, (matchup) => matchup.matchup_id || matchup.roster_id);
-    const previousGroups = Array.from(previousGrouped.values());
-    const previousHeatedKeys = heatedRivalryKeys(previousGroups, rosters, users);
+  if (isTuesdayMode() && previewedWeek !== week) {
+    const recapWeek = completedThroughCurrentSeasonWeek() || Math.max(1, currentWeek - 1);
+    const recapMatchups = currentData.matchupsByWeek[recapWeek] || [];
+    const recapGrouped = groupBy(recapMatchups, (matchup) => matchup.matchup_id || matchup.roster_id);
+    const recapGroups = Array.from(recapGrouped.values());
+    const previousHeatedKeys = heatedRivalryKeys(recapGroups, rosters, users);
+    const recapTags = matchupWeekExtremeTags(recapGroups);
+    const nextWeek = recapWeek + 1;
     els.matchups.innerHTML = `
       <div class="matchup-subsection">
-        <span class="metric-label">Last week recap</span>
-        ${previousGroups.map((pair) => matchupCard(pair, rosters, users, { forceScores: true, heatedRivalry: previousHeatedKeys.has(matchupPairKey(pair)) })).join("")}
+        <span class="metric-label">Week ${recapWeek} recap</span>
+        ${recapGroups.map((pair) => matchupCard(pair, rosters, users, {
+          forceScores: true,
+          finalScores: true,
+          recapWeek,
+          heatedRivalry: previousHeatedKeys.has(matchupPairKey(pair)),
+          extremeTag: recapTags.get(matchupPairKey(pair)),
+        })).join("")}
       </div>
-      <div class="matchup-subsection">
-        <span class="metric-label">Week ${week} preview</span>
-        ${groups.map((pair) => matchupCard(pair, rosters, users, { heatedRivalry: heatedKeys.has(matchupPairKey(pair)) })).join("")}
-      </div>
+      ${nextWeek <= 18 ? `<button class="button matchup-preview-button" type="button" data-week-preview="${nextWeek}">Show Week ${nextWeek} preview</button>` : ""}
     `;
     return;
   }
-  els.matchups.innerHTML = groups.map((pair) => matchupCard(pair, rosters, users, { heatedRivalry: heatedKeys.has(matchupPairKey(pair)) })).join("");
+  const previewLabel = isTuesdayMode() && previewedWeek === week ? `<span class="metric-label">Week ${week} preview</span>` : "";
+  els.matchups.innerHTML = `${previewLabel}${groups.map((pair) => matchupCard(pair, rosters, users, { heatedRivalry: heatedKeys.has(matchupPairKey(pair)) })).join("")}`;
 }
 
 function renderTeamSelector(rosters, users) {
@@ -1132,9 +1196,14 @@ async function renderSelectedTeam() {
     return;
   }
 
-  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users);
+  const selectedCompletedWeek = completedThroughCurrentSeasonWeek();
+  const selectedMatchupWeek = isTuesdayMode() && previewedWeek !== currentWeek && selectedCompletedWeek
+    ? selectedCompletedWeek
+    : currentWeek;
+  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[selectedMatchupWeek] || [], currentData.rosters, currentData.users);
   const opponentRoster = matchup.opponentRoster;
-  const selectedIsHeated = isHeatedSelectedMatchup(matchup, currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users);
+  const selectedIsHeated = isHeatedSelectedMatchup(matchup, currentData.matchupsByWeek[selectedMatchupWeek] || [], currentData.rosters, currentData.users);
+  const selectedRecapWeek = isTuesdayMode() && Number(selectedMatchupWeek) === Number(selectedCompletedWeek) ? selectedCompletedWeek : null;
   const rosterHasPlayers = [...(matchup.mine?.players || []), ...(roster.players || [])].some((playerId) => playerId !== "0");
   const opponentHasPlayers = [...(matchup.opponent?.players || []), ...(opponentRoster?.players || [])].some((playerId) => playerId !== "0");
   let playerContext = null;
@@ -1157,24 +1226,36 @@ async function renderSelectedTeam() {
   const historicalRosterSnapshot = isHistoricalCurrentPreview()
     ? historicalRosterSnapshots(matchup, roster, opponentRoster, source.users, playerContext, opponentContext)
     : "";
+  const matchupFocusLabel = selectedRecapWeek ? `Week ${selectedRecapWeek} result` : "Current matchup";
+  const matchupFocusResultClass = selectedRecapWeek ? selectedMatchupResultClass(matchup) : "";
 
   els.teamPanel.innerHTML = `
-    ${tuesdayLastWeekResult(roster, source.rosters, source.users)}
-    <div class="matchup-focus-card ${selectedIsHeated ? "heated-rivalry-card" : ""}">
+    ${selectedRecapWeek ? "" : tuesdayLastWeekResult(roster, source.rosters, source.users)}
+    <div class="matchup-focus-card ${selectedIsHeated ? "heated-rivalry-card" : ""} ${matchupFocusResultClass}">
       <div class="matchup-focus-head">
         <div>
-          <span class="metric-label">Current matchup</span>
+          <span class="metric-label">${escapeHtml(matchupFocusLabel)}</span>
           ${matchup.detail ? `<p class="muted">${escapeHtml(matchup.detail)}</p>` : ""}
         </div>
         ${matchupScoreBadge(matchup)}
       </div>
       ${matchupVersusShowpiece(roster, opponentRoster, source.users)}
-      ${matchupHistoryPanel(roster, opponentRoster, source.users, { heatedRivalry: selectedIsHeated })}
+      ${matchupHistoryPanel(roster, opponentRoster, source.users, { heatedRivalry: selectedIsHeated, recapWeek: selectedRecapWeek })}
+      ${tuesdayNextMatchup(roster, source.rosters, source.users, selectedRecapWeek)}
     </div>
     ${historicalRosterSnapshot}
     ${playersToWatch}
     <button class="button league-view-button" type="button" data-league-view>See All Matchups in League View</button>
   `;
+}
+
+function selectedMatchupResultClass(matchup) {
+  if (!matchup?.mine || !matchup?.opponent) return "";
+  const mine = scoreFor(matchup.mine);
+  const opponent = scoreFor(matchup.opponent);
+  if (mine > opponent) return "matchup-focus-win";
+  if (mine < opponent) return "matchup-focus-loss";
+  return "matchup-focus-tie";
 }
 
 function tuesdayLastWeekResult(roster, rosters, users) {
@@ -1186,6 +1267,25 @@ function tuesdayLastWeekResult(roster, rosters, users) {
       <span class="metric-label">Last week result</span>
       <h3>${escapeHtml(matchupResultText(roster, matchup.opponentRoster, users, scoreFor(matchup.mine), scoreFor(matchup.opponent), { final: true }))}</h3>
       ${matchupScoreLine(matchup, roster, matchup.opponentRoster, users)}
+    </article>
+  `;
+}
+
+function tuesdayNextMatchup(roster, rosters, users, recapWeek) {
+  if (!isTuesdayMode() || !recapWeek) return "";
+  const nextWeek = recapWeek + 1;
+  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[nextWeek] || [], rosters, users);
+  if (!matchup?.mine || !matchup?.opponentRoster) return "";
+  return `
+    <article class="next-matchup-mini">
+      <span class="metric-label">Next matchup</span>
+      <div>
+        ${avatar(roster, users, { initialsSource: ownerIdentityName(roster, users) })}
+        <strong>${escapeHtml(ownerIdentityName(roster, users))}</strong>
+        <span>vs</span>
+        ${avatar(matchup.opponentRoster, users, { initialsSource: ownerIdentityName(matchup.opponentRoster, users) })}
+        <strong>${escapeHtml(ownerIdentityName(matchup.opponentRoster, users))}</strong>
+      </div>
     </article>
   `;
 }
@@ -1659,8 +1759,8 @@ async function previousWeekTopPprCopy() {
   if (!topPlayers.length) return nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || "";
   const leaders = topPlayers
     .map((item, index) => `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) - ${ownerIdentityName(item.roster, currentData.users)}`)
-    .join("; ");
-  return `Previous week top PPR players: ${leaders}.`;
+    .join("\n");
+  return `Previous week top PPR players:\n${leaders}`;
 }
 
 async function topPprPlayersForWeek(week, teamFilter = null, limit = 3, options = {}) {
@@ -1732,6 +1832,10 @@ function isModePreview() {
 
 function isDraftCompletePreview() {
   return PAGE === "current" && DRAFT_COMPLETE_PREVIEW;
+}
+
+function isWeekCompletePreview() {
+  return PAGE === "current" && WEEK_COMPLETE_PREVIEW;
 }
 
 function isHistoricalCurrentPreview() {
@@ -2504,6 +2608,7 @@ function fantasyWeekWindowStart() {
 
 function isDisplayedMatchupFinal() {
   if (PAGE !== "current" || isHistoricalCurrentPreview()) return true;
+  if (isWeekCompletePreview()) return true;
   const lastScored = Number(currentData?.league?.settings?.last_scored_leg || 0);
   if (lastScored >= currentWeek) return true;
   return Number(currentWeek) < Number(currentData?.week || currentWeek);
@@ -2556,21 +2661,34 @@ function matchupHistoryPanel(roster, opponentRoster, users, options = {}) {
   }
   const last = summary.games.at(-1);
   const waxStats = waxStatHighlightsForSeries(summary);
+  const changedStats = options.recapWeek
+    ? waxStats.filter((stat) => Number(stat.game?.season) === Number(currentData?.league?.season || 2026) && Number(stat.game?.week) === Number(options.recapWeek))
+    : [];
   const rivalryUrl = rivalryPageUrl(firstManager, secondManager);
-  return `
-    <div class="matchup-history-card ${options.heatedRivalry ? "heated" : ""}">
-      <span class="metric-label">Manager history</span>${heatLabel}
-      <strong>${escapeHtml(firstManager)} ${escapeHtml(formatH2HRecord(summary))} ${escapeHtml(secondManager)}</strong>
-      <div class="matchup-history-facts">
+  const scoreDelta = options.recapWeek ? rivalryScoreChangeText(firstManager, secondManager, options.recapWeek) : "";
+  const lastMeetingTile = options.recapWeek ? "" : `
         <div>
           <span>Last meeting</span>
           <b>${escapeHtml(h2hGameLabel(last))}</b>
           <em>${escapeHtml(h2hResultText(last))}</em>
         </div>
+  `;
+  return `
+    <div class="matchup-history-card ${options.heatedRivalry ? "heated" : ""}">
+      <span class="metric-label">Manager history</span>${heatLabel}
+      <strong>${escapeHtml(firstManager)} ${escapeHtml(formatH2HRecord(summary))} ${escapeHtml(secondManager)}</strong>
+      <div class="matchup-history-facts">
+        ${lastMeetingTile}
         <div>
           <span>Rivalry score</span>
-          <a class="matchup-rivalry-link" href="${rivalryUrl}"><b>${rivalryScoreOutOf100(summary)}/100</b></a>
+          <a class="matchup-rivalry-link" href="${rivalryUrl}"><b>${rivalryScoreOutOf100(summary)}/100${scoreDelta ? ` (${scoreDelta})` : ""}</b></a>
         </div>
+        ${changedStats.length ? `
+          <div class="matchup-wax-stats changed">
+            <span>Changed this week</span>
+            ${changedStats.map((stat) => `<b>${escapeHtml(stat.label)}</b><em>${escapeHtml(stat.detail)}</em>`).join("")}
+          </div>
+        ` : ""}
         ${waxStats.length ? `
           <div class="matchup-wax-stats">
             <span>Wax Stats</span>
@@ -2624,6 +2742,7 @@ function matchupHistoryLine(first, second, rosters, users, options = {}) {
   const firstManager = ownerIdentityName(firstRoster, users);
   const secondManager = ownerIdentityName(secondRoster, users);
   const summary = managerMatchupHistory(firstManager, secondManager);
+  const scoreDelta = options.recapWeek ? rivalryScoreChangeText(firstManager, secondManager, options.recapWeek) : "";
   if (!summary.games.length) {
     return `
       <div class="matchup-history-line ${options.heatedRivalry ? "heated" : ""}">
@@ -2642,10 +2761,27 @@ function matchupHistoryLine(first, second, rosters, users, options = {}) {
         <strong>${escapeHtml(compactManagerName(firstManager))} ${escapeHtml(formatH2HRecord(summary))} ${escapeHtml(compactManagerName(secondManager))}</strong>
       </div>
       <div class="matchup-history-score">
-        <a class="matchup-rivalry-link" href="${rivalryUrl}"><em>Rivalry score ${rivalryScoreOutOf100(summary)}/100</em></a>
+        <a class="matchup-rivalry-link" href="${rivalryUrl}"><em>Rivalry score ${rivalryScoreOutOf100(summary)}/100${scoreDelta ? ` (${scoreDelta})` : ""}</em></a>
       </div>
     </div>
   `;
+}
+
+function rivalryScoreChangeText(firstManager, secondManager, recapWeek) {
+  const season = Number(currentData?.league?.season || 2026);
+  const after = managerMatchupHistory(firstManager, secondManager);
+  const before = managerMatchupHistoryThrough(firstManager, secondManager, season, recapWeek - 1);
+  const delta = rivalryScoreOutOf100(after) - rivalryScoreOutOf100(before);
+  if (!delta) return "no change";
+  return `${delta > 0 ? "+" : ""}${delta}`;
+}
+
+function managerMatchupHistoryThrough(firstManager, secondManager, throughSeason, throughWeek) {
+  const games = allH2HGames()
+    .filter((game) => game.managers?.includes(firstManager) && game.managers?.includes(secondManager))
+    .filter((game) => Number(game.season) < throughSeason || (Number(game.season) === throughSeason && Number(game.week) <= throughWeek))
+    .sort((a, b) => (Number(a.season) - Number(b.season)) || (Number(a.week) - Number(b.week)) || String(a.id || "").localeCompare(String(b.id || "")));
+  return summarizeH2HGames(games, firstManager, secondManager);
 }
 
 function rivalryPageUrl(firstManager, secondManager) {
@@ -2661,6 +2797,10 @@ function managerMatchupHistory(firstManager, secondManager) {
   const games = allH2HGames()
     .filter((game) => game.managers?.includes(firstManager) && game.managers?.includes(secondManager))
     .sort((a, b) => (Number(a.season) - Number(b.season)) || (Number(a.week) - Number(b.week)) || String(a.id || "").localeCompare(String(b.id || "")));
+  return summarizeH2HGames(games, firstManager, secondManager);
+}
+
+function summarizeH2HGames(games, firstManager, secondManager) {
   return games.reduce((summary, game) => {
     const firstIndex = game.managers.indexOf(firstManager);
     const secondIndex = game.managers.indexOf(secondManager);
@@ -2711,6 +2851,7 @@ function currentSeasonCompletedH2HGames() {
 
 function completedThroughCurrentSeasonWeek() {
   if (!currentData?.league) return Math.max(0, Number(currentWeek || 1) - 1);
+  if (isWeekCompletePreview()) return Number(weekCompleteThrough || currentWeek || 1);
   return completedThroughWeek(currentData.league, currentData.state);
 }
 
@@ -3215,23 +3356,56 @@ function matchupCard(pair, rosters, users, options = {}) {
   const [first, second] = pair;
   const firstScore = scoreFor(first);
   const secondScore = second ? scoreFor(second) : 0;
+  const matchupOptions = {
+    ...options,
+    tied: Boolean(second && firstScore === secondScore),
+  };
+  const classNames = [
+    "matchup-card",
+    options.heatedRivalry ? "heated-rivalry-card" : "",
+    ...(options.extremeTag ? String(options.extremeTag).split(" ").map((tag) => `matchup-card-${tag}`) : []),
+  ].filter(Boolean).join(" ");
   return `
-    <div class="matchup-card ${options.heatedRivalry ? "heated-rivalry-card" : ""}">
+    <div class="${classNames}">
       <div class="matchup-row">
-        ${matchupTeam(first, rosters, users, firstScore > secondScore, "", options)}
+        ${matchupTeam(first, rosters, users, firstScore > secondScore, "", matchupOptions)}
         <div class="versus">vs</div>
-        ${second ? matchupTeam(second, rosters, users, secondScore > firstScore, "away", options) : `<div class="matchup-team away"><span class="avatar">--</span><div class="team-copy"><strong>Bye</strong></div></div>`}
+        ${second ? matchupTeam(second, rosters, users, secondScore > firstScore, "away", matchupOptions) : `<div class="matchup-team away"><span class="avatar">--</span><div class="team-copy"><strong>Bye</strong></div></div>`}
       </div>
       ${matchupHistoryLine(first, second, rosters, users, options)}
     </div>
   `;
 }
 
+function matchupWeekExtremeTags(groups) {
+  const scored = groups
+    .filter((pair) => pair?.[0] && pair?.[1])
+    .map((pair) => ({
+      key: matchupPairKey(pair),
+      margin: Math.abs(scoreFor(pair[0]) - scoreFor(pair[1])),
+    }))
+    .filter((item) => item.key);
+  if (!scored.length) return new Map();
+  const closest = Math.min(...scored.map((item) => item.margin));
+  const blowout = Math.max(...scored.map((item) => item.margin));
+  const tags = new Map();
+  scored.forEach((item) => {
+    if (item.margin === closest) tags.set(item.key, "closest");
+    if (item.margin === blowout) tags.set(item.key, tags.get(item.key) ? "closest blowout" : "blowout");
+  });
+  return tags;
+}
+
 function matchupTeam(matchup, rosters, users, leads, side = "", options = {}) {
   const roster = rosters.find((item) => item.roster_id === matchup.roster_id);
   const scoreLabel = options.forceScores || shouldShowMatchupScores() ? scoreFor(matchup).toFixed(2) : currentPosition(roster, rosters);
+  const isSelected = Number(selectedRosterId) === Number(matchup.roster_id);
+  const resultState = options.finalScores ? options.tied ? "result-tie" : leads ? "result-win" : "result-loss" : "";
+  const selectedResult = isSelected && options.finalScores && !options.tied
+    ? leads ? "selected-win" : "selected-loss"
+    : "";
   return `
-    <button class="matchup-team ${side}" type="button" data-roster-link="${escapeHtml(matchup.roster_id)}" aria-label="Open ${escapeHtml(roster ? teamName(roster, users) : `Roster ${matchup.roster_id}`)} team page">
+    <button class="matchup-team ${side} ${resultState} ${selectedResult}" type="button" data-roster-link="${escapeHtml(matchup.roster_id)}" aria-label="Open ${escapeHtml(roster ? teamName(roster, users) : `Roster ${matchup.roster_id}`)} team page">
       ${avatar(roster, users)}
       <div class="team-copy">
         <strong>${escapeHtml(roster ? teamName(roster, users) : `Roster ${matchup.roster_id}`)}</strong>
@@ -3651,6 +3825,10 @@ function clampWeek(week) {
 
 function formatTime() {
   return `${new Intl.DateTimeFormat(undefined, { timeZone: displayTimeZone(), hour: "numeric", minute: "2-digit" }).format(currentDate())} ${localTimezoneLabel()}`;
+}
+
+function formatRefreshStamp() {
+  return `${new Intl.DateTimeFormat(undefined, { timeZone: displayTimeZone(), month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(currentDate())} ${localTimezoneLabel()}`;
 }
 
 function formatKickoff(value) {
