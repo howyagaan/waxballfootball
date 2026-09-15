@@ -54,16 +54,14 @@ const PRESENTATION_PREVIEW = QUERY_PARAMS.get("presentation") || document.body.d
 const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
 const ARTICLES_2026 = [
-  /*
   {
     week: 1,
-    headline: "Week 1 - Headline goes here",
-    url: "https://www.nicholaswhamilton.com/waxball2026/week1",
-    thumbnail: "./assets/articles/2026-week1.jpg",
+    headline: "STAT FAG GAGS TEA HOUSE DOWN BOOTS IN WEEK 1",
+    url: "./articles/2026/week-1.html",
+    thumbnail: "./assets/articles/2026/week-1/week-1-thumb.jpeg",
     published: true,
     publishedAt: "2026-09-15",
   },
-  */
 ];
 const PPR_LEADERS_2025 = [
   { name: "Christian McCaffrey", position: "RB", team: "SF" },
@@ -457,6 +455,12 @@ function init() {
     }
     requestAnimationFrame(() => document.querySelector("#top")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   });
+
+  if (PAGE === "articles") {
+    renderArticleArchive();
+    setStatus("Articles loaded.", "ready");
+    return;
+  }
 
   loadAll();
   window.setInterval(loadAll, AUTO_REFRESH_MS);

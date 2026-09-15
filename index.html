@@ -66,33 +66,6 @@
           <p id="hero-mode-label" class="eyebrow">Midweek mode</p>
           <h1>Waxball 2026</h1>
           <p id="hero-copy" hidden></p>
-          <div class="hero-actions">
-            <a id="standings-action" class="button primary" href="#standings">League Table</a>
-            <a class="button" href="https://sleeper.com/leagues/1312219624808419328" target="_blank" rel="noreferrer">Open Sleeper</a>
-            <div id="draft-countdown" class="preseason-countdown draft-countdown" hidden>
-              <span class="metric-label">Draft Day Countdown</span>
-              <strong id="draft-countdown-value">--</strong>
-              <p>Scheduled</p>
-            </div>
-            <article id="draft-scout-panel" class="draft-scout-panel" hidden>
-              <div class="draft-scout-head">
-                <div>
-                  <h2>DRAFT REVIEW</h2>
-                </div>
-                <select id="draft-scout-select" aria-label="Choose a manager for draft review">
-                  <option value="">Choose manager</option>
-                </select>
-              </div>
-              <div id="draft-scout-body" class="draft-scout-body">
-                <p>Select a manager to see his draft review.</p>
-              </div>
-            </article>
-            <div id="preseason-countdown" class="preseason-countdown" hidden>
-              <span class="metric-label">First Game Countdown</span>
-              <strong id="countdown-value">--</strong>
-              <p>Scheduled</p>
-            </div>
-          </div>
         </div>
 
         <aside class="hero-card" aria-label="League snapshot">
@@ -135,6 +108,47 @@
             <span>CHOOSE TEAM</span>
             <select id="team-select" aria-label="Choose a team"></select>
           </label>
+        </div>
+
+        <section class="home-article-preview" aria-label="Latest Waxball article">
+          <a href="./articles/2026/week-1.html">
+            <img src="./assets/articles/2026/week-1/week-1-thumb.jpeg" alt="" loading="lazy" />
+            <span>
+              <em class="eyebrow">Week 1 Article</em>
+              <strong>STAT FAG GAGS TEA HOUSE DOWN BOOTS IN WEEK 1</strong>
+              <small>9/15/2026</small>
+            </span>
+          </a>
+        </section>
+
+        <div class="hero-actions">
+          <a id="standings-action" class="button primary" href="#standings">League Table</a>
+          <a class="button" href="https://sleeper.com/leagues/1312219624808419328" target="_blank" rel="noreferrer">Open Sleeper</a>
+          <span class="hero-action-break" aria-hidden="true"></span>
+          <a class="button home-articles-button" href="./articles-2026.html">2026 Articles</a>
+          <div id="draft-countdown" class="preseason-countdown draft-countdown" hidden>
+            <span class="metric-label">Draft Day Countdown</span>
+            <strong id="draft-countdown-value">--</strong>
+            <p>Scheduled</p>
+          </div>
+          <article id="draft-scout-panel" class="draft-scout-panel" hidden>
+            <div class="draft-scout-head">
+              <div>
+                <h2>DRAFT REVIEW</h2>
+              </div>
+              <select id="draft-scout-select" aria-label="Choose a manager for draft review">
+                <option value="">Choose manager</option>
+              </select>
+            </div>
+            <div id="draft-scout-body" class="draft-scout-body">
+              <p>Select a manager to see his draft review.</p>
+            </div>
+          </article>
+          <div id="preseason-countdown" class="preseason-countdown" hidden>
+            <span class="metric-label">First Game Countdown</span>
+            <strong id="countdown-value">--</strong>
+            <p>Scheduled</p>
+          </div>
         </div>
       </section>
 
@@ -201,6 +215,6 @@
     </footer>
 
     <script src="./assets/data/h2h-data.js"></script>
-    <script src="./app.js?v=20260915-rivals"></script>
+    <script src="./app.js?v=20260915-home-article"></script>
   </body>
 </html>
