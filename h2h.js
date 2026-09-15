@@ -13,6 +13,7 @@ const H2H_OWNER_REAL_NAMES = {
   willyboyp: "Will Price",
   bigdicksenior: "Sam Labovitz",
   darryluvr: "Travis Roy Rogers",
+  darryluvr3000: "Travis Roy Rogers",
   chrissy511: "Christian Engelhardt",
   papicoop: "Jakob Cooper",
   millsberry27: "Miles Elliot",
@@ -29,6 +30,62 @@ const H2H_SEASON_OUTCOMES = {
     toiletBowlLoser: "Jakob Cooper",
   },
 };
+const H2H_CURRENT_SEASON_FALLBACK_MATCHUPS = [
+  {
+    id: "2026-w1-m1",
+    season: 2026,
+    week: 1,
+    stage: "Regular season",
+    managers: ["Miles Elliot", "Jakob Cooper"],
+    teams: ["Daddy Campbell", "Papi Coop"],
+    scores: [115, 150.96],
+  },
+  {
+    id: "2026-w1-m2",
+    season: 2026,
+    week: 1,
+    stage: "Regular season",
+    managers: ["Nic Hamilton", "Miles Blue"],
+    teams: ["Stat Fag", "blueballs"],
+    scores: [156.02, 117.72],
+  },
+  {
+    id: "2026-w1-m3",
+    season: 2026,
+    week: 1,
+    stage: "Regular season",
+    managers: ["Milo Manheim", "Jacob Moskovitz"],
+    teams: ["Nacua Matata", "poonfullofsugar"],
+    scores: [122.86, 94.04],
+  },
+  {
+    id: "2026-w1-m4",
+    season: 2026,
+    week: 1,
+    stage: "Regular season",
+    managers: ["Erik Ohno Dagoberg", "Christian Engelhardt"],
+    teams: ["Pamela Mari Ohno Dagoberg", "Steeler Virginity"],
+    scores: [115.4, 121.96],
+  },
+  {
+    id: "2026-w1-m5",
+    season: 2026,
+    week: 1,
+    stage: "Regular season",
+    managers: ["Travis Roy Rogers", "Sam Labovitz"],
+    teams: ["darryluvr3000", "mistahbigdick"],
+    scores: [140, 100.76],
+  },
+  {
+    id: "2026-w1-m6",
+    season: 2026,
+    week: 1,
+    stage: "Regular season",
+    managers: ["Will Price", "Paul Legallet"],
+    teams: ["poon messiah", "helloimpaul"],
+    scores: [93.86, 120.56],
+  },
+];
 
 const h2hEls = {
   rivalManager: document.querySelector("#h2h-rival-manager"),
@@ -48,7 +105,7 @@ const h2hEls = {
   quirks: document.querySelector("#h2h-quirks"),
 };
 
-let h2hMatchups = [...(H2H_DATA.matchups || [])];
+let h2hMatchups = mergeMatchups(H2H_DATA.matchups || [], H2H_CURRENT_SEASON_FALLBACK_MATCHUPS);
 let managerStats = buildManagerStats(h2hMatchups);
 let weekStats = buildWeekStats(h2hMatchups);
 let seasonStats = buildSeasonStats(h2hMatchups);
@@ -82,7 +139,7 @@ async function refreshH2HData({ render = true } = {}) {
   const selectedManagerA = h2hEls.managerA?.value || "";
   const selectedManagerB = h2hEls.managerB?.value || "";
   const currentMatchups = await loadCompletedSleeperMatchups();
-  h2hMatchups = mergeMatchups(H2H_DATA.matchups || [], currentMatchups);
+  h2hMatchups = mergeMatchups(H2H_DATA.matchups || [], H2H_CURRENT_SEASON_FALLBACK_MATCHUPS, currentMatchups);
   managerStats = buildManagerStats(h2hMatchups);
   weekStats = buildWeekStats(h2hMatchups);
   seasonStats = buildSeasonStats(h2hMatchups);
@@ -621,8 +678,10 @@ async function loadCompletedSleeperMatchups() {
       h2hFetchJson(`/league/${H2H_CURRENT_LEAGUE_ID}/users`),
     ]);
     const completedThrough = completedThroughWeek(league, state);
-    if (completedThrough < 1) return [];
-    const weeks = Array.from({ length: Math.min(completedThrough, 18) }, (_, index) => index + 1);
+    const displayedWeek = Number(state?.display_week || state?.week || league?.settings?.leg || 1);
+    const fetchThrough = Math.max(completedThrough, isH2HTuesdayRefresh() ? displayedWeek : 0);
+    if (fetchThrough < 1) return [];
+    const weeks = Array.from({ length: Math.min(fetchThrough, 18) }, (_, index) => index + 1);
     const weekMatchups = await Promise.all(
       weeks.map(async (week) => [week, await h2hFetchOptionalJson(`/league/${H2H_CURRENT_LEAGUE_ID}/matchups/${week}`, [])]),
     );
@@ -631,6 +690,12 @@ async function loadCompletedSleeperMatchups() {
     console.warn("Unable to load current-season H2H matchups.", error);
     return [];
   }
+}
+
+function isH2HTuesdayRefresh() {
+  const local = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short" }).format(local);
+  return weekday === "Tue";
 }
 
 function completedThroughWeek(league, state) {
@@ -656,10 +721,14 @@ function sleeperWeekToH2H(league, rosters, users, week, matchups) {
         stage: "Regular season",
         managers: [h2hOwnerName(leftRoster, users), h2hOwnerName(rightRoster, users)],
         teams: [h2hTeamName(leftRoster, users), h2hTeamName(rightRoster, users)],
-        scores: [Number(left.points || 0), Number(right.points || 0)],
+        scores: [h2hScoreFor(left), h2hScoreFor(right)],
       };
     })
     .filter((game) => game.managers.every(Boolean) && game.scores.some((score) => score > 0));
+}
+
+function h2hScoreFor(matchup) {
+  return Number(matchup?.custom_points ?? matchup?.points ?? 0);
 }
 
 async function h2hFetchJson(path) {
@@ -679,9 +748,20 @@ async function h2hFetchOptionalJson(path, fallback) {
 function mergeMatchups(...groups) {
   const merged = new Map();
   groups.flat().forEach((game) => {
-    if (game?.id) merged.set(game.id, game);
+    const key = h2hGameKey(game);
+    if (key) merged.set(key, game);
   });
   return [...merged.values()];
+}
+
+function h2hGameKey(game) {
+  const managers = game?.managers || [];
+  if (!game || managers.length < 2) return "";
+  return [
+    Number(game.season || 0),
+    Number(game.week || 0),
+    ...managers.map((manager) => String(manager || "").trim()).sort(),
+  ].join("||");
 }
 
 function h2hOwnerName(roster, users) {
@@ -835,12 +915,6 @@ function rivalryScoreOutOf100(rivalry) {
 }
 
 function gameStakeWeight(game) {
-  const finalBadge = finalWeekPlacementBadge(game);
-  if (finalBadge === "Championship game") return 34;
-  if (finalBadge === "Toilet Bowl final") return 32;
-  if (finalBadge === "3rd-place game") return 22;
-  if (finalBadge === "5th-place game") return 16;
-  if (finalBadge === "7th-place game") return 13;
   if (game.stage === "Championship") return 34;
   if (game.stage === "Toilet Bowl final") return 32;
   if (game.stage === "3rd-place game") return 22;

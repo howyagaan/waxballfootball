@@ -1124,8 +1124,8 @@ function renderMatchups(matchups, rosters, users, week) {
   const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
   const groups = Array.from(grouped.values());
   const heatedKeys = heatedRivalryKeys(groups, rosters, users);
-  if (isTuesdayMode() && previewedWeek !== week) {
-    const recapWeek = completedThroughCurrentSeasonWeek() || Math.max(1, currentWeek - 1);
+  const recapWeek = tuesdayRecapWeek();
+  if (isTuesdayMode() && recapWeek && !isTuesdayWeekPreviewActive()) {
     const recapMatchups = currentData.matchupsByWeek[recapWeek] || [];
     const recapGrouped = groupBy(recapMatchups, (matchup) => matchup.matchup_id || matchup.roster_id);
     const recapGroups = Array.from(recapGrouped.values());
@@ -1147,8 +1147,7 @@ function renderMatchups(matchups, rosters, users, week) {
     `;
     return;
   }
-  const previewLabel = isTuesdayMode() && previewedWeek === week ? `<span class="metric-label">Week ${week} preview</span>` : "";
-  els.matchups.innerHTML = `${previewLabel}${groups.map((pair) => matchupCard(pair, rosters, users, { heatedRivalry: heatedKeys.has(matchupPairKey(pair)) })).join("")}`;
+  els.matchups.innerHTML = groups.map((pair) => matchupCard(pair, rosters, users, { heatedRivalry: heatedKeys.has(matchupPairKey(pair)) })).join("");
 }
 
 function renderTeamSelector(rosters, users) {
@@ -1196,14 +1195,14 @@ async function renderSelectedTeam() {
     return;
   }
 
-  const selectedCompletedWeek = completedThroughCurrentSeasonWeek();
-  const selectedMatchupWeek = isTuesdayMode() && previewedWeek !== currentWeek && selectedCompletedWeek
+  const selectedCompletedWeek = tuesdayRecapWeek();
+  const selectedMatchupWeek = isTuesdayMode() && !isTuesdayWeekPreviewActive() && selectedCompletedWeek
     ? selectedCompletedWeek
     : currentWeek;
-  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[selectedMatchupWeek] || [], currentData.rosters, currentData.users);
+  const selectedRecapWeek = isTuesdayMode() && Number(selectedMatchupWeek) === Number(selectedCompletedWeek) && !isTuesdayWeekPreviewActive() ? selectedCompletedWeek : null;
+  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[selectedMatchupWeek] || [], currentData.rosters, currentData.users, { forceScores: Boolean(selectedRecapWeek) });
   const opponentRoster = matchup.opponentRoster;
   const selectedIsHeated = isHeatedSelectedMatchup(matchup, currentData.matchupsByWeek[selectedMatchupWeek] || [], currentData.rosters, currentData.users);
-  const selectedRecapWeek = isTuesdayMode() && Number(selectedMatchupWeek) === Number(selectedCompletedWeek) ? selectedCompletedWeek : null;
   const rosterHasPlayers = [...(matchup.mine?.players || []), ...(roster.players || [])].some((playerId) => playerId !== "0");
   const opponentHasPlayers = [...(matchup.opponent?.players || []), ...(opponentRoster?.players || [])].some((playerId) => playerId !== "0");
   let playerContext = null;
@@ -1260,7 +1259,9 @@ function selectedMatchupResultClass(matchup) {
 
 function tuesdayLastWeekResult(roster, rosters, users) {
   if (!isTuesdayMode()) return "";
-  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[currentWeek - 1] || [], rosters, users, { forceScores: true });
+  const recapWeek = tuesdayRecapWeek();
+  if (!recapWeek) return "";
+  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[recapWeek] || [], rosters, users, { forceScores: true });
   if (!matchup?.mine || !matchup?.opponentRoster) return "";
   return `
     <article class="matchup-focus-card last-week-result-card">
@@ -2499,6 +2500,31 @@ function isTuesdayMode() {
   return PAGE === "current" && !isPreseasonMode() && modeRolloverParts().weekday === 2;
 }
 
+function isTuesdayWeekPreviewActive() {
+  return isTuesdayMode() && previewedWeek && Number(previewedWeek) === Number(currentWeek);
+}
+
+function tuesdayRecapWeek() {
+  if (!isTuesdayMode()) return 0;
+  const completed = completedThroughCurrentSeasonWeek();
+  if (completed > 0) return completed;
+  return latestScoredMatchupWeek();
+}
+
+function latestScoredMatchupWeek() {
+  if (!currentData?.matchupsByWeek) return 0;
+  return Object.keys(currentData.matchupsByWeek)
+    .map(Number)
+    .filter((week) => week > 0 && hasScoredMatchupWeek(week))
+    .sort((a, b) => b - a)[0] || 0;
+}
+
+function hasScoredMatchupWeek(week) {
+  const matchups = currentData?.matchupsByWeek?.[week] || [];
+  const groups = Array.from(groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id).values());
+  return groups.some((pair) => pair?.[0] && pair?.[1] && (scoreFor(pair[0]) > 0 || scoreFor(pair[1]) > 0));
+}
+
 function weekdayName(value = currentDate()) {
   return new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: displayTimeZone() }).format(modeRolloverDate(value));
 }
@@ -2818,12 +2844,31 @@ function summarizeH2HGames(games, firstManager, secondManager) {
 
 function allH2HGames() {
   const staticGames = window.WAXBALL_H2H_DATA?.matchups || [];
-  return [...staticGames, ...currentSeasonCompletedH2HGames()];
+  return mergeH2HGames(staticGames, currentSeasonCompletedH2HGames());
+}
+
+function mergeH2HGames(...groups) {
+  const gamesByKey = new Map();
+  groups.flat().forEach((game) => {
+    const key = h2hGameKey(game);
+    if (key) gamesByKey.set(key, game);
+  });
+  return [...gamesByKey.values()];
+}
+
+function h2hGameKey(game) {
+  const managers = game?.managers || [];
+  if (!game || managers.length < 2) return "";
+  return [
+    Number(game.season || 0),
+    Number(game.week || 0),
+    ...managers.map((manager) => String(manager || "").trim()).sort(),
+  ].join("||");
 }
 
 function currentSeasonCompletedH2HGames() {
   if (PAGE !== "current" || !currentData?.matchupsByWeek) return [];
-  const completedThrough = completedThroughCurrentSeasonWeek();
+  const completedThrough = completedThroughCurrentSeasonWeek() || (isTuesdayMode() ? latestScoredMatchupWeek() : 0);
   return Object.entries(currentData.matchupsByWeek).flatMap(([week, matchups]) => {
     if (Number(week) > completedThrough) return [];
     const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
