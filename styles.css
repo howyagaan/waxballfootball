@@ -2074,6 +2074,7 @@ select {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  width: 100%;
   min-width: 0;
   border: 0;
   border-radius: 12px;
@@ -2091,6 +2092,23 @@ select {
 .matchup-team.away {
   flex-direction: row-reverse;
   text-align: right;
+}
+
+.matchup-team .avatar {
+  flex: 0 0 auto;
+}
+
+.matchup-team .team-copy {
+  flex: 1 1 auto;
+  max-width: 100%;
+}
+
+.matchup-team .team-copy strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  font-size: clamp(0.92rem, 1.35vw, 1.08rem);
+  line-height: 1.08;
 }
 
 .matchup-team:hover,
