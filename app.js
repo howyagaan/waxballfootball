@@ -494,7 +494,7 @@ async function loadAll() {
       currentData.rosters = standingsThroughWeek(currentData.rosters, currentData.matchupsByWeek, previewWeek() - 1);
       currentData.week = previewWeek();
     }
-    currentWeek = previewWeek() || currentData.week;
+    currentWeek = selectedMatchupWeek(currentData.week);
     if (isWeekCompletePreview()) {
       applyWeekCompletePreview(currentData, currentWeek);
     }
@@ -3873,6 +3873,10 @@ function statusLabel(status) {
 
 function buildWeekOptions() {
   els.weekSelect.innerHTML = WEEKS.map((week) => `<option value="${week}">Week ${week}</option>`).join("");
+}
+
+function selectedMatchupWeek(fallbackWeek) {
+  return clampWeek(previewWeek() || previewedWeek || fallbackWeek);
 }
 
 function groupBy(items, callback) {

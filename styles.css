@@ -506,6 +506,30 @@ body[data-theme="midweek"] .hero {
   margin-top: 0;
 }
 
+@media (min-width: 821px) {
+  .hero > .hero-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .hero > .hero-actions .button {
+    width: 100%;
+  }
+
+  .hero-action-break {
+    display: none;
+  }
+
+  .home-articles-button {
+    grid-column: auto;
+  }
+
+  .hero .hero-team-select {
+    width: 100%;
+  }
+}
+
 .home-article-preview img {
   width: 100%;
   aspect-ratio: 1;
