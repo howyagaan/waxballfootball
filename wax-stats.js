@@ -13,7 +13,7 @@
       stage: "Regular season",
       managers: ["Miles Elliot", "Jakob Cooper"],
       teams: ["Daddy Campbell", "Papi Coop"],
-      scores: [115, 150.96],
+      scores: [115, 154.06],
     },
     {
       id: "2026-w1-m2",
@@ -22,7 +22,7 @@
       stage: "Regular season",
       managers: ["Nic Hamilton", "Miles Blue"],
       teams: ["Stat Fag", "blueballs"],
-      scores: [156.02, 117.72],
+      scores: [156.02, 121.92],
     },
     {
       id: "2026-w1-m3",
@@ -31,7 +31,7 @@
       stage: "Regular season",
       managers: ["Milo Manheim", "Jacob Moskovitz"],
       teams: ["Nacua Matata", "poonfullofsugar"],
-      scores: [122.86, 94.04],
+      scores: [139.96, 94.04],
     },
     {
       id: "2026-w1-m4",
@@ -49,7 +49,7 @@
       stage: "Regular season",
       managers: ["Travis Roy Rogers", "Sam Labovitz"],
       teams: ["darryluvr3000", "mistahbigdick"],
-      scores: [140, 100.76],
+      scores: [149.9, 100.76],
     },
     {
       id: "2026-w1-m6",
@@ -58,7 +58,7 @@
       stage: "Regular season",
       managers: ["Will Price", "Paul Legallet"],
       teams: ["poon messiah", "helloimpaul"],
-      scores: [93.86, 120.56],
+      scores: [127.96, 120.56],
     },
   ];
   let games = mergeMatchups(Array.isArray(data.matchups) ? data.matchups : [], CURRENT_SEASON_FALLBACK_MATCHUPS);
