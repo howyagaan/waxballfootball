@@ -9,13 +9,24 @@ const H2H_OWNER_REAL_NAMES = {
   eviandon: "Milo Manheim",
   pigmanbigman: "Nic Hamilton",
   "10w5l": "Jacob Moskovitz",
+  "daddy campbell": "Miles Elliot",
   waxobwaxkovitz: "Jacob Moskovitz",
   willyboyp: "Will Price",
   bigdicksenior: "Sam Labovitz",
+  blueballs: "Miles Blue",
   darryluvr: "Travis Roy Rogers",
   darryluvr3000: "Travis Roy Rogers",
   chrissy511: "Christian Engelhardt",
+  "helloimpaul": "Paul Legallet",
+  "mistahbigdick": "Sam Labovitz",
+  "nacua matata": "Milo Manheim",
+  "pamela mari ohno dagoberg": "Erik Ohno Dagoberg",
   papicoop: "Jakob Cooper",
+  "papi coop": "Jakob Cooper",
+  "poon messiah": "Will Price",
+  poonfullofsugar: "Jacob Moskovitz",
+  "stat fag": "Nic Hamilton",
+  "steeler virginity": "Christian Engelhardt",
   millsberry27: "Miles Elliot",
 };
 const H2H_SEASON_OUTCOMES = {
@@ -144,7 +155,9 @@ async function refreshH2HData({ render = true } = {}) {
   weekStats = buildWeekStats(h2hMatchups);
   seasonStats = buildSeasonStats(h2hMatchups);
   historicalStats = buildHistoricalStats(h2hMatchups);
-  h2hManagers = [...new Set([...(H2H_DATA.managers || []), ...h2hMatchups.flatMap((game) => game.managers)])].sort();
+  h2hManagers = [...new Set([...(H2H_DATA.managers || []), ...h2hMatchups.flatMap((game) => game.managers)]
+    .map(h2hCanonicalManager)
+    .filter(Boolean))].sort();
   populateRivalManagerSelect();
   populateManagerSelects();
   if (selectedRivalManager && h2hManagers.includes(selectedRivalManager)) h2hEls.rivalManager.value = selectedRivalManager;
@@ -748,10 +761,25 @@ async function h2hFetchOptionalJson(path, fallback) {
 function mergeMatchups(...groups) {
   const merged = new Map();
   groups.flat().forEach((game) => {
-    const key = h2hGameKey(game);
-    if (key) merged.set(key, game);
+    const normalizedGame = h2hNormalizeGame(game);
+    const key = h2hGameKey(normalizedGame);
+    if (key) merged.set(key, normalizedGame);
   });
   return [...merged.values()];
+}
+
+function h2hNormalizeGame(game) {
+  if (!game) return game;
+  return {
+    ...game,
+    managers: (game.managers || []).map(h2hCanonicalManager),
+  };
+}
+
+function h2hCanonicalManager(value) {
+  const name = String(value || "").trim();
+  const key = name.toLowerCase();
+  return H2H_OWNER_REAL_NAMES[key] || name;
 }
 
 function h2hGameKey(game) {
@@ -766,9 +794,14 @@ function h2hGameKey(game) {
 
 function h2hOwnerName(roster, users) {
   const user = users.find((candidate) => candidate.user_id === roster?.owner_id);
-  const username = user?.username?.toLowerCase();
-  if (username && H2H_OWNER_REAL_NAMES[username]) return H2H_OWNER_REAL_NAMES[username];
-  return user?.display_name || user?.username || "";
+  const username = String(user?.username || "").toLowerCase();
+  const displayName = String(user?.display_name || "").toLowerCase();
+  return H2H_OWNER_REAL_NAMES[username]
+    || H2H_OWNER_REAL_NAMES[displayName]
+    || user?.metadata?.real_name
+    || user?.display_name
+    || user?.username
+    || "";
 }
 
 function h2hTeamName(roster, users) {
@@ -915,6 +948,12 @@ function rivalryScoreOutOf100(rivalry) {
 }
 
 function gameStakeWeight(game) {
+  const finalBadge = finalWeekPlacementBadge(game);
+  if (finalBadge === "Championship game") return 34;
+  if (finalBadge === "Toilet Bowl final") return 32;
+  if (finalBadge === "3rd-place game") return 22;
+  if (finalBadge === "5th-place game") return 16;
+  if (finalBadge === "7th-place game") return 13;
   if (game.stage === "Championship") return 34;
   if (game.stage === "Toilet Bowl final") return 32;
   if (game.stage === "3rd-place game") return 22;

@@ -2980,6 +2980,24 @@ function tiedRecords(items, valueFn, mode) {
 }
 
 function gameRivalryWeight(game) {
+  let weight = gameStakeWeight(game);
+  const outcomes = H2H_SEASON_OUTCOMES[Number(game.season)];
+  if (!outcomes) return weight;
+  const winner = h2hWinnerManager(game);
+  const loser = h2hLoserManager(game);
+  if (winner === outcomes.champion) weight += 4;
+  if (outcomes.money.includes(winner)) weight += 2.5;
+  if (loser === outcomes.toiletBowlLoser) weight += 3.5;
+  return weight;
+}
+
+function gameStakeWeight(game) {
+  const finalBadge = finalWeekPlacementBadge(game);
+  if (finalBadge === "Championship game") return 34;
+  if (finalBadge === "Toilet Bowl final") return 32;
+  if (finalBadge === "3rd-place game") return 22;
+  if (finalBadge === "5th-place game") return 16;
+  if (finalBadge === "7th-place game") return 13;
   const stage = game.stage || "";
   let weight = 0;
   if (stage === "Championship") weight += 34;
@@ -2989,14 +3007,21 @@ function gameRivalryWeight(game) {
   else if (stage === "Playoffs") weight += 20;
   else if (stage === "Toilet Bowl") weight += 18;
   else if (stage === "Toilet Bowl placement") weight += 12;
-  const outcomes = H2H_SEASON_OUTCOMES[Number(game.season)];
-  if (!outcomes) return weight;
-  const winner = h2hWinnerManager(game);
-  const loser = h2hLoserManager(game);
-  if (winner === outcomes.champion) weight += 4;
-  if (outcomes.money.includes(winner)) weight += 2.5;
-  if (loser === outcomes.toiletBowlLoser) weight += 3.5;
   return weight;
+}
+
+function finalWeekPlacementBadge(game) {
+  const season = Number(game.season);
+  const week = Number(game.week);
+  const teams = game.teams || [];
+  if (game.stage === "Championship") return "Championship game";
+  if (game.stage === "3rd-place game") return "3rd-place game";
+  if (game.stage === "5th-place game") return "5th-place game";
+  if (game.stage === "Toilet Bowl final") return "Toilet Bowl final";
+  if (season === 2024 && week === 16 && teams.includes("Balls? Say Less.") && teams.includes("blueball")) return "5th-place game";
+  if (season === 2024 && week === 16 && teams.includes("Leaping Jesters") && teams.includes("Daddy Campbell")) return "7th-place game";
+  if (season === 2025 && week === 17 && game.stage === "Toilet Bowl placement") return "7th-place game";
+  return "";
 }
 
 function h2hWinnerManager(game) {

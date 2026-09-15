@@ -1,9 +1,67 @@
 (() => {
   const data = window.WAXBALL_H2H_DATA || {};
-  const games = Array.isArray(data.matchups) ? data.matchups : [];
   const managers = Array.isArray(data.managers) ? data.managers : [];
   const EPSILON = 0.005;
   const API_BASE = "https://api.sleeper.app/v1";
+  const CURRENT_LEAGUE_ID = "1312219624808419328";
+  const REFRESH_MS = 60000;
+  const CURRENT_SEASON_FALLBACK_MATCHUPS = [
+    {
+      id: "2026-w1-m1",
+      season: 2026,
+      week: 1,
+      stage: "Regular season",
+      managers: ["Miles Elliot", "Jakob Cooper"],
+      teams: ["Daddy Campbell", "Papi Coop"],
+      scores: [115, 150.96],
+    },
+    {
+      id: "2026-w1-m2",
+      season: 2026,
+      week: 1,
+      stage: "Regular season",
+      managers: ["Nic Hamilton", "Miles Blue"],
+      teams: ["Stat Fag", "blueballs"],
+      scores: [156.02, 117.72],
+    },
+    {
+      id: "2026-w1-m3",
+      season: 2026,
+      week: 1,
+      stage: "Regular season",
+      managers: ["Milo Manheim", "Jacob Moskovitz"],
+      teams: ["Nacua Matata", "poonfullofsugar"],
+      scores: [122.86, 94.04],
+    },
+    {
+      id: "2026-w1-m4",
+      season: 2026,
+      week: 1,
+      stage: "Regular season",
+      managers: ["Erik Ohno Dagoberg", "Christian Engelhardt"],
+      teams: ["Pamela Mari Ohno Dagoberg", "Steeler Virginity"],
+      scores: [115.4, 121.96],
+    },
+    {
+      id: "2026-w1-m5",
+      season: 2026,
+      week: 1,
+      stage: "Regular season",
+      managers: ["Travis Roy Rogers", "Sam Labovitz"],
+      teams: ["darryluvr3000", "mistahbigdick"],
+      scores: [140, 100.76],
+    },
+    {
+      id: "2026-w1-m6",
+      season: 2026,
+      week: 1,
+      stage: "Regular season",
+      managers: ["Will Price", "Paul Legallet"],
+      teams: ["poon messiah", "helloimpaul"],
+      scores: [93.86, 120.56],
+    },
+  ];
+  let games = mergeMatchups(Array.isArray(data.matchups) ? data.matchups : [], CURRENT_SEASON_FALLBACK_MATCHUPS);
   const SLEEPER_PLAYER_LEAGUES = [
     { season: 2025, leagueId: "1253094778665439232" },
     { season: 2026, leagueId: "1312219624808419328" },
@@ -192,6 +250,111 @@
       }));
     }));
     return seasonRows.flat();
+  }
+
+  async function refreshCompletedMatchups() {
+    const currentMatchups = await loadCompletedSleeperMatchups();
+    games = mergeMatchups(Array.isArray(data.matchups) ? data.matchups : [], CURRENT_SEASON_FALLBACK_MATCHUPS, currentMatchups);
+    render();
+  }
+
+  async function loadCompletedSleeperMatchups() {
+    try {
+      const [league, state, rosters, users] = await Promise.all([
+        fetchJson(`/league/${CURRENT_LEAGUE_ID}`),
+        fetchJson("/state/nfl"),
+        fetchJson(`/league/${CURRENT_LEAGUE_ID}/rosters`),
+        fetchJson(`/league/${CURRENT_LEAGUE_ID}/users`),
+      ]);
+      const completedThrough = completedThroughWeek(league, state);
+      const displayedWeek = Number(state?.display_week || state?.week || league?.settings?.leg || 1);
+      const fetchThrough = Math.max(completedThrough, isTuesdayRefresh() ? displayedWeek : 0);
+      if (fetchThrough < 1) return [];
+      const weeks = Array.from({ length: Math.min(fetchThrough, 18) }, (_, index) => index + 1);
+      const weekMatchups = await Promise.all(
+        weeks.map(async (week) => [week, await fetchOptionalJson(`/league/${CURRENT_LEAGUE_ID}/matchups/${week}`, [])]),
+      );
+      return weekMatchups.flatMap(([week, matchups]) => sleeperWeekToGames(league, rosters, users, week, matchups));
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function isTuesdayRefresh() {
+    const local = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short" }).format(local);
+    return weekday === "Tue";
+  }
+
+  function completedThroughWeek(league, state) {
+    if (league?.status === "complete") return Number(league.settings?.last_scored_leg || league.settings?.leg || 18);
+    const previousWeek = Number(state?.previous_week || 0);
+    const stateWeek = Number(state?.display_week || state?.week || 1);
+    const leagueWeek = Number(league?.settings?.leg || stateWeek || 1);
+    return Math.max(0, Math.min(18, Math.max(previousWeek, Math.min(stateWeek, leagueWeek) - 1)));
+  }
+
+  function sleeperWeekToGames(league, rosters, users, week, matchups) {
+    const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);
+    return [...grouped.values()]
+      .filter((pair) => pair.length === 2)
+      .map((pair) => {
+        const [left, right] = pair;
+        const leftRoster = rosters.find((roster) => roster.roster_id === left.roster_id);
+        const rightRoster = rosters.find((roster) => roster.roster_id === right.roster_id);
+        return {
+          id: `${league.season || 2026}-w${week}-m${left.matchup_id || left.roster_id}`,
+          season: Number(league.season || 2026),
+          week,
+          stage: "Regular season",
+          managers: [ownerName(leftRoster, users), ownerName(rightRoster, users)],
+          teams: [ownerTeamName(leftRoster, users), ownerTeamName(rightRoster, users)],
+          scores: [matchupScore(left), matchupScore(right)],
+        };
+      })
+      .filter((game) => game.managers.every(Boolean) && game.scores.some((gameScore) => gameScore > 0));
+  }
+
+  function ownerName(roster, users) {
+    const user = users.find((candidate) => candidate.user_id === roster?.owner_id);
+    return canonicalManagerName(user);
+  }
+
+  function ownerTeamName(roster, users) {
+    const user = users.find((candidate) => candidate.user_id === roster?.owner_id);
+    return teamName(user);
+  }
+
+  function matchupScore(matchup) {
+    return Number(matchup?.custom_points ?? matchup?.points ?? 0);
+  }
+
+  function mergeMatchups(...groups) {
+    const merged = new Map();
+    groups.flat().forEach((game) => {
+      const key = gameKey(game);
+      if (key) merged.set(key, game);
+    });
+    return [...merged.values()];
+  }
+
+  function gameKey(game) {
+    const gameManagers = game?.managers || [];
+    if (!game || gameManagers.length < 2) return "";
+    return [
+      Number(game.season || 0),
+      Number(game.week || 0),
+      ...gameManagers.map((manager) => String(manager || "").trim()).sort(),
+    ].join("||");
+  }
+
+  function groupBy(items, keyFn) {
+    return items.reduce((groups, item) => {
+      const key = keyFn(item);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+      return groups;
+    }, new Map());
   }
 
   function winnerIndex(game) {
@@ -903,6 +1066,8 @@
   if (allEl) {
     populateManagerFilter();
     render();
+    refreshCompletedMatchups();
+    window.setInterval(refreshCompletedMatchups, REFRESH_MS);
     loadPlayerPprStat();
   }
 })();
