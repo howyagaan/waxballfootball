@@ -410,6 +410,14 @@ body[data-theme="midweek"] .hero {
   white-space: pre-line;
 }
 
+.hero-copy-line {
+  display: block;
+}
+
+.hero-game-preview-line {
+  color: var(--ink);
+}
+
 .hero-main .hero-copy-loading {
   display: flex;
   align-items: center;

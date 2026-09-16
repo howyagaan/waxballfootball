@@ -1882,7 +1882,16 @@ function setHeroCopy(copy) {
   els.heroCopy.classList.remove("hero-copy-loading");
   els.heroCopy.removeAttribute("role");
   els.heroCopy.removeAttribute("aria-label");
-  els.heroCopy.textContent = text;
+  els.heroCopy.textContent = "";
+  text.split("\n").filter(Boolean).forEach((line) => {
+    const lineElement = document.createElement("span");
+    lineElement.className = "hero-copy-line";
+    if (/^(TNF|SNF|MNF) game:|^Next NFL game:/.test(line)) {
+      lineElement.classList.add("hero-game-preview-line");
+    }
+    lineElement.textContent = line;
+    els.heroCopy.appendChild(lineElement);
+  });
   els.heroCopy.hidden = !text;
 }
 
