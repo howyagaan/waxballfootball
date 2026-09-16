@@ -416,6 +416,11 @@ body[data-theme="midweek"] .hero {
 
 .hero-game-preview-line {
   color: var(--ink);
+  font-weight: 800;
+}
+
+.hero-copy-line + .hero-game-preview-line {
+  margin-top: 0.3rem;
 }
 
 .hero-main .hero-copy-loading {
