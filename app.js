@@ -45,6 +45,24 @@ const SLEEPER_MATCHDAY_SCHEDULE = {
     ["2026-w1-sun-dal-nyg", "2026-09-13T20:20:00-04:00", "DAL", "NYG", "NBC"],
     ["2026-w1-mon-den-kc", "2026-09-14T20:15:00-04:00", "DEN", "KC", "ESPN"],
   ],
+  "2026-2": [
+    ["2026-w2-thu-det-buf", "2026-09-17T20:15:00-04:00", "DET", "BUF", "Prime Video"],
+    ["2026-w2-sun-phi-ten", "2026-09-20T13:00:00-04:00", "PHI", "TEN", "FOX"],
+    ["2026-w2-sun-pit-ne", "2026-09-20T13:00:00-04:00", "PIT", "NE", "CBS"],
+    ["2026-w2-sun-min-chi", "2026-09-20T13:00:00-04:00", "MIN", "CHI", "FOX"],
+    ["2026-w2-sun-car-atl", "2026-09-20T13:00:00-04:00", "CAR", "ATL", "FOX"],
+    ["2026-w2-sun-gb-nyj", "2026-09-20T13:00:00-04:00", "GB", "NYJ", "FOX"],
+    ["2026-w2-sun-no-bal", "2026-09-20T13:00:00-04:00", "NO", "BAL", "CBS"],
+    ["2026-w2-sun-cin-hou", "2026-09-20T13:00:00-04:00", "CIN", "HOU", "CBS"],
+    ["2026-w2-sun-cle-tb", "2026-09-20T13:00:00-04:00", "CLE", "TB", "CBS"],
+    ["2026-w2-sun-jax-den", "2026-09-20T16:05:00-04:00", "JAX", "DEN", "CBS"],
+    ["2026-w2-sun-lv-lac", "2026-09-20T16:05:00-04:00", "LV", "LAC", "CBS"],
+    ["2026-w2-sun-sea-ari", "2026-09-20T16:25:00-04:00", "SEA", "ARI", "FOX"],
+    ["2026-w2-sun-was-dal", "2026-09-20T16:25:00-04:00", "WAS", "DAL", "FOX"],
+    ["2026-w2-sun-mia-sf", "2026-09-20T16:25:00-04:00", "MIA", "SF", "FOX"],
+    ["2026-w2-sun-ind-kc", "2026-09-20T20:20:00-04:00", "IND", "KC", "NBC"],
+    ["2026-w2-mon-nyg-lar", "2026-09-21T20:15:00-04:00", "NYG", "LAR", "ESPN"],
+  ],
 };
 const QUERY_PARAMS = new URLSearchParams(window.location.search);
 const SEASON_PREVIEW = QUERY_PARAMS.get("season");
@@ -1563,7 +1581,7 @@ function heroLeagueCopy(league) {
 
 async function renderModeHeroCopy(league) {
   if (!els.heroCopy || PAGE !== "current" || isPreseasonMode() || isDraftCompletePreview() || isHistoricalCurrentPreview()) return;
-  if (hideHeroSubtitleForMode() && !["Friday", "Saturday", "Sunday", "Monday"].includes(nflData?.mode?.label)) return;
+  if (hideHeroSubtitleForMode() && !["Wednesday", "Friday", "Saturday", "Sunday", "Monday"].includes(nflData?.mode?.label)) return;
   try {
     const modeCopy = await asyncModeHeroCopy();
     if (modeCopy) setHeroCopy(modeCopy);
@@ -1580,14 +1598,11 @@ function setHeroCopy(copy) {
 }
 
 function hideHeroSubtitleForMode() {
-  return ["Friday", "Saturday", "Sunday", "Monday"].includes(nflData?.mode?.label);
+  return ["Wednesday", "Friday", "Saturday", "Sunday", "Monday"].includes(nflData?.mode?.label);
 }
 
 function syncModeHeroCopy() {
   const label = nflData?.mode?.label;
-  if (label === "Wednesday") {
-    return nextScheduledGameCopy(nflData?.events || [], nflData?.mode);
-  }
   if (label === "Saturday") {
     return saturdayFootballCopy(nflData?.events || []);
   }
@@ -1598,6 +1613,9 @@ async function asyncModeHeroCopy() {
   const label = nflData?.mode?.label;
   if (label === "Tuesday") {
     return previousWeekTopPprCopy();
+  }
+  if (label === "Wednesday") {
+    return previousWeekTopPprAndTnfCopy();
   }
   if (label === "Thursday" || label === "Friday") {
     return thursdayTopPprCopy();
@@ -1745,6 +1763,16 @@ async function mondayTopPprAndMnfCopy() {
   return [topPlayerText, mnfText].filter(Boolean).join("\n");
 }
 
+async function previousWeekTopPprAndTnfCopy() {
+  const topPlayersText = await previousWeekTopPprCopy({ fallback: false }).catch((error) => {
+    console.warn("Previous week top PPR unavailable.", error);
+    return "";
+  });
+  const tnfText = thursdayGameCopy(nflData?.events || [], nflData?.mode)
+    || nextScheduledGameCopy(nflData?.events || [], nflData?.mode);
+  return [topPlayersText, tnfText].filter(Boolean).join("\n");
+}
+
 async function fridayTnfRecapCopy() {
   const tnf = latestCompletedGameForWeekday(nflData?.events || [], 4);
   if (!tnf) return nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || nflData?.mode?.copy || "";
@@ -1758,10 +1786,12 @@ async function fridayTnfRecapCopy() {
   return `TNF final: ${parsed.shortName}${scoreText}${leaderText}`;
 }
 
-async function previousWeekTopPprCopy() {
+async function previousWeekTopPprCopy(options = {}) {
   const week = Math.max(1, currentWeek - 1);
   const topPlayers = await topPprPlayersForWeek(week, null, 3);
-  if (!topPlayers.length) return nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || "";
+  if (!topPlayers.length) {
+    return options.fallback === false ? "" : nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || "";
+  }
   const leaders = topPlayers
     .map((item, index) => `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) - ${ownerIdentityName(item.roster, currentData.users)}`)
     .join("\n");
@@ -2490,8 +2520,8 @@ function targetMatchdayWeekdays(events) {
     : modeRolloverParts().weekday;
   const windows = {
     2: [3, 4],
-    3: [3, 4],
-    4: [3, 4],
+    3: [4],
+    4: [4],
     5: [0],
     6: [0],
     0: [0],
@@ -3335,7 +3365,7 @@ function targetWindowFallbackLabel() {
     0: "Sunday's games",
     1: "Monday night's game",
     3: "Wednesday/Thursday games",
-    4: "Wednesday/Thursday games",
+    4: "Thursday night's game",
     6: "Saturday's games",
   };
   return targetWeekdays.map((weekday) => labels[weekday]).filter(Boolean)[0] || "the next NFL window";
