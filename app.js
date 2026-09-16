@@ -1306,8 +1306,8 @@ function renderStandings(rosters, users) {
           <td class="rank">${index + 1}${movement}</td>
           <td>${teamCell(roster, users)}</td>
           <td>${record}</td>
-          <td>${shortPoints(roster, "fpts")}</td>
-          <td>${shortPoints(roster, "fpts_against")}</td>
+          <td>${points(roster, "fpts")}</td>
+          <td>${points(roster, "fpts_against")}</td>
         </tr>
       `;
     })
@@ -1876,6 +1876,9 @@ function hideHeroSubtitleForMode() {
 
 function syncModeHeroCopy() {
   const label = nflData?.mode?.label;
+  if (label === "Thursday") {
+    return thursdayGameCopy(nflData?.events || [], nflData?.mode);
+  }
   if (label === "Saturday") {
     return saturdayFootballCopy(nflData?.events || []);
   }
@@ -1890,7 +1893,7 @@ async function asyncModeHeroCopy() {
   if (label === "Wednesday") {
     return previousWeekTopPprAndTnfCopy();
   }
-  if (label === "Thursday" || label === "Friday") {
+  if (label === "Friday") {
     return thursdayTopPprCopy();
   }
   if (label === "Saturday") {
