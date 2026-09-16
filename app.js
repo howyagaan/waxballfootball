@@ -1854,18 +1854,34 @@ function heroLeagueCopy(league) {
 
 async function renderModeHeroCopy(league) {
   if (!els.heroCopy || PAGE !== "current" || isPreseasonMode() || isDraftCompletePreview() || isHistoricalCurrentPreview()) return;
-  if (hideHeroSubtitleForMode() && !["Wednesday", "Friday", "Saturday", "Sunday", "Monday"].includes(nflData?.mode?.label)) return;
+  const label = nflData?.mode?.label;
+  if (!["Tuesday", "Wednesday", "Friday", "Saturday", "Sunday", "Monday"].includes(label)) return;
+  setHeroCopyLoading();
   try {
     const modeCopy = await asyncModeHeroCopy();
-    if (modeCopy) setHeroCopy(modeCopy);
+    setHeroCopy(modeCopy || "");
   } catch (error) {
     console.warn("Mode hero copy unavailable.", error);
+    setHeroCopy("");
   }
+}
+
+function setHeroCopyLoading() {
+  if (!els.heroCopy) return;
+  els.heroCopy.textContent = "";
+  els.heroCopy.classList.add("hero-copy-loading");
+  els.heroCopy.setAttribute("role", "status");
+  els.heroCopy.setAttribute("aria-label", "Loading subtitle");
+  els.heroCopy.innerHTML = '<span class="hero-copy-spinner" aria-hidden="true"></span>';
+  els.heroCopy.hidden = false;
 }
 
 function setHeroCopy(copy) {
   if (!els.heroCopy) return;
   const text = String(copy || "").trim();
+  els.heroCopy.classList.remove("hero-copy-loading");
+  els.heroCopy.removeAttribute("role");
+  els.heroCopy.removeAttribute("aria-label");
   els.heroCopy.textContent = text;
   els.heroCopy.hidden = !text;
 }

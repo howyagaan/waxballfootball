@@ -65,7 +65,9 @@
         <div class="hero-main">
           <p id="hero-mode-label" class="eyebrow">Midweek mode</p>
           <h1>Waxball 2026</h1>
-          <p id="hero-copy" hidden></p>
+          <p id="hero-copy" class="hero-copy-loading" role="status" aria-label="Loading subtitle">
+            <span class="hero-copy-spinner" aria-hidden="true"></span>
+          </p>
         </div>
 
         <aside class="hero-card" aria-label="League snapshot">
@@ -215,6 +217,6 @@
     </footer>
 
     <script src="./assets/data/h2h-data.js"></script>
-    <script src="./app.js?v=20260916-standings-decimals"></script>
+    <script src="./app.js?v=20260916-subtitle-loader"></script>
   </body>
 </html>

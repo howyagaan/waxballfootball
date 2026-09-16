@@ -410,6 +410,33 @@ body[data-theme="midweek"] .hero {
   white-space: pre-line;
 }
 
+.hero-main .hero-copy-loading {
+  display: flex;
+  align-items: center;
+  min-height: 1.9rem;
+}
+
+.hero-copy-spinner {
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 3px solid color-mix(in srgb, var(--muted) 35%, transparent);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: hero-copy-spin 0.75s linear infinite;
+}
+
+@keyframes hero-copy-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy-spinner {
+    animation-duration: 1.5s;
+  }
+}
+
 .eyebrow {
   margin: 0 0 0.55rem;
   color: var(--teal);
