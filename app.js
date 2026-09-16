@@ -373,6 +373,7 @@ const OWNER_REAL_NAMES = {
   erikohno: "Erik Ohno Dagoberg",
   eviandon: "Milo Manheim",
   pigmanbigman: "Nic Hamilton",
+  dicklesscameltoe: "Nic Hamilton",
   "10w5l": "Jacob Moskovitz",
   waxobwaxkovitz: "Jacob Moskovitz",
   willyboyp: "Will Price",
