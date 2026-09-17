@@ -30,7 +30,7 @@
     <meta name="twitter:image" content="https://waxballfootball.com/assets/social/waxball-preview-full.jpg" />
     <link rel="icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" type="image/png" />
     <link rel="apple-touch-icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" />
-    <link rel="stylesheet" href="./styles.css?v=20260916-bold-game-preview" />
+    <link rel="stylesheet" href="./styles.css?v=20260916-no-avatar-title" />
   </head>
   <body data-page="current">
     <header class="topbar">
@@ -59,8 +59,12 @@
     </header>
 
     <nav id="league-avatar-rail" class="league-avatar-rail" aria-label="2026 team shortcuts"></nav>
+    <button id="linked-league-launcher" class="linked-league-launcher" type="button">
+      <span>ADD ANOTHER LEAGUE</span>
+    </button>
 
     <main id="top">
+
       <section class="hero">
         <div class="hero-main">
           <p id="hero-mode-label" class="eyebrow">Midweek mode</p>
@@ -209,6 +213,58 @@
 
     </main>
 
+    <div id="linked-league-modal" class="linked-league-modal" hidden>
+      <div class="linked-league-dialog" role="dialog" aria-modal="true" aria-labelledby="linked-league-title">
+        <button id="linked-league-close" class="linked-league-close" type="button" aria-label="Close">×</button>
+        <div class="linked-step" data-linked-step="manager">
+          <span class="linked-step-number">01</span>
+          <h2 id="linked-league-title">CHOOSE MANAGER</h2>
+          <label class="linked-question" for="linked-profile-select">
+            <span>Waxball manager</span>
+            <select id="linked-profile-select"><option value="">Choose manager</option></select>
+          </label>
+          <div id="linked-connections" class="linked-connections"></div>
+          <button id="linked-manager-next" class="button primary linked-step-action" type="button">Next</button>
+        </div>
+
+        <div class="linked-step" data-linked-step="league" hidden>
+          <span class="linked-step-number">02</span>
+          <h2>WHICH LEAGUE?</h2>
+          <form id="linked-league-form" class="linked-league-form">
+            <label for="linked-league-url">League URL or League ID</label>
+            <input id="linked-league-url" type="text" inputmode="url" placeholder="Paste URL or enter league ID" autocomplete="off" />
+            <button class="button primary linked-step-action" type="submit">Find League</button>
+          </form>
+          <p id="linked-league-status" class="muted linked-league-status"></p>
+        </div>
+
+        <div class="linked-step" data-linked-step="team" hidden>
+          <span class="linked-step-number">03</span>
+          <h2>WHICH TEAM IS YOURS?</h2>
+          <label id="linked-team-control" class="linked-team-control" for="linked-team-select" hidden>
+            <span>Team</span>
+            <select id="linked-team-select"><option value="">Choose their team</option></select>
+          </label>
+          <label id="linked-manual-team-control" class="linked-team-control" for="linked-manual-team" hidden>
+            <span>Team name</span>
+            <input id="linked-manual-team" type="text" placeholder="Enter team name" autocomplete="off" />
+          </label>
+          <p id="linked-team-note" class="linked-team-note" hidden></p>
+          <button id="linked-team-next" class="button primary linked-step-action" type="button">Review</button>
+        </div>
+
+        <div class="linked-step" data-linked-step="confirm" hidden>
+          <span class="linked-step-number">04</span>
+          <h2>CONFIRM TEAM</h2>
+          <div id="linked-confirmation" class="linked-confirmation">
+            <p id="linked-confirmation-copy"></p>
+          </div>
+          <button id="linked-confirm" class="button primary linked-step-action" type="button">Add Team to Profile</button>
+          <p class="linked-remove-note">Added leagues can be removed from your profile at any time.</p>
+        </div>
+      </div>
+    </div>
+
     <footer>
       Waxball HQ <span aria-hidden="true">|</span> Sleeper league data and NFL
       context refresh while the page is open. <a href="./archive-2025.html">2025 Archive</a>
@@ -217,6 +273,6 @@
     </footer>
 
     <script src="./assets/data/h2h-data.js"></script>
-    <script src="./app.js?v=20260916-white-game-preview"></script>
+    <script src="./app.js?v=20260916-no-avatar-title"></script>
   </body>
 </html>

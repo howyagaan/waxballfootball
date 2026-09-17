@@ -3,6 +3,7 @@ const CURRENT_LEAGUE_ID = "1312219624808419328";
 const ARCHIVE_2025_LEAGUE_ID = "1253094778665439232";
 const ARCHIVE_2025_DRAFT_ID = "1253094779571421184";
 const AUTO_REFRESH_MS = 60000;
+const LINKED_LEAGUE_STORAGE_KEY = "waxball-linked-leagues-v2";
 const WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
 const PAGE = document.body.dataset.page || "current";
 const EASTERN_TIME_ZONE = "America/New_York";
@@ -343,6 +344,7 @@ const DATE_PREVIEW = QUERY_PARAMS.get("date");
 const PRESENTATION_PREVIEW = QUERY_PARAMS.get("presentation") || document.body.dataset.presentation || "";
 const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
+const LINKED_LEAGUE_DEMO = QUERY_PARAMS.get("linked-demo") === "1";
 const ARTICLES_2026 = [
   {
     week: 1,
@@ -635,6 +637,24 @@ const els = {
   teamViewStatus: document.querySelector("#team-view-status"),
   teamPanel: document.querySelector("#team-panel"),
   teamPanelSection: document.querySelector("#team-panel-section"),
+  linkedLeagueForm: document.querySelector("#linked-league-form"),
+  linkedLeagueUrl: document.querySelector("#linked-league-url"),
+  linkedLeagueStatus: document.querySelector("#linked-league-status"),
+  linkedProfileSelect: document.querySelector("#linked-profile-select"),
+  linkedTeamControl: document.querySelector("#linked-team-control"),
+  linkedTeamSelect: document.querySelector("#linked-team-select"),
+  linkedManualTeamControl: document.querySelector("#linked-manual-team-control"),
+  linkedManualTeam: document.querySelector("#linked-manual-team"),
+  linkedTeamNote: document.querySelector("#linked-team-note"),
+  linkedConfirmation: document.querySelector("#linked-confirmation"),
+  linkedConfirmationCopy: document.querySelector("#linked-confirmation-copy"),
+  linkedConfirm: document.querySelector("#linked-confirm"),
+  linkedConnections: document.querySelector("#linked-connections"),
+  linkedLeagueLauncher: document.querySelector("#linked-league-launcher"),
+  linkedLeagueModal: document.querySelector("#linked-league-modal"),
+  linkedLeagueClose: document.querySelector("#linked-league-close"),
+  linkedManagerNext: document.querySelector("#linked-manager-next"),
+  linkedTeamNext: document.querySelector("#linked-team-next"),
   weeklySlateSection: document.querySelector("#weekly-slate-section"),
   midweekArticleSection: document.querySelector("#midweek-article-section"),
   midweekArticleCard: document.querySelector("#midweek-article-card"),
@@ -679,6 +699,10 @@ let playersById = null;
 let playersLoadedAt = 0;
 let previewedWeek = null;
 let weekCompleteThrough = null;
+let linkedLeagueCandidate = null;
+let linkedLeagueConnections = [];
+const linkedLeagueCache = new Map();
+let linkedLeagueRestored = false;
 
 init();
 
@@ -698,13 +722,14 @@ function init() {
     });
   }
   if (els.teamSelect) {
-    els.teamSelect.addEventListener("change", () => {
+    els.teamSelect.addEventListener("change", async () => {
       selectedRosterId = els.teamSelect.value === "league" ? "league" : Number(els.teamSelect.value);
-      renderSelectedTeam();
+      await renderSelectedTeam();
       if (currentData) renderStandings(currentData.rosters, currentData.users);
+      if (currentData) renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
       if (PAGE === "current" && currentData) renderLeagueAvatarRail(currentData.rosters, currentData.users);
       if (PAGE === "archive" && archiveData) renderLeagueAvatarRail(archiveData.rosters, archiveData.users);
-      if (selectedRosterId !== "league") scrollToLeagueTable();
+      syncLinkedProfileSelection();
     });
   }
   if (els.draftScoutSelect) {
@@ -712,7 +737,45 @@ function init() {
       renderDraftScoutReport(els.draftScoutSelect.value);
     });
   }
+  if (els.linkedLeagueForm) {
+    els.linkedLeagueForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await syncLinkedLeague(els.linkedLeagueUrl?.value || "");
+    });
+  }
+  els.linkedLeagueLauncher?.addEventListener("click", openLinkedLeagueModal);
+  els.linkedLeagueClose?.addEventListener("click", closeLinkedLeagueModal);
+  els.linkedManagerNext?.addEventListener("click", () => {
+    if (!Number(els.linkedProfileSelect?.value || 0)) {
+      els.linkedProfileSelect?.focus();
+      return;
+    }
+    showLinkedLeagueStep("league");
+  });
+  els.linkedTeamNext?.addEventListener("click", () => {
+    updateLinkedLeagueConfirmation();
+    if (!els.linkedConfirmation?.hasAttribute("hidden")) showLinkedLeagueStep("confirm");
+  });
+  if (els.linkedTeamSelect) {
+    els.linkedTeamSelect.addEventListener("change", updateLinkedLeagueConfirmation);
+  }
+  if (els.linkedManualTeam) {
+    els.linkedManualTeam.addEventListener("input", updateLinkedLeagueConfirmation);
+  }
+  if (els.linkedProfileSelect) {
+    els.linkedProfileSelect.addEventListener("change", () => {
+      renderLinkedConnections();
+      resetLinkedLeagueCandidate();
+    });
+  }
+  if (els.linkedConfirm) {
+    els.linkedConfirm.addEventListener("click", confirmLinkedLeagueConnection);
+  }
   document.addEventListener("click", (event) => {
+    if (event.target === els.linkedLeagueModal) {
+      closeLinkedLeagueModal();
+      return;
+    }
     const leaderToggle = event.target.closest("[data-leader-toggle]");
     if (leaderToggle) {
       toggleArchiveLeaders(!document.body.classList.contains("leaders-expanded"));
@@ -721,7 +784,13 @@ function init() {
 
     const rosterTarget = event.target.closest("[data-roster-link]");
     if (rosterTarget) {
-      selectRosterFromShortcut(Number(rosterTarget.dataset.rosterLink), { scroll: rosterTarget.hasAttribute("data-avatar-shortcut") ? "profile" : "table" });
+      selectRosterFromShortcut(Number(rosterTarget.dataset.rosterLink));
+      return;
+    }
+
+    const linkedRemove = event.target.closest("[data-linked-remove]");
+    if (linkedRemove) {
+      removeLinkedLeagueConnection(linkedRemove.dataset.linkedRemove);
       return;
     }
 
@@ -969,6 +1038,18 @@ async function loadNflContext() {
     };
   }
 
+  const datedSchedule = DATE_PREVIEW ? scheduleForDate(DATE_PREVIEW) : null;
+  if (datedSchedule) {
+    const events = sleeperMatchdayEvents(datedSchedule.seasonYear, datedSchedule.weekNumber);
+    return {
+      season: { year: datedSchedule.seasonYear },
+      week: { number: datedSchedule.weekNumber },
+      events,
+      articles: [],
+      mode: detectFootballMode(events),
+    };
+  }
+
   const state = await fetchJson("/state/nfl");
   const seasonYear = Number(state.season) || new Date().getFullYear();
   const weekNumber = clampWeek(state.display_week || state.week || 1);
@@ -980,6 +1061,15 @@ async function loadNflContext() {
     articles: [],
     mode: detectFootballMode(events),
   };
+}
+
+function scheduleForDate(dateKey) {
+  for (const [scheduleKey, games] of Object.entries(SLEEPER_MATCHDAY_SCHEDULE)) {
+    if (!games.some(([, date]) => displayDateKey(date) === dateKey)) continue;
+    const [seasonYear, weekNumber] = scheduleKey.split("-").map(Number);
+    return { seasonYear, weekNumber };
+  }
+  return null;
 }
 
 function sleeperMatchdayEvents(seasonYear, weekNumber) {
@@ -1091,6 +1181,271 @@ function renderCurrentPage() {
   renderMatchups(currentData.matchupsByWeek[currentWeek] || [], rosters, users, currentWeek);
   renderTeamSelector(rosters, users);
   renderSelectedTeam();
+  restoreLinkedLeagueConnection();
+}
+
+async function syncLinkedLeague(value, options = {}) {
+  if (!els.linkedLeagueStatus) return;
+  const waxRosterId = Number(els.linkedProfileSelect?.value || selectedRosterId || 0);
+  if (!waxRosterId) {
+    els.linkedLeagueStatus.textContent = "Choose the Waxball manager whose profile should receive this team.";
+    els.linkedLeagueStatus.classList.add("is-error");
+    return;
+  }
+  if (linkedLeagueConnections.filter((connection) => connection.waxRosterId === waxRosterId).length >= 4) {
+    els.linkedLeagueStatus.textContent = "This manager already has the maximum of four extra leagues.";
+    els.linkedLeagueStatus.classList.add("is-error");
+    return;
+  }
+  const platform = linkedLeaguePlatform(value);
+  if (!platform) {
+    els.linkedLeagueStatus.textContent = "Enter a league URL or league ID.";
+    els.linkedLeagueStatus.classList.add("is-error");
+    return;
+  }
+
+  els.linkedLeagueStatus.classList.remove("is-error");
+  linkedLeagueCandidate = { platform, source: String(value || "").trim(), waxRosterId };
+  if (platform !== "Sleeper") {
+    els.linkedTeamControl?.setAttribute("hidden", "");
+    els.linkedManualTeamControl?.removeAttribute("hidden");
+    els.linkedLeagueStatus.textContent = `${platform} detected. Enter the team name; live roster sync will remain pending until its platform connector is authorized.`;
+    if (els.linkedTeamNote) {
+      els.linkedTeamNote.textContent = `Live ${platform} roster sync requires that platform's connector. You can still attach the team to your profile now.`;
+      els.linkedTeamNote.removeAttribute("hidden");
+    }
+    showLinkedLeagueStep("team");
+    return;
+  }
+
+  const leagueId = sleeperLeagueIdFromInput(value);
+  if (!leagueId) {
+    els.linkedLeagueStatus.textContent = "That looks like Sleeper, but the league ID could not be found.";
+    els.linkedLeagueStatus.classList.add("is-error");
+    return;
+  }
+  els.linkedLeagueStatus.textContent = "Syncing Sleeper league and teams...";
+  els.linkedLeagueForm?.classList.add("is-loading");
+  try {
+    const [league, users, rosters, state] = await Promise.all([
+      fetchJson(`/league/${leagueId}`),
+      fetchJson(`/league/${leagueId}/users`),
+      fetchJson(`/league/${leagueId}/rosters`),
+      fetchJson("/state/nfl"),
+    ]);
+    const week = displayWeek(league, state);
+    const matchups = await fetchJson(`/league/${leagueId}/matchups/${week}`);
+    linkedLeagueCandidate = { ...linkedLeagueCandidate, leagueId, league, users, rosters, matchups, week };
+    linkedLeagueCache.set(`Sleeper:${leagueId}`, linkedLeagueCandidate);
+    populateLinkedTeamSelect(linkedLeagueCandidate);
+    const waxRoster = currentData?.rosters?.find((roster) => roster.roster_id === waxRosterId);
+    const matchingRoster = rosters.find((roster) => roster.owner_id === waxRoster?.owner_id);
+    if (els.linkedTeamSelect) els.linkedTeamSelect.value = matchingRoster ? String(matchingRoster.roster_id) : "";
+    els.linkedTeamControl?.removeAttribute("hidden");
+    els.linkedManualTeamControl?.setAttribute("hidden", "");
+    els.linkedTeamNote?.setAttribute("hidden", "");
+    if (els.linkedLeagueUrl) els.linkedLeagueUrl.value = value || leagueId;
+    els.linkedLeagueStatus.textContent = `${league.name || "League"} found. Confirm which team belongs to this manager.`;
+    showLinkedLeagueStep("team");
+  } catch (error) {
+    console.warn("Linked league unavailable.", error);
+    linkedLeagueCandidate = null;
+    els.linkedLeagueStatus.textContent = "Could not load that Sleeper league. Check the URL or league ID and try again.";
+    els.linkedLeagueStatus.classList.add("is-error");
+    els.linkedTeamControl?.setAttribute("hidden", "");
+    els.linkedConfirmation?.setAttribute("hidden", "");
+  } finally {
+    els.linkedLeagueForm?.classList.remove("is-loading");
+  }
+}
+
+function linkedLeaguePlatform(value) {
+  const input = String(value || "").trim();
+  if (!input) return "";
+  if (/^\d{8,}$/.test(input) || /sleeper\.(com|app)/i.test(input)) return "Sleeper";
+  if (/fantasy\.espn\.com|espn\.com\/fantasy/i.test(input)) return "ESPN";
+  if (/football\.fantasysports\.yahoo\.com|yahoo\.com\/fantasy/i.test(input)) return "Yahoo";
+  if (/fantasy\.nfl\.com/i.test(input)) return "NFL Fantasy";
+  if (/fantrax\.com/i.test(input)) return "Fantrax";
+  try {
+    return new URL(input).hostname ? "Other platform" : "";
+  } catch (error) {
+    return "Other platform";
+  }
+}
+
+function sleeperLeagueIdFromInput(value) {
+  const input = String(value || "").trim();
+  if (/^\d{8,}$/.test(input)) return input;
+  try {
+    const url = new URL(input);
+    if (!/(^|\.)sleeper\.(com|app)$/i.test(url.hostname)) return "";
+    return url.pathname.match(/\/leagues?\/(\d+)/i)?.[1] || "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function populateLinkedTeamSelect(data) {
+  if (!els.linkedTeamSelect || !data) return;
+  const options = [...data.rosters]
+    .sort((a, b) => teamName(a, data.users).localeCompare(teamName(b, data.users)))
+    .map((roster) => `<option value="${roster.roster_id}">${escapeHtml(teamName(roster, data.users))} - ${escapeHtml(ownerName(roster, data.users))}</option>`)
+    .join("");
+  els.linkedTeamSelect.innerHTML = `<option value="">Choose their team</option>${options}`;
+}
+
+function updateLinkedLeagueConfirmation() {
+  if (!linkedLeagueCandidate || !els.linkedConfirmation) return;
+  const rosterId = Number(els.linkedTeamSelect?.value || 0);
+  const roster = linkedLeagueCandidate.rosters?.find((item) => item.roster_id === rosterId);
+  const manualTeam = els.linkedManualTeam?.value.trim() || "";
+  const team = roster ? teamName(roster, linkedLeagueCandidate.users) : manualTeam;
+  if (!team) {
+    els.linkedConfirmation.setAttribute("hidden", "");
+    return;
+  }
+  const manager = managerNameByRosterId(linkedLeagueCandidate.waxRosterId);
+  if (els.linkedConfirmationCopy) els.linkedConfirmationCopy.textContent = `Add ${team} (${linkedLeagueCandidate.platform}) to ${manager}'s profile?`;
+  els.linkedConfirmation.removeAttribute("hidden");
+}
+
+async function confirmLinkedLeagueConnection() {
+  if (!linkedLeagueCandidate) return;
+  const rosterId = Number(els.linkedTeamSelect?.value || 0);
+  const roster = linkedLeagueCandidate.rosters?.find((item) => item.roster_id === rosterId);
+  const team = roster ? teamName(roster, linkedLeagueCandidate.users) : els.linkedManualTeam?.value.trim();
+  if (!team) return;
+  const managerConnections = linkedLeagueConnections.filter((connection) => connection.waxRosterId === linkedLeagueCandidate.waxRosterId);
+  if (managerConnections.length >= 4) return;
+  const connection = {
+    id: `${linkedLeagueCandidate.platform}-${linkedLeagueCandidate.leagueId || Date.now()}-${rosterId || team}`,
+    waxRosterId: linkedLeagueCandidate.waxRosterId,
+    platform: linkedLeagueCandidate.platform,
+    source: linkedLeagueCandidate.source,
+    leagueId: linkedLeagueCandidate.leagueId || "",
+    leagueName: linkedLeagueCandidate.league?.name || linkedLeagueCandidate.platform,
+    rosterId: rosterId || 0,
+    teamName: team,
+    syncAvailable: linkedLeagueCandidate.platform === "Sleeper",
+  };
+  linkedLeagueConnections = [...linkedLeagueConnections.filter((item) => item.id !== connection.id), connection];
+  persistLinkedLeagueConnections();
+  selectedRosterId = connection.waxRosterId;
+  if (els.teamSelect) els.teamSelect.value = String(selectedRosterId);
+  resetLinkedLeagueCandidate();
+  renderLinkedConnections();
+  closeLinkedLeagueModal();
+  await renderSelectedTeam();
+  renderStandings(currentData.rosters, currentData.users);
+  renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
+  renderLeagueAvatarRail(currentData.rosters, currentData.users);
+  syncLinkedProfileSelection();
+}
+
+function persistLinkedLeagueConnections() {
+  localStorage.setItem(LINKED_LEAGUE_STORAGE_KEY, JSON.stringify(linkedLeagueConnections));
+}
+
+function restoreLinkedLeagueConnection() {
+  if (linkedLeagueRestored || !els.linkedLeagueForm) return;
+  linkedLeagueRestored = true;
+  try {
+    const saved = JSON.parse(localStorage.getItem(LINKED_LEAGUE_STORAGE_KEY) || "[]");
+    linkedLeagueConnections = Array.isArray(saved) ? saved : [];
+  } catch (error) {
+    localStorage.removeItem(LINKED_LEAGUE_STORAGE_KEY);
+    linkedLeagueConnections = [];
+  }
+  populateLinkedProfileSelect();
+  syncLinkedProfileSelection();
+  renderLinkedConnections();
+}
+
+function resetLinkedLeagueCandidate() {
+  linkedLeagueCandidate = null;
+  if (els.linkedLeagueUrl) els.linkedLeagueUrl.value = "";
+  if (els.linkedTeamSelect) els.linkedTeamSelect.innerHTML = '<option value="">Choose their team</option>';
+  if (els.linkedManualTeam) els.linkedManualTeam.value = "";
+  els.linkedTeamControl?.setAttribute("hidden", "");
+  els.linkedManualTeamControl?.setAttribute("hidden", "");
+  els.linkedTeamNote?.setAttribute("hidden", "");
+  els.linkedConfirmation?.setAttribute("hidden", "");
+  if (els.linkedLeagueStatus) {
+    els.linkedLeagueStatus.classList.remove("is-error");
+    els.linkedLeagueStatus.textContent = "";
+  }
+}
+
+function openLinkedLeagueModal() {
+  if (!els.linkedLeagueModal) return;
+  if (selectedRosterId !== "league" && selectedRosterId && els.linkedProfileSelect) {
+    els.linkedProfileSelect.value = String(selectedRosterId);
+  }
+  renderLinkedConnections();
+  resetLinkedLeagueCandidate();
+  showLinkedLeagueStep("manager");
+  els.linkedLeagueModal.removeAttribute("hidden");
+  document.body.classList.add("linked-league-modal-open");
+}
+
+function closeLinkedLeagueModal() {
+  els.linkedLeagueModal?.setAttribute("hidden", "");
+  document.body.classList.remove("linked-league-modal-open");
+}
+
+function showLinkedLeagueStep(step) {
+  document.querySelectorAll("[data-linked-step]").forEach((panel) => {
+    panel.toggleAttribute("hidden", panel.dataset.linkedStep !== step);
+  });
+}
+
+function populateLinkedProfileSelect() {
+  if (!els.linkedProfileSelect || !currentData) return;
+  const options = [...currentData.rosters]
+    .sort((a, b) => ownerIdentityName(a, currentData.users).localeCompare(ownerIdentityName(b, currentData.users)))
+    .map((roster) => `<option value="${roster.roster_id}">${escapeHtml(ownerIdentityName(roster, currentData.users))}</option>`)
+    .join("");
+  els.linkedProfileSelect.innerHTML = `<option value="">Choose manager</option>${options}`;
+}
+
+function syncLinkedProfileSelection() {
+  if (!els.linkedProfileSelect) return;
+  els.linkedProfileSelect.value = selectedRosterId !== "league" && selectedRosterId ? String(selectedRosterId) : "";
+  renderLinkedConnections();
+}
+
+function renderLinkedConnections() {
+  if (!els.linkedConnections) return;
+  const waxRosterId = Number(els.linkedProfileSelect?.value || 0);
+  const connections = linkedLeagueConnections.filter((connection) => connection.waxRosterId === waxRosterId);
+  const launcherLabel = els.linkedLeagueLauncher?.querySelector("span");
+  if (launcherLabel) {
+    const hasConnections = waxRosterId ? connections.length > 0 : linkedLeagueConnections.length > 0;
+    launcherLabel.textContent = hasConnections ? "ADD/REMOVE ANOTHER LEAGUE" : "ADD ANOTHER LEAGUE";
+  }
+  els.linkedConnections.innerHTML = connections.length ? connections.map((connection) => `
+    <div class="linked-connection-row">
+      <div><strong>${escapeHtml(connection.teamName)}</strong><span>${escapeHtml(connection.leagueName)} · ${escapeHtml(connection.platform)}${connection.syncAvailable ? "" : " · Sync pending"}</span></div>
+      <button type="button" class="button" data-linked-remove="${escapeHtml(connection.id)}">Remove</button>
+    </div>
+  `).join("") : "";
+}
+
+async function removeLinkedLeagueConnection(id) {
+  const removed = linkedLeagueConnections.find((connection) => connection.id === id);
+  linkedLeagueConnections = linkedLeagueConnections.filter((connection) => connection.id !== id);
+  if (removed?.leagueId) linkedLeagueCache.delete(`${removed.platform}:${removed.leagueId}`);
+  persistLinkedLeagueConnections();
+  renderLinkedConnections();
+  if (selectedRosterId !== "league") {
+    await renderSelectedTeam();
+  }
+}
+
+function managerNameByRosterId(rosterId) {
+  const roster = currentData?.rosters?.find((item) => item.roster_id === Number(rosterId));
+  return roster ? ownerIdentityName(roster, currentData.users) : "this manager";
 }
 
 function renderArticlesPage() {
@@ -1398,11 +1753,7 @@ async function selectRosterFromShortcut(rosterId, options = {}) {
   if (PAGE === "current" && currentData) renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
   if (PAGE === "archive" && archiveData) renderLeagueAvatarRail(archiveData.rosters, archiveData.users);
   if (PAGE === "current" && currentData) renderLeagueAvatarRail(currentData.rosters, currentData.users);
-  if (options.scroll === "profile") {
-    scrollToSelectedTeamPanel();
-  } else {
-    scrollToLeagueTable();
-  }
+  syncLinkedProfileSelection();
 }
 
 function renderMatchups(matchups, rosters, users, week) {
@@ -1458,7 +1809,9 @@ function renderTeamSelector(rosters, users) {
     !selectedRosterId ||
     (selectedRosterId !== "league" && !rosters.some((roster) => roster.roster_id === selectedRosterId))
   ) {
-    const previewRoster = isDraftCompletePreview()
+    const previewRoster = LINKED_LEAGUE_DEMO
+      ? rosters.find((roster) => ownerIdentityName(roster, users) === "Nic Hamilton")
+      : isDraftCompletePreview()
       ? rosters.find((roster) => ownerIdentityName(roster, users) === "Milo Manheim")
       : null;
     selectedRosterId = previewRoster?.roster_id || (PAGE === "current" ? "league" : sorted[0]?.roster_id || null);
@@ -1509,11 +1862,14 @@ async function renderSelectedTeam() {
   if (opponentRoster && opponentHasPlayers && shouldShowPlayersToWatch()) {
     opponentContext = await teamPlayerContext(opponentRoster, nflData.events, matchup.opponent);
   }
+  const linkedWatchContexts = shouldShowPlayersToWatch()
+    ? await linkedLeagueWatchContexts(roster.roster_id)
+    : [];
   const playersToWatch = shouldShowPlayersToWatch()
     ? `
       <article class="things-watch-panel">
         <span class="metric-label">Players to Watch</span>
-        ${thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users)}
+        ${thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users, linkedWatchContexts)}
       </article>
     `
     : "";
@@ -1882,16 +2238,7 @@ function setHeroCopy(copy) {
   els.heroCopy.classList.remove("hero-copy-loading");
   els.heroCopy.removeAttribute("role");
   els.heroCopy.removeAttribute("aria-label");
-  els.heroCopy.textContent = "";
-  text.split("\n").filter(Boolean).forEach((line) => {
-    const lineElement = document.createElement("span");
-    lineElement.className = "hero-copy-line";
-    if (/^(TNF|SNF|MNF) game:|^Next NFL game:/.test(line)) {
-      lineElement.classList.add("hero-game-preview-line");
-    }
-    lineElement.textContent = line;
-    els.heroCopy.appendChild(lineElement);
-  });
+  els.heroCopy.textContent = text;
   els.heroCopy.hidden = !text;
 }
 
@@ -3460,6 +3807,92 @@ async function teamPlayerContext(roster, events, matchup = null) {
   return { starters, bench, watch };
 }
 
+async function linkedLeagueWatchContexts(waxRosterId) {
+  const connections = linkedLeagueConnections.filter((connection) =>
+    connection.waxRosterId === Number(waxRosterId) && connection.platform === "Sleeper" && connection.syncAvailable
+  );
+  const contexts = await Promise.all(connections.map(async (connection) => {
+    try {
+      const data = await loadLinkedSleeperLeague(connection);
+      const roster = data.rosters.find((item) => item.roster_id === Number(connection.rosterId));
+      if (!roster) return null;
+      const mine = data.matchups.find((matchup) => matchup.roster_id === roster.roster_id);
+      const opponentMatchup = mine
+        ? data.matchups.find((matchup) => matchup.matchup_id === mine.matchup_id && matchup.roster_id !== roster.roster_id)
+        : null;
+      const opponentRoster = opponentMatchup
+        ? data.rosters.find((item) => item.roster_id === opponentMatchup.roster_id)
+        : null;
+      const [ownContext, opponentContext] = await Promise.all([
+        teamPlayerContext(roster, nflData.events, mine),
+        opponentRoster ? teamPlayerContext(opponentRoster, nflData.events, opponentMatchup) : null,
+      ]);
+      return {
+        leagueLabel: data.league.name || connection.leagueName || "Other league",
+        ownContext,
+        opponentContext,
+        opponentTeam: opponentRoster ? teamName(opponentRoster, data.users) : "Other opponent",
+      };
+    } catch (error) {
+      console.warn(`Could not sync linked league ${connection.leagueId}.`, error);
+      return null;
+    }
+  }));
+  const available = contexts.filter(Boolean);
+  const waxRoster = currentData.rosters.find((roster) => roster.roster_id === Number(waxRosterId));
+  if (LINKED_LEAGUE_DEMO && waxRoster && ownerIdentityName(waxRoster, currentData.users) === "Nic Hamilton") {
+    const demo = await linkedLeagueDemoContext();
+    if (demo) available.push(demo);
+  }
+  return available;
+}
+
+async function linkedLeagueDemoContext() {
+  const teams = nextMatchdayGames(nflData?.events || []).flatMap((event) => nflTeamsForEvent(event));
+  if (!teams.length) return null;
+  let eligible = [];
+  try {
+    const players = await loadPlayers();
+    eligible = Object.entries(players)
+      .filter(([, player]) => teams.includes(player.team) && ["QB", "RB", "WR", "TE", "K"].includes(player.position))
+      .map(([id]) => playerSummary(id, players))
+      .filter(Boolean);
+  } catch (error) {
+    console.warn("Could not load players for the linked-league demo.", error);
+  }
+  if (!eligible.length && teams.includes("DET") && teams.includes("BUF")) {
+    eligible = [
+      { id: "linked-demo-gibbs", name: "Jahmyr Gibbs", position: "RB", team: "DET" },
+      { id: "linked-demo-allen", name: "Josh Allen", position: "QB", team: "BUF" },
+    ];
+  }
+  if (!eligible.length) return null;
+  const ownPlayer = eligible[0];
+  const opponentPlayer = eligible.find((player) => player.team !== ownPlayer.team) || eligible[1] || eligible[0];
+  return {
+    leagueLabel: "Thursday Demo League",
+    ownContext: { starters: [ownPlayer], bench: [] },
+    opponentContext: { starters: [opponentPlayer], bench: [] },
+    opponentTeam: "Demo Opponent",
+  };
+}
+
+async function loadLinkedSleeperLeague(connection) {
+  const key = `Sleeper:${connection.leagueId}`;
+  if (linkedLeagueCache.has(key)) return linkedLeagueCache.get(key);
+  const [league, users, rosters, state] = await Promise.all([
+    fetchJson(`/league/${connection.leagueId}`),
+    fetchJson(`/league/${connection.leagueId}/users`),
+    fetchJson(`/league/${connection.leagueId}/rosters`),
+    fetchJson("/state/nfl"),
+  ]);
+  const week = displayWeek(league, state);
+  const matchups = await fetchJson(`/league/${connection.leagueId}/matchups/${week}`);
+  const data = { leagueId: connection.leagueId, league, users, rosters, matchups, week };
+  linkedLeagueCache.set(key, data);
+  return data;
+}
+
 async function loadPlayers() {
   if (playersById && Date.now() - playersLoadedAt < 10 * 60 * 1000) return playersById;
   playersById = await fetchJson("/players/nfl");
@@ -3548,21 +3981,66 @@ function scoreboardPlayerRow(player, matchup) {
   `;
 }
 
-function thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, users) {
-  const mine = watchPlayers(playerContext, false);
-  const theirs = watchPlayers(opponentContext, true);
+function thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, users, linkedContexts = []) {
+  const mine = [
+    ...watchPlayers(playerContext, false).map((player) => ({ ...player, leagueKey: "Waxball" })),
+    ...linkedContexts.flatMap((context) => watchPlayers(context.ownContext, false)
+      .map((player) => ({ ...player, leagueLabel: context.leagueLabel, leagueKey: context.leagueLabel }))),
+  ].sort((a, b) => playerGameSortValue(a) - playerGameSortValue(b) || a.name.localeCompare(b.name));
+  const waxballOpponentPlayers = watchPlayers(opponentContext, true)
+    .map((player) => ({ ...player, leagueKey: "Waxball" }));
+  const otherOpponentPlayers = linkedContexts.flatMap((context) => watchPlayers(context.opponentContext, true)
+    .map((player) => ({ ...player, leagueLabel: context.leagueLabel, leagueKey: context.leagueLabel, rosteredBy: context.opponentTeam })))
+    .sort((a, b) => playerGameSortValue(a) - playerGameSortValue(b) || a.name.localeCompare(b.name));
+  const allOpponents = [...waxballOpponentPlayers, ...otherOpponentPlayers];
+  const opponentCounts = countPlayersById(allOpponents);
+  const ownLeagueKeys = playerLeagueKeys(mine);
+  const opponentLeagueKeys = playerLeagueKeys(allOpponents);
+  const annotate = (player) => ({
+    ...player,
+    sharedOpponent: (opponentCounts.get(player.id) || 0) > 1,
+    crossLeagueConflict: hasCrossLeagueConflict(player, ownLeagueKeys, opponentLeagueKeys),
+  });
+  const annotatedMine = mine.map(annotate);
+  const annotatedWaxballOpponents = waxballOpponentPlayers.map(annotate);
+  const annotatedOtherOpponents = otherOpponentPlayers.map(annotate);
   return `
     <div class="watch-columns">
       <div class="watch-team-column">
         <header>${avatar(roster, users)}<div><span class="metric-label">Your players</span><strong>${escapeHtml(teamName(roster, users))}</strong></div></header>
-        ${watchListRows(mine, watchFallbackText("No players from this roster"))}
+        ${watchListRows(annotatedMine, watchFallbackText("No players from this roster"))}
       </div>
       <div class="watch-team-column hate-watch">
         <header>${avatar(opponentRoster, users)}<div><span class="metric-label">Hate-watch</span><strong>${escapeHtml(opponentRoster ? teamName(opponentRoster, users) : "Opponent")}</strong></div></header>
-        ${watchListRows(theirs, watchFallbackText("No opponent players"))}
+        ${watchListRows(annotatedWaxballOpponents, watchFallbackText("No opponent players"))}
+        ${linkedContexts.length ? `
+          <div class="hate-watch-group other-opponents-group">
+            <span class="watch-group-label">Other league opponents</span>
+            ${watchListRows(annotatedOtherOpponents, watchFallbackText("No other-league opponent players"))}
+          </div>
+        ` : ""}
       </div>
     </div>
   `;
+}
+
+function countPlayersById(players) {
+  return players.reduce((counts, player) => counts.set(player.id, (counts.get(player.id) || 0) + 1), new Map());
+}
+
+function playerLeagueKeys(players) {
+  return players.reduce((byPlayer, player) => {
+    const leagues = byPlayer.get(player.id) || new Set();
+    leagues.add(player.leagueKey || "Waxball");
+    byPlayer.set(player.id, leagues);
+    return byPlayer;
+  }, new Map());
+}
+
+function hasCrossLeagueConflict(player, ownLeagueKeys, opponentLeagueKeys) {
+  const own = ownLeagueKeys.get(player.id) || new Set();
+  const opponents = opponentLeagueKeys.get(player.id) || new Set();
+  return [...own].some((ownLeague) => [...opponents].some((opponentLeague) => opponentLeague !== ownLeague));
 }
 
 function historicalRosterSnapshots(matchup, roster, opponentRoster, users, playerContext, opponentContext) {
@@ -3644,12 +4122,15 @@ function watchListRows(players, fallback) {
   if (!players.length) return `<p class="muted">${escapeHtml(fallback)}</p>`;
   return `
     <ul class="player-list">
-      ${players.map((player) => `
-        <li>
-          ${playerNameHtml(player)}
-          <span>${escapeHtml([player.position, player.team, player.game.label || player.note].filter(Boolean).join(" · "))}</span>
-        </li>
-      `).join("")}
+      ${players.map((player) => {
+        const className = [player.sharedOpponent ? "shared-opponent-player" : "", player.crossLeagueConflict ? "cross-league-conflict" : ""].filter(Boolean).join(" ");
+        return `
+          <li${className ? ` class="${className}"` : ""}>
+            ${playerNameHtml(player)}
+            <span>${escapeHtml([player.position, player.team, player.game.label || player.note, player.leagueLabel, player.rosteredBy ? `Rostered by ${player.rosteredBy}` : "", player.crossLeagueConflict ? "ON BOTH SIDES" : ""].filter(Boolean).join(" · "))}</span>
+          </li>
+        `;
+      }).join("")}
     </ul>
   `;
 }
@@ -3767,6 +4248,7 @@ function matchupCard(pair, rosters, users, options = {}) {
   };
   const classNames = [
     "matchup-card",
+    pair.some((matchup) => Number(matchup?.roster_id) === Number(selectedRosterId)) ? "matchup-card-selected" : "",
     options.heatedRivalry ? "heated-rivalry-card" : "",
     ...(options.extremeTag ? String(options.extremeTag).split(" ").map((tag) => `matchup-card-${tag}`) : []),
   ].filter(Boolean).join(" ");
