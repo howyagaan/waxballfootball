@@ -30,7 +30,7 @@
     <meta name="twitter:image" content="https://waxballfootball.com/assets/social/waxball-preview-full.jpg" />
     <link rel="icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" type="image/png" />
     <link rel="apple-touch-icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" />
-    <link rel="stylesheet" href="./styles.css?v=20260916-no-avatar-title" />
+    <link rel="stylesheet" href="./styles.css?v=20260916-linked-mobile-headings" />
   </head>
   <body data-page="current">
     <header class="topbar">
@@ -262,6 +262,13 @@
           <button id="linked-confirm" class="button primary linked-step-action" type="button">Add Team to Profile</button>
           <p class="linked-remove-note">Added leagues can be removed from your profile at any time.</p>
         </div>
+
+        <div class="linked-step linked-success-step" data-linked-step="success" hidden>
+          <span class="linked-success-mark" aria-hidden="true">✓</span>
+          <h2>LEAGUE ADDED</h2>
+          <p id="linked-success-copy" class="linked-success-copy"></p>
+          <button id="linked-show-matchup" class="button primary linked-step-action" type="button">SHOW ME MATCHUPS</button>
+        </div>
       </div>
     </div>
 
@@ -273,6 +280,6 @@
     </footer>
 
     <script src="./assets/data/h2h-data.js"></script>
-    <script src="./app.js?v=20260916-no-avatar-title"></script>
+    <script src="./app.js?v=20260916-linked-success"></script>
   </body>
 </html>

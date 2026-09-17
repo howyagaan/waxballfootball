@@ -649,6 +649,8 @@ const els = {
   linkedConfirmation: document.querySelector("#linked-confirmation"),
   linkedConfirmationCopy: document.querySelector("#linked-confirmation-copy"),
   linkedConfirm: document.querySelector("#linked-confirm"),
+  linkedSuccessCopy: document.querySelector("#linked-success-copy"),
+  linkedShowMatchup: document.querySelector("#linked-show-matchup"),
   linkedConnections: document.querySelector("#linked-connections"),
   linkedLeagueLauncher: document.querySelector("#linked-league-launcher"),
   linkedLeagueModal: document.querySelector("#linked-league-modal"),
@@ -771,6 +773,12 @@ function init() {
   if (els.linkedConfirm) {
     els.linkedConfirm.addEventListener("click", confirmLinkedLeagueConnection);
   }
+  els.linkedShowMatchup?.addEventListener("click", () => {
+    closeLinkedLeagueModal();
+    requestAnimationFrame(() => {
+      els.teamPanelSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
   document.addEventListener("click", (event) => {
     if (event.target === els.linkedLeagueModal) {
       closeLinkedLeagueModal();
@@ -1329,18 +1337,22 @@ async function confirmLinkedLeagueConnection() {
     teamName: team,
     syncAvailable: linkedLeagueCandidate.platform === "Sleeper",
   };
+  const manager = managerNameByRosterId(connection.waxRosterId);
   linkedLeagueConnections = [...linkedLeagueConnections.filter((item) => item.id !== connection.id), connection];
   persistLinkedLeagueConnections();
   selectedRosterId = connection.waxRosterId;
   if (els.teamSelect) els.teamSelect.value = String(selectedRosterId);
   resetLinkedLeagueCandidate();
   renderLinkedConnections();
-  closeLinkedLeagueModal();
   await renderSelectedTeam();
   renderStandings(currentData.rosters, currentData.users);
   renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
   renderLeagueAvatarRail(currentData.rosters, currentData.users);
   syncLinkedProfileSelection();
+  if (els.linkedSuccessCopy) {
+    els.linkedSuccessCopy.textContent = `${connection.teamName} has been added to ${manager}'s profile.`;
+  }
+  showLinkedLeagueStep("success");
 }
 
 function persistLinkedLeagueConnections() {
