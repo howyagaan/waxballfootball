@@ -679,10 +679,18 @@ let playersById = null;
 let playersLoadedAt = 0;
 let previewedWeek = null;
 let weekCompleteThrough = null;
+let temporaryLinkedLeagues = [];
+let temporaryLinkedLeagueDraft = null;
 
 init();
 
 function init() {
+  document.addEventListener("submit", async (event) => {
+    const form = event.target.closest("[data-other-league-form]");
+    if (!form) return;
+    event.preventDefault();
+    await loadTemporaryLinkedLeague(new FormData(form).get("league-url"));
+  });
   if (els.weekSelect) {
     buildWeekOptions();
     els.weekSelect.addEventListener("change", async () => {
@@ -713,6 +721,18 @@ function init() {
     });
   }
   document.addEventListener("click", (event) => {
+    const addLeague = event.target.closest("[data-other-league-start]");
+    if (addLeague) {
+      temporaryLinkedLeagueDraft = { waxRosterId: Number(selectedRosterId), state: "url", error: "" };
+      renderSelectedTeam();
+      return;
+    }
+    const removeLeague = event.target.closest("[data-other-league-remove]");
+    if (removeLeague) {
+      temporaryLinkedLeagues = temporaryLinkedLeagues.filter((league) => league.id !== removeLeague.dataset.otherLeagueRemove);
+      renderSelectedTeam();
+      return;
+    }
     const leaderToggle = event.target.closest("[data-leader-toggle]");
     if (leaderToggle) {
       toggleArchiveLeaders(!document.body.classList.contains("leaders-expanded"));
@@ -745,6 +765,24 @@ function init() {
       renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
     }
     requestAnimationFrame(() => document.querySelector("#top")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  });
+
+  document.addEventListener("change", async (event) => {
+    const teamSelect = event.target.closest("[data-other-league-team]");
+    if (!teamSelect || !temporaryLinkedLeagueDraft?.data) return;
+    const rosterId = Number(teamSelect.value);
+    if (!rosterId) return;
+    const data = temporaryLinkedLeagueDraft.data;
+    const roster = data.rosters.find((item) => Number(item.roster_id) === rosterId);
+    if (!roster) return;
+    temporaryLinkedLeagues.push({
+      id: `${data.league.league_id}-${rosterId}-${Date.now()}`,
+      waxRosterId: temporaryLinkedLeagueDraft.waxRosterId,
+      ...data,
+      rosterId,
+    });
+    temporaryLinkedLeagueDraft = null;
+    await renderSelectedTeam();
   });
 
   if (PAGE === "articles") {
@@ -1509,11 +1547,19 @@ async function renderSelectedTeam() {
   if (opponentRoster && opponentHasPlayers && shouldShowPlayersToWatch()) {
     opponentContext = await teamPlayerContext(opponentRoster, nflData.events, matchup.opponent);
   }
+  const temporaryLeagueContexts = shouldShowPlayersToWatch()
+    ? await temporaryLeagueWatchContexts(roster.roster_id)
+    : [];
   const playersToWatch = shouldShowPlayersToWatch()
     ? `
       <article class="things-watch-panel">
-        <span class="metric-label">Players to Watch</span>
+        <div class="watch-panel-title">
+          <span class="metric-label">Players to Watch</span>
+          <button class="other-league-link" type="button" data-other-league-start>HAVE ANOTHER LEAGUE? SEE THOSE PLAYERS TOO</button>
+        </div>
+        ${temporaryLeagueEntryMarkup(roster.roster_id)}
         ${thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users)}
+        ${temporaryLeagueContexts.map(temporaryLeagueWatchMarkup).join("")}
       </article>
     `
     : "";
@@ -3545,6 +3591,118 @@ function scoreboardPlayerRow(player, matchup) {
       ${playerNameHtml(player)}
       <span>${escapeHtml(score || meta || "NFL")}</span>
     </li>
+  `;
+}
+
+function temporarySleeperLeagueId(value) {
+  const input = String(value || "").trim();
+  if (/^\d{8,}$/.test(input)) return input;
+  try {
+    const url = new URL(input);
+    if (!/(^|\.)sleeper\.(com|app)$/i.test(url.hostname)) return "";
+    return url.pathname.match(/\/leagues?\/(\d+)/i)?.[1] || "";
+  } catch (error) {
+    return "";
+  }
+}
+
+async function loadTemporaryLinkedLeague(value) {
+  const leagueId = temporarySleeperLeagueId(value);
+  if (!leagueId || !temporaryLinkedLeagueDraft) {
+    if (temporaryLinkedLeagueDraft) temporaryLinkedLeagueDraft.error = "Enter a valid Sleeper league URL or league ID.";
+    await renderSelectedTeam();
+    return;
+  }
+  temporaryLinkedLeagueDraft.state = "loading";
+  temporaryLinkedLeagueDraft.error = "";
+  await renderSelectedTeam();
+  try {
+    const [league, rosters, users, state] = await Promise.all([
+      fetchJson(`/league/${leagueId}`),
+      fetchJson(`/league/${leagueId}/rosters`),
+      fetchJson(`/league/${leagueId}/users`),
+      fetchJson("/state/nfl"),
+    ]);
+    const week = displayWeek(league, state);
+    const matchups = await fetchJson(`/league/${leagueId}/matchups/${week}`);
+    temporaryLinkedLeagueDraft = {
+      ...temporaryLinkedLeagueDraft,
+      state: "team",
+      data: { league, rosters, users, matchups, week },
+    };
+  } catch (error) {
+    temporaryLinkedLeagueDraft.state = "url";
+    temporaryLinkedLeagueDraft.error = "That league could not be loaded. Check the URL and try again.";
+  }
+  await renderSelectedTeam();
+}
+
+function temporaryLeagueEntryMarkup(waxRosterId) {
+  const draft = temporaryLinkedLeagueDraft;
+  if (!draft || Number(draft.waxRosterId) !== Number(waxRosterId)) return "";
+  if (draft.state === "team" && draft.data) {
+    const options = [...draft.data.rosters]
+      .sort((a, b) => teamName(a, draft.data.users).localeCompare(teamName(b, draft.data.users)))
+      .map((roster) => `<option value="${roster.roster_id}">${escapeHtml(teamName(roster, draft.data.users))} - ${escapeHtml(ownerName(roster, draft.data.users))}</option>`)
+      .join("");
+    return `
+      <label class="other-league-entry other-league-team-picker">
+        <span>WHICH TEAM IS YOURS?</span>
+        <select data-other-league-team>
+          <option value="">Choose team</option>
+          ${options}
+        </select>
+      </label>
+    `;
+  }
+  return `
+    <form class="other-league-entry" data-other-league-form>
+      <input name="league-url" type="text" inputmode="url" placeholder="Sleeper league URL or league ID" aria-label="Sleeper league URL or league ID" ${draft.state === "loading" ? "disabled" : ""}>
+      <button class="button" type="submit" ${draft.state === "loading" ? "disabled" : ""}>${draft.state === "loading" ? "Loading..." : "Next"}</button>
+      ${draft.error ? `<p>${escapeHtml(draft.error)}</p>` : ""}
+    </form>
+  `;
+}
+
+async function temporaryLeagueWatchContexts(waxRosterId) {
+  const leagues = temporaryLinkedLeagues.filter((league) => Number(league.waxRosterId) === Number(waxRosterId));
+  return Promise.all(leagues.map(async (league) => {
+    const roster = league.rosters.find((item) => Number(item.roster_id) === Number(league.rosterId));
+    const mine = league.matchups.find((item) => Number(item.roster_id) === Number(league.rosterId));
+    const opponentMatchup = mine
+      ? league.matchups.find((item) => item.matchup_id === mine.matchup_id && Number(item.roster_id) !== Number(league.rosterId))
+      : null;
+    const opponentRoster = opponentMatchup
+      ? league.rosters.find((item) => Number(item.roster_id) === Number(opponentMatchup.roster_id))
+      : null;
+    const [ownContext, opponentContext] = await Promise.all([
+      roster ? teamPlayerContext(roster, nflData.events, mine) : null,
+      opponentRoster ? teamPlayerContext(opponentRoster, nflData.events, opponentMatchup) : null,
+    ]);
+    return { ...league, roster, opponentRoster, ownContext, opponentContext };
+  }));
+}
+
+function temporaryLeagueWatchMarkup(context) {
+  const mine = watchPlayers(context.ownContext, false);
+  const theirs = watchPlayers(context.opponentContext, true);
+  return `
+    <section class="temporary-league-watch">
+      <header class="temporary-league-title">
+        <strong>${escapeHtml(context.league.name || "Other League")}</strong>
+        <button type="button" data-other-league-remove="${escapeHtml(context.id)}" aria-label="Remove ${escapeHtml(context.league.name || "other league")}">×</button>
+      </header>
+      <div class="watch-columns">
+        <div class="watch-team-column">
+          <header>${avatar(context.roster, context.users)}<div><span class="metric-label">Your players</span><strong>${escapeHtml(context.roster ? teamName(context.roster, context.users) : "Your team")}</strong></div></header>
+          ${watchListRows(mine, watchFallbackText("No players from this roster"))}
+        </div>
+        <div class="watch-team-column hate-watch">
+          <header>${avatar(context.opponentRoster, context.users)}<div><span class="metric-label">Hate-watch</span><strong>${escapeHtml(context.opponentRoster ? teamName(context.opponentRoster, context.users) : "Opponent")}</strong></div></header>
+          ${watchListRows(theirs, watchFallbackText("No opponent players"))}
+        </div>
+      </div>
+    </section>
   `;
 }
 

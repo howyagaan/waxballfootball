@@ -1023,6 +1023,106 @@ body[data-theme="mnf"] .matchup-card {
   grid-column: 1 / -1;
 }
 
+.watch-panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.other-league-link {
+  border: 0;
+  background: transparent;
+  color: var(--teal);
+  padding: 0;
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.other-league-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  margin: 0 0 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(8, 14, 22, 0.48);
+  padding: 0.65rem;
+}
+
+.other-league-entry input,
+.other-league-entry select {
+  width: 100%;
+  min-height: 2.65rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: 0 0.7rem;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.other-league-entry p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--red);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.other-league-team-picker {
+  grid-template-columns: minmax(8rem, auto) minmax(0, 1fr);
+  align-items: center;
+}
+
+.other-league-team-picker > span {
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.07em;
+}
+
+.temporary-league-watch {
+  margin-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.9rem;
+}
+
+.temporary-league-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.temporary-league-title > strong {
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.temporary-league-title button {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .league-view-button {
   grid-column: 1 / -1;
   justify-self: center;
@@ -5083,6 +5183,17 @@ footer {
 
   .matchup-focus-head {
     display: grid;
+  }
+
+  .watch-panel-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .other-league-entry,
+  .other-league-team-picker {
+    grid-template-columns: 1fr;
   }
 
   .matchup-history-facts {
