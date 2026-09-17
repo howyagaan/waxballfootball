@@ -723,6 +723,8 @@ function init() {
   document.addEventListener("click", (event) => {
     const addLeague = event.target.closest("[data-other-league-start]");
     if (addLeague) {
+      const addedCount = temporaryLinkedLeagues.filter((league) => Number(league.waxRosterId) === Number(selectedRosterId)).length;
+      if (addedCount >= 3) return;
       temporaryLinkedLeagueDraft = { waxRosterId: Number(selectedRosterId), state: "url", error: "" };
       renderSelectedTeam();
       return;
@@ -775,6 +777,8 @@ function init() {
     const data = temporaryLinkedLeagueDraft.data;
     const roster = data.rosters.find((item) => Number(item.roster_id) === rosterId);
     if (!roster) return;
+    const addedCount = temporaryLinkedLeagues.filter((league) => Number(league.waxRosterId) === Number(temporaryLinkedLeagueDraft.waxRosterId)).length;
+    if (addedCount >= 3) return;
     temporaryLinkedLeagues.push({
       id: `${data.league.league_id}-${rosterId}-${Date.now()}`,
       waxRosterId: temporaryLinkedLeagueDraft.waxRosterId,
@@ -1550,16 +1554,22 @@ async function renderSelectedTeam() {
   const temporaryLeagueContexts = shouldShowPlayersToWatch()
     ? await temporaryLeagueWatchContexts(roster.roster_id)
     : [];
+  const crossLeagueNotes = playerCrossLeagueNotes(
+    playerContext,
+    opponentContext,
+    temporaryLeagueContexts,
+    opponentRoster ? teamName(opponentRoster, source.users) : "Waxball opponent",
+  );
   const playersToWatch = shouldShowPlayersToWatch()
     ? `
       <article class="things-watch-panel">
         <div class="watch-panel-title">
           <span class="metric-label">Players to Watch</span>
-          <button class="other-league-link" type="button" data-other-league-start>HAVE ANOTHER LEAGUE? SEE THOSE PLAYERS TOO</button>
+          ${temporaryLeagueAddLink(roster.roster_id)}
         </div>
         ${temporaryLeagueEntryMarkup(roster.roster_id)}
-        ${thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users)}
-        ${temporaryLeagueContexts.map(temporaryLeagueWatchMarkup).join("")}
+        ${thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users, crossLeagueNotes)}
+        ${temporaryLeagueContexts.map((context) => temporaryLeagueWatchMarkup(context, crossLeagueNotes)).join("")}
       </article>
     `
     : "";
@@ -3657,11 +3667,22 @@ function temporaryLeagueEntryMarkup(waxRosterId) {
   }
   return `
     <form class="other-league-entry" data-other-league-form>
-      <input name="league-url" type="text" inputmode="url" placeholder="Sleeper league URL or league ID" aria-label="Sleeper league URL or league ID" ${draft.state === "loading" ? "disabled" : ""}>
+      <input name="league-url" type="text" inputmode="url" placeholder="League URL or League ID" aria-label="League URL or League ID" ${draft.state === "loading" ? "disabled" : ""}>
       <button class="button" type="submit" ${draft.state === "loading" ? "disabled" : ""}>${draft.state === "loading" ? "Loading..." : "Next"}</button>
       ${draft.error ? `<p>${escapeHtml(draft.error)}</p>` : ""}
     </form>
   `;
+}
+
+function temporaryLeagueAddLink(waxRosterId) {
+  const addedCount = temporaryLinkedLeagues.filter((league) => Number(league.waxRosterId) === Number(waxRosterId)).length;
+  const atLimit = addedCount >= 3;
+  const label = atLimit
+    ? "4 TOTAL LEAGUES ADDED"
+    : addedCount
+      ? "ADD UP TO 4 TOTAL LEAGUES"
+      : "HAVE ANOTHER LEAGUE? SEE THOSE PLAYERS TOO";
+  return `<button class="other-league-link" type="button" data-other-league-start ${atLimit ? "disabled" : ""}>${label}</button>`;
 }
 
 async function temporaryLeagueWatchContexts(waxRosterId) {
@@ -3683,9 +3704,52 @@ async function temporaryLeagueWatchContexts(waxRosterId) {
   }));
 }
 
-function temporaryLeagueWatchMarkup(context) {
-  const mine = watchPlayers(context.ownContext, false);
-  const theirs = watchPlayers(context.opponentContext, true);
+function playerCrossLeagueNotes(playerContext, opponentContext, temporaryContexts, waxballOpponentName) {
+  const groups = [
+    { leagueKey: "waxball", leagueName: "Waxball", role: "own", players: watchPlayers(playerContext, false) },
+    { leagueKey: "waxball", leagueName: "Waxball", role: "opponent", opponentName: waxballOpponentName, players: watchPlayers(opponentContext, true) },
+    ...temporaryContexts.flatMap((context) => [
+      { leagueKey: context.id, leagueName: context.league.name || "Other League", role: "own", players: watchPlayers(context.ownContext, false) },
+      {
+        leagueKey: context.id,
+        leagueName: context.league.name || "Other League",
+        role: "opponent",
+        opponentName: context.opponentRoster ? teamName(context.opponentRoster, context.users) : "Opponent",
+        players: watchPlayers(context.opponentContext, true),
+      },
+    ]),
+  ];
+  const occurrences = groups.flatMap((group) => group.players.map((player) => ({ ...group, player })));
+  const notes = new Map();
+  occurrences.forEach((current) => {
+    const matches = occurrences.filter((other) => other.player.id === current.player.id && other.leagueKey !== current.leagueKey);
+    if (!matches.length) return;
+    const ownLeagues = [...new Set(matches.filter((match) => match.role === "own").map((match) => match.leagueName))];
+    const opponentTeams = [...new Set(matches
+      .filter((match) => match.role === "opponent")
+      .map((match) => `${match.opponentName} in ${match.leagueName}`))];
+    const parts = [];
+    if (ownLeagues.length) parts.push(`Also on your roster in ${ownLeagues.join(" and ")}`);
+    if (opponentTeams.length) parts.push(`Also rostered by ${opponentTeams.join(" and ")}`);
+    notes.set(watchPlayerOccurrenceKey(current.leagueKey, current.role, current.player.id), parts.join("; "));
+  });
+  return notes;
+}
+
+function watchPlayerOccurrenceKey(leagueKey, role, playerId) {
+  return `${leagueKey}:${role}:${playerId}`;
+}
+
+function annotateWatchPlayers(players, leagueKey, role, notes) {
+  return players.map((player) => ({
+    ...player,
+    relationshipNote: notes.get(watchPlayerOccurrenceKey(leagueKey, role, player.id)) || "",
+  }));
+}
+
+function temporaryLeagueWatchMarkup(context, crossLeagueNotes) {
+  const mine = annotateWatchPlayers(watchPlayers(context.ownContext, false), context.id, "own", crossLeagueNotes);
+  const theirs = annotateWatchPlayers(watchPlayers(context.opponentContext, true), context.id, "opponent", crossLeagueNotes);
   return `
     <section class="temporary-league-watch">
       <header class="temporary-league-title">
@@ -3706,9 +3770,9 @@ function temporaryLeagueWatchMarkup(context) {
   `;
 }
 
-function thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, users) {
-  const mine = watchPlayers(playerContext, false);
-  const theirs = watchPlayers(opponentContext, true);
+function thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, users, crossLeagueNotes = new Map()) {
+  const mine = annotateWatchPlayers(watchPlayers(playerContext, false), "waxball", "own", crossLeagueNotes);
+  const theirs = annotateWatchPlayers(watchPlayers(opponentContext, true), "waxball", "opponent", crossLeagueNotes);
   return `
     <div class="watch-columns">
       <div class="watch-team-column">
@@ -3805,7 +3869,7 @@ function watchListRows(players, fallback) {
       ${players.map((player) => `
         <li>
           ${playerNameHtml(player)}
-          <span>${escapeHtml([player.position, player.team, player.game.label || player.note].filter(Boolean).join(" · "))}</span>
+          <span>${escapeHtml([player.position, player.team, player.game.label || player.note, player.relationshipNote].filter(Boolean).join(" · "))}</span>
         </li>
       `).join("")}
     </ul>

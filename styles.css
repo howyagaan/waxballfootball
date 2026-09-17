@@ -1045,6 +1045,12 @@ body[data-theme="mnf"] .matchup-card {
   cursor: pointer;
 }
 
+.other-league-link:disabled {
+  color: var(--muted);
+  cursor: default;
+  text-decoration: none;
+}
+
 .other-league-entry {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
