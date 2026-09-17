@@ -344,7 +344,6 @@ const DATE_PREVIEW = QUERY_PARAMS.get("date");
 const PRESENTATION_PREVIEW = QUERY_PARAMS.get("presentation") || document.body.dataset.presentation || "";
 const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
-const LINKED_LEAGUE_DEMO = QUERY_PARAMS.get("linked-demo") === "1";
 const ARTICLES_2026 = [
   {
     week: 1,
@@ -1189,7 +1188,6 @@ function renderCurrentPage() {
   renderMatchups(currentData.matchupsByWeek[currentWeek] || [], rosters, users, currentWeek);
   renderTeamSelector(rosters, users);
   renderSelectedTeam();
-  restoreLinkedLeagueConnection();
 }
 
 async function syncLinkedLeague(value, options = {}) {
@@ -1821,9 +1819,7 @@ function renderTeamSelector(rosters, users) {
     !selectedRosterId ||
     (selectedRosterId !== "league" && !rosters.some((roster) => roster.roster_id === selectedRosterId))
   ) {
-    const previewRoster = LINKED_LEAGUE_DEMO
-      ? rosters.find((roster) => ownerIdentityName(roster, users) === "Nic Hamilton")
-      : isDraftCompletePreview()
+    const previewRoster = isDraftCompletePreview()
       ? rosters.find((roster) => ownerIdentityName(roster, users) === "Milo Manheim")
       : null;
     selectedRosterId = previewRoster?.roster_id || (PAGE === "current" ? "league" : sorted[0]?.roster_id || null);
@@ -1874,14 +1870,11 @@ async function renderSelectedTeam() {
   if (opponentRoster && opponentHasPlayers && shouldShowPlayersToWatch()) {
     opponentContext = await teamPlayerContext(opponentRoster, nflData.events, matchup.opponent);
   }
-  const linkedWatchContexts = shouldShowPlayersToWatch()
-    ? await linkedLeagueWatchContexts(roster.roster_id)
-    : [];
   const playersToWatch = shouldShowPlayersToWatch()
     ? `
       <article class="things-watch-panel">
         <span class="metric-label">Players to Watch</span>
-        ${thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users, linkedWatchContexts)}
+        ${thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users)}
       </article>
     `
     : "";
@@ -3850,43 +3843,7 @@ async function linkedLeagueWatchContexts(waxRosterId) {
       return null;
     }
   }));
-  const available = contexts.filter(Boolean);
-  const waxRoster = currentData.rosters.find((roster) => roster.roster_id === Number(waxRosterId));
-  if (LINKED_LEAGUE_DEMO && waxRoster && ownerIdentityName(waxRoster, currentData.users) === "Nic Hamilton") {
-    const demo = await linkedLeagueDemoContext();
-    if (demo) available.push(demo);
-  }
-  return available;
-}
-
-async function linkedLeagueDemoContext() {
-  const teams = nextMatchdayGames(nflData?.events || []).flatMap((event) => nflTeamsForEvent(event));
-  if (!teams.length) return null;
-  let eligible = [];
-  try {
-    const players = await loadPlayers();
-    eligible = Object.entries(players)
-      .filter(([, player]) => teams.includes(player.team) && ["QB", "RB", "WR", "TE", "K"].includes(player.position))
-      .map(([id]) => playerSummary(id, players))
-      .filter(Boolean);
-  } catch (error) {
-    console.warn("Could not load players for the linked-league demo.", error);
-  }
-  if (!eligible.length && teams.includes("DET") && teams.includes("BUF")) {
-    eligible = [
-      { id: "linked-demo-gibbs", name: "Jahmyr Gibbs", position: "RB", team: "DET" },
-      { id: "linked-demo-allen", name: "Josh Allen", position: "QB", team: "BUF" },
-    ];
-  }
-  if (!eligible.length) return null;
-  const ownPlayer = eligible[0];
-  const opponentPlayer = eligible.find((player) => player.team !== ownPlayer.team) || eligible[1] || eligible[0];
-  return {
-    leagueLabel: "Thursday Demo League",
-    ownContext: { starters: [ownPlayer], bench: [] },
-    opponentContext: { starters: [opponentPlayer], bench: [] },
-    opponentTeam: "Demo Opponent",
-  };
+  return contexts.filter(Boolean);
 }
 
 async function loadLinkedSleeperLeague(connection) {
