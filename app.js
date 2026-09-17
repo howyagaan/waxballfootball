@@ -1,4 +1,7 @@
 const API_BASE = "https://api.sleeper.app/v1";
+const PERMANENT_LINKED_LEAGUES = [
+  { id: "nic-redzone-remix", waxManager: "Nic Hamilton", leagueId: "1400270350368923648", rosterId: 2 },
+];
 const CURRENT_LEAGUE_ID = "1312219624808419328";
 const ARCHIVE_2025_LEAGUE_ID = "1253094778665439232";
 const ARCHIVE_2025_DRAFT_ID = "1253094779571421184";
@@ -681,6 +684,8 @@ let previewedWeek = null;
 let weekCompleteThrough = null;
 let temporaryLinkedLeagues = [];
 let temporaryLinkedLeagueDraft = null;
+let hiddenPermanentLeagueIds = new Set();
+const permanentLinkedLeagueCache = new Map();
 
 init();
 
@@ -723,7 +728,7 @@ function init() {
   document.addEventListener("click", (event) => {
     const addLeague = event.target.closest("[data-other-league-start]");
     if (addLeague) {
-      const addedCount = temporaryLinkedLeagues.filter((league) => Number(league.waxRosterId) === Number(selectedRosterId)).length;
+      const addedCount = additionalLeagueCount(selectedRosterId);
       if (addedCount >= 3) return;
       temporaryLinkedLeagueDraft = { waxRosterId: Number(selectedRosterId), state: "url", error: "" };
       renderSelectedTeam();
@@ -731,6 +736,9 @@ function init() {
     }
     const removeLeague = event.target.closest("[data-other-league-remove]");
     if (removeLeague) {
+      if (PERMANENT_LINKED_LEAGUES.some((league) => league.id === removeLeague.dataset.otherLeagueRemove)) {
+        hiddenPermanentLeagueIds.add(removeLeague.dataset.otherLeagueRemove);
+      }
       temporaryLinkedLeagues = temporaryLinkedLeagues.filter((league) => league.id !== removeLeague.dataset.otherLeagueRemove);
       renderSelectedTeam();
       return;
@@ -777,7 +785,7 @@ function init() {
     const data = temporaryLinkedLeagueDraft.data;
     const roster = data.rosters.find((item) => Number(item.roster_id) === rosterId);
     if (!roster) return;
-    const addedCount = temporaryLinkedLeagues.filter((league) => Number(league.waxRosterId) === Number(temporaryLinkedLeagueDraft.waxRosterId)).length;
+    const addedCount = additionalLeagueCount(temporaryLinkedLeagueDraft.waxRosterId);
     if (addedCount >= 3) return;
     temporaryLinkedLeagues.push({
       id: `${data.league.league_id}-${rosterId}-${Date.now()}`,
@@ -800,6 +808,7 @@ function init() {
 }
 
 async function loadAll() {
+  permanentLinkedLeagueCache.clear();
   setStatus("Syncing data...", "loading");
   try {
     const currentLeagueId = activeCurrentLeagueId();
@@ -1552,7 +1561,7 @@ async function renderSelectedTeam() {
     opponentContext = await teamPlayerContext(opponentRoster, nflData.events, matchup.opponent);
   }
   const temporaryLeagueContexts = shouldShowPlayersToWatch()
-    ? await temporaryLeagueWatchContexts(roster.roster_id)
+    ? await additionalLeagueWatchContexts(roster.roster_id)
     : [];
   const crossLeagueNotes = playerCrossLeagueNotes(
     playerContext,
@@ -2258,6 +2267,11 @@ function currentPosition(roster, rosters, users = currentData?.users || []) {
 function teamNameByRosterId(rosterId) {
   const roster = currentData?.rosters?.find((item) => Number(item.roster_id) === Number(rosterId));
   return roster ? teamName(roster, currentData.users) : "team view";
+}
+
+function managerNameByRosterId(rosterId) {
+  const roster = currentData?.rosters?.find((item) => Number(item.roster_id) === Number(rosterId));
+  return roster ? ownerIdentityName(roster, currentData.users) : "";
 }
 
 function isMatchupPreviewMode() {
@@ -3675,7 +3689,7 @@ function temporaryLeagueEntryMarkup(waxRosterId) {
 }
 
 function temporaryLeagueAddLink(waxRosterId) {
-  const addedCount = temporaryLinkedLeagues.filter((league) => Number(league.waxRosterId) === Number(waxRosterId)).length;
+  const addedCount = additionalLeagueCount(waxRosterId);
   const atLimit = addedCount >= 3;
   const label = atLimit
     ? "4 TOTAL LEAGUES ADDED"
@@ -3685,9 +3699,20 @@ function temporaryLeagueAddLink(waxRosterId) {
   return `<button class="other-league-link" type="button" data-other-league-start ${atLimit ? "disabled" : ""}>${label}</button>`;
 }
 
-async function temporaryLeagueWatchContexts(waxRosterId) {
+function additionalLeagueCount(waxRosterId) {
+  const temporaryCount = temporaryLinkedLeagues.filter((league) => Number(league.waxRosterId) === Number(waxRosterId)).length;
+  const manager = managerNameByRosterId(waxRosterId);
+  const permanentCount = PERMANENT_LINKED_LEAGUES.filter((league) => league.waxManager === manager && !hiddenPermanentLeagueIds.has(league.id)).length;
+  return temporaryCount + permanentCount;
+}
+
+async function additionalLeagueWatchContexts(waxRosterId) {
   const leagues = temporaryLinkedLeagues.filter((league) => Number(league.waxRosterId) === Number(waxRosterId));
-  return Promise.all(leagues.map(async (league) => {
+  const permanent = PERMANENT_LINKED_LEAGUES.filter((league) =>
+    league.waxManager === managerNameByRosterId(waxRosterId) && !hiddenPermanentLeagueIds.has(league.id)
+  );
+  const permanentLeagues = (await Promise.all(permanent.map((league) => loadPermanentLinkedLeague(league, waxRosterId)))).filter(Boolean);
+  return Promise.all([...permanentLeagues, ...leagues].map(async (league) => {
     const roster = league.rosters.find((item) => Number(item.roster_id) === Number(league.rosterId));
     const mine = league.matchups.find((item) => Number(item.roster_id) === Number(league.rosterId));
     const opponentMatchup = mine
@@ -3702,6 +3727,29 @@ async function temporaryLeagueWatchContexts(waxRosterId) {
     ]);
     return { ...league, roster, opponentRoster, ownContext, opponentContext };
   }));
+}
+
+async function loadPermanentLinkedLeague(config, waxRosterId) {
+  try {
+    if (!permanentLinkedLeagueCache.has(config.id)) {
+      permanentLinkedLeagueCache.set(config.id, (async () => {
+        const [league, rosters, users, state] = await Promise.all([
+          fetchJson(`/league/${config.leagueId}`),
+          fetchJson(`/league/${config.leagueId}/rosters`),
+          fetchJson(`/league/${config.leagueId}/users`),
+          fetchJson("/state/nfl"),
+        ]);
+        const week = displayWeek(league, state);
+        const matchups = await fetchJson(`/league/${config.leagueId}/matchups/${week}`);
+        return { ...config, waxRosterId: Number(waxRosterId), league, rosters, users, matchups, week };
+      })());
+    }
+    return await permanentLinkedLeagueCache.get(config.id);
+  } catch (error) {
+    permanentLinkedLeagueCache.delete(config.id);
+    console.warn(`Could not load permanent linked league ${config.leagueId}.`, error);
+    return null;
+  }
 }
 
 function playerCrossLeagueNotes(playerContext, opponentContext, temporaryContexts, waxballOpponentName) {
