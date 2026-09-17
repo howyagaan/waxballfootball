@@ -751,7 +751,7 @@ function init() {
 
     const rosterTarget = event.target.closest("[data-roster-link]");
     if (rosterTarget) {
-      selectRosterFromShortcut(Number(rosterTarget.dataset.rosterLink), { scroll: rosterTarget.hasAttribute("data-avatar-shortcut") ? "profile" : "table" });
+      selectRosterFromShortcut(Number(rosterTarget.dataset.rosterLink), { scroll: "profile" });
       return;
     }
 
@@ -815,7 +815,7 @@ async function loadAll() {
     const [current, archive, nfl] = await Promise.all([
       loadSeason(currentLeagueId, {
         includeTransactions: true,
-        matchupWeeks: PAGE === "current" || isHistoricalCurrentPreview() ? WEEKS : null,
+        matchupWeeks: PAGE === "current" || isHistoricalCurrentPreview() ? "available" : null,
       }),
       loadSeason(ARCHIVE_2025_LEAGUE_ID, {
         includeTransactions: PAGE === "archive",
@@ -840,7 +840,10 @@ async function loadAll() {
     if (isWeekCompletePreview()) {
       applyWeekCompletePreview(currentData, currentWeek);
     }
-    if (els.weekSelect) els.weekSelect.value = String(currentWeek);
+    if (els.weekSelect) {
+      buildWeekOptions(visibleMatchupWeekLimit(currentData.week));
+      els.weekSelect.value = String(currentWeek);
+    }
 
     if (PAGE === "archive") renderArchivePage();
     else if (PAGE === "articles") renderArticlesPage();
@@ -866,7 +869,9 @@ async function loadSeason(leagueId, options = {}) {
   const week = displayWeek(league, state);
   const transactions = options.includeTransactions ? await loadTransactions(leagueId) : [];
   const draftPicks = options.includeDraft ? await fetchOptionalJson(`/draft/${ARCHIVE_2025_DRAFT_ID}/picks`, []) : [];
-  const matchupWeeks = options.matchupWeeks || (options.includeDraft ? [week, 15, 16, 17] : [week]);
+  const matchupWeeks = options.matchupWeeks === "available"
+    ? availableMatchupWeeks(week)
+    : options.matchupWeeks || (options.includeDraft ? [week, 15, 16, 17] : [week]);
   const matchupsByWeek = await loadMatchupsForWeeks(leagueId, matchupWeeks);
   const history = buildHistory(league, rosters, users, winnersBracket, losersBracket);
 
@@ -4472,8 +4477,21 @@ function statusLabel(status) {
   return String(status || "").replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function buildWeekOptions() {
-  els.weekSelect.innerHTML = WEEKS.map((week) => `<option value="${week}">Week ${week}</option>`).join("");
+function visibleMatchupWeekLimit(leagueWeek) {
+  const week = clampWeek(leagueWeek || 1);
+  return week < 15 ? 14 : week;
+}
+
+function availableMatchupWeeks(leagueWeek) {
+  const limit = visibleMatchupWeekLimit(leagueWeek);
+  return WEEKS.filter((week) => week <= limit);
+}
+
+function buildWeekOptions(maxWeek = 14) {
+  els.weekSelect.innerHTML = WEEKS
+    .filter((week) => week <= maxWeek)
+    .map((week) => `<option value="${week}">Week ${week}</option>`)
+    .join("");
 }
 
 function selectedMatchupWeek(fallbackWeek) {
