@@ -3696,11 +3696,12 @@ function temporaryLeagueEntryMarkup(waxRosterId) {
 function temporaryLeagueAddLink(waxRosterId) {
   const addedCount = additionalLeagueCount(waxRosterId);
   const atLimit = addedCount >= 3;
+  const manager = trueFirstName(managerNameByRosterId(waxRosterId)).toUpperCase();
   const label = atLimit
     ? "4 TOTAL LEAGUES ADDED"
     : addedCount
       ? "ADD UP TO 4 TOTAL LEAGUES"
-      : "HAVE ANOTHER LEAGUE? SEE THOSE PLAYERS TOO";
+      : `HAVE ANOTHER LEAGUE ${manager}? SEE THOSE PLAYERS TOO (ADD UP TO 4)`;
   return `<button class="other-league-link" type="button" data-other-league-start ${atLimit ? "disabled" : ""}>${label}</button>`;
 }
 
@@ -3781,10 +3782,10 @@ function playerCrossLeagueNotes(playerContext, opponentContext, temporaryContext
     const opponentTeams = [...new Set(matches
       .filter((match) => match.role === "opponent")
       .map((match) => `${match.opponentName} in ${match.leagueName}`))];
-    const parts = [];
-    if (ownLeagues.length) parts.push(`Also on your roster in ${ownLeagues.join(" and ")}`);
-    if (opponentTeams.length) parts.push(`Also rostered by ${opponentTeams.join(" and ")}`);
-    notes.set(watchPlayerOccurrenceKey(current.leagueKey, current.role, current.player.id), parts.join("; "));
+    notes.set(watchPlayerOccurrenceKey(current.leagueKey, current.role, current.player.id), {
+      own: ownLeagues.length ? `Also on your roster in ${ownLeagues.join(" and ")}` : "",
+      opponent: opponentTeams.length ? `Also rostered by ${opponentTeams.join(" and ")}` : "",
+    });
   });
   return notes;
 }
@@ -3794,10 +3795,15 @@ function watchPlayerOccurrenceKey(leagueKey, role, playerId) {
 }
 
 function annotateWatchPlayers(players, leagueKey, role, notes) {
-  return players.map((player) => ({
-    ...player,
-    relationshipNote: notes.get(watchPlayerOccurrenceKey(leagueKey, role, player.id)) || "",
-  }));
+  return players.map((player) => {
+    const relationship = notes.get(watchPlayerOccurrenceKey(leagueKey, role, player.id)) || {};
+    return {
+      ...player,
+      ownRelationshipNote: relationship.own || "",
+      ownRelationshipConflict: role === "opponent" && Boolean(relationship.own),
+      opponentRelationshipNote: relationship.opponent || "",
+    };
+  });
 }
 
 function temporaryLeagueWatchMarkup(context, crossLeagueNotes) {
@@ -3908,23 +3914,49 @@ function watchPlayers(context, hateWatch) {
   const players = [...(context?.starters || []), ...(context?.bench || [])]
     .map((player) => ({ ...player, game: playerGameWindow(player) }))
     .filter((player) => player.game.isTarget)
-    .sort((a, b) => playerGameSortValue(a) - playerGameSortValue(b) || a.name.localeCompare(b.name));
+    .sort((a, b) =>
+      playerGameSortValue(a) - playerGameSortValue(b)
+      || watchPositionRank(a.position) - watchPositionRank(b.position)
+      || playerSurname(a.name).localeCompare(playerSurname(b.name), undefined, { sensitivity: "base" })
+      || a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+    );
   return players.map((player) => ({
     ...player,
     note: hateWatch ? `Hate-watch ${player.position || "player"} usage` : `${player.position || "Player"} usage watch`,
   }));
 }
 
+function watchPositionRank(position) {
+  const order = ["QB", "RB", "WR", "TE", "K", "DEF"];
+  const rank = order.indexOf(String(position || "").toUpperCase());
+  return rank === -1 ? order.length : rank;
+}
+
+function playerSurname(name) {
+  const suffixes = new Set(["jr", "sr", "ii", "iii", "iv", "v"]);
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  while (parts.length > 1 && suffixes.has(parts[parts.length - 1].replace(/\./g, "").toLowerCase())) parts.pop();
+  return parts[parts.length - 1] || "";
+}
+
 function watchListRows(players, fallback) {
   if (!players.length) return `<p class="muted">${escapeHtml(fallback)}</p>`;
   return `
     <ul class="player-list">
-      ${players.map((player) => `
-        <li>
+      ${players.map((player, index) => {
+        const startsNewGameWindow = index > 0
+          && playerGameSortValue(player) - playerGameSortValue(players[index - 1]) > 30 * 60 * 1000;
+        return `
+        <li class="${startsNewGameWindow ? "watch-game-divider" : ""}">
           ${playerNameHtml(player)}
-          <span>${escapeHtml([player.position, player.team, player.game.label || player.note, player.relationshipNote].filter(Boolean).join(" · "))}</span>
+          <span class="watch-player-meta">
+            ${escapeHtml([player.position, player.team, player.game.label || player.note].filter(Boolean).join(" · "))}
+            ${player.ownRelationshipNote ? `<span class="${player.ownRelationshipConflict ? "watch-overlap-conflict" : "watch-overlap-own"}"> · ${escapeHtml(player.ownRelationshipNote)}</span>` : ""}
+            ${player.opponentRelationshipNote ? `<span class="watch-overlap-opponent"> · ${escapeHtml(player.opponentRelationshipNote)}</span>` : ""}
+          </span>
         </li>
-      `).join("")}
+      `;
+      }).join("")}
     </ul>
   `;
 }

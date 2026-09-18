@@ -2556,6 +2556,13 @@ select {
   padding-top: 0.45rem;
 }
 
+.player-list li.watch-game-divider {
+  margin-top: 0.2rem;
+  border-top-width: 2px;
+  border-top-color: color-mix(in srgb, var(--muted) 55%, var(--line));
+  padding-top: 0.65rem;
+}
+
 .player-list strong {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -2566,6 +2573,21 @@ select {
   font-size: 0.78rem;
   text-align: right;
   overflow-wrap: anywhere;
+}
+
+.player-list .watch-overlap-own {
+  color: #31dc84;
+  font-weight: 850;
+}
+
+.player-list .watch-overlap-conflict {
+  color: #ffad42;
+  font-weight: 850;
+}
+
+.player-list .watch-overlap-opponent {
+  color: #ff6677;
+  font-weight: 850;
 }
 
 .archive-profile-grid .wide-card {
@@ -5191,6 +5213,10 @@ footer {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.35rem;
+  }
+
+  .other-league-link {
+    text-align: left;
   }
 
   .other-league-entry,
