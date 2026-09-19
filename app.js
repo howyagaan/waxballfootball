@@ -783,7 +783,7 @@ function init() {
       renderStandings(currentData.rosters, currentData.users);
       renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
     }
-    requestAnimationFrame(() => document.querySelector("#top")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    requestAnimationFrame(() => els.weeklySlateSection?.scrollIntoView({ behavior: "smooth", block: "start" }));
   });
   els.leagueRemoveCancel?.addEventListener("click", closeLeagueRemovalModal);
   els.leagueRemoveConfirm?.addEventListener("click", () => {
@@ -3732,7 +3732,7 @@ function temporaryLeagueAddLink(waxRosterId) {
     ? "4 TOTAL LEAGUES ADDED"
     : addedCount
       ? "ADD UP TO 4 TOTAL LEAGUES"
-      : `HAVE ANOTHER LEAGUE ${manager}? SEE THOSE PLAYERS TOO (ADD UP TO 4)`;
+      : `HAVE ANOTHER LEAGUE, ${manager}? SEE THOSE PLAYERS TOO (ADD UP TO 4)`;
   return `<button class="other-league-link" type="button" data-other-league-start ${atLimit ? "disabled" : ""}>${label}</button>`;
 }
 
@@ -3881,36 +3881,67 @@ function leagueWatchAccordion(name, content, removeId = "", managerAvatar = "", 
 function temporaryLeagueWatchMarkup(context, crossLeagueNotes) {
   const mine = annotateWatchPlayers(watchPlayers(context.ownContext, false), context.id, "own", crossLeagueNotes);
   const theirs = annotateWatchPlayers(watchPlayers(context.opponentContext, true), context.id, "opponent", crossLeagueNotes);
-  const content = `
-      <div class="watch-columns">
-        <div class="watch-team-column">
-          <header>${avatar(context.roster, context.users)}<div><span class="metric-label">Your players</span><strong>${escapeHtml(context.roster ? teamName(context.roster, context.users) : "Your team")}</strong></div></header>
-          ${watchListRows(mine, watchFallbackText("No players from this roster"))}
-        </div>
-        <div class="watch-team-column hate-watch">
-          <header>${avatar(context.opponentRoster, context.users)}<div><span class="metric-label">Hate-watch</span><strong>${escapeHtml(context.opponentRoster ? teamName(context.opponentRoster, context.users) : "Opponent")}</strong></div></header>
-          ${watchListRows(theirs, watchFallbackText("No opponent players"))}
-        </div>
-      </div>
-  `;
+  const content = groupedWatchColumns(
+    mine,
+    theirs,
+    `${avatar(context.roster, context.users)}<div><span class="metric-label">Your players</span><strong>${escapeHtml(context.roster ? teamName(context.roster, context.users) : "Your team")}</strong></div>`,
+    `${avatar(context.opponentRoster, context.users)}<div><span class="metric-label">Hate-watch</span><strong>${escapeHtml(context.opponentRoster ? teamName(context.opponentRoster, context.users) : "Opponent")}</strong></div>`,
+    watchFallbackText("No players from this roster"),
+    watchFallbackText("No opponent players"),
+  );
   return leagueWatchAccordion(linkedLeagueName(context), content, context.id, avatar(context.roster, context.users), context.id);
 }
 
 function thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, users, crossLeagueNotes = new Map()) {
   const mine = annotateWatchPlayers(watchPlayers(playerContext, false), "waxball", "own", crossLeagueNotes);
   const theirs = annotateWatchPlayers(watchPlayers(opponentContext, true), "waxball", "opponent", crossLeagueNotes);
+  return groupedWatchColumns(
+    mine,
+    theirs,
+    `${avatar(roster, users)}<div><span class="metric-label">Your players</span><strong>${escapeHtml(teamName(roster, users))}</strong></div>`,
+    `${avatar(opponentRoster, users)}<div><span class="metric-label">Hate-watch</span><strong>${escapeHtml(opponentRoster ? teamName(opponentRoster, users) : "Opponent")}</strong></div>`,
+    watchFallbackText("No players from this roster"),
+    watchFallbackText("No opponent players"),
+  );
+}
+
+function groupedWatchColumns(mine, theirs, mineHeader, theirsHeader, mineFallback, theirsFallback) {
+  const groups = groupedWatchPlayers(mine, theirs);
+  const rows = groups.length
+    ? groups.map((group) => `
+        <div class="watch-team-column watch-game-chunk">${group.mine.length ? watchListRows(group.mine, "") : `<p class="watch-empty-slot" aria-hidden="true">&nbsp;</p>`}</div>
+        <div class="watch-team-column hate-watch watch-game-chunk">${group.theirs.length ? watchListRows(group.theirs, "") : `<p class="watch-empty-slot" aria-hidden="true">&nbsp;</p>`}</div>
+      `).join("")
+    : `
+        <div class="watch-team-column watch-game-chunk">${watchListRows([], mineFallback)}</div>
+        <div class="watch-team-column hate-watch watch-game-chunk">${watchListRows([], theirsFallback)}</div>
+      `;
   return `
-    <div class="watch-columns">
-      <div class="watch-team-column">
-        <header>${avatar(roster, users)}<div><span class="metric-label">Your players</span><strong>${escapeHtml(teamName(roster, users))}</strong></div></header>
-        ${watchListRows(mine, watchFallbackText("No players from this roster"))}
-      </div>
-      <div class="watch-team-column hate-watch">
-        <header>${avatar(opponentRoster, users)}<div><span class="metric-label">Hate-watch</span><strong>${escapeHtml(opponentRoster ? teamName(opponentRoster, users) : "Opponent")}</strong></div></header>
-        ${watchListRows(theirs, watchFallbackText("No opponent players"))}
-      </div>
+    <div class="watch-columns watch-columns-synced">
+      <div class="watch-team-column watch-team-heading"><header>${mineHeader}</header></div>
+      <div class="watch-team-column hate-watch watch-team-heading"><header>${theirsHeader}</header></div>
+      ${rows}
     </div>
   `;
+}
+
+function groupedWatchPlayers(mine, theirs) {
+  const tagged = [
+    ...mine.map((player) => ({ side: "mine", player })),
+    ...theirs.map((player) => ({ side: "theirs", player })),
+  ].sort((a, b) => playerGameSortValue(a.player) - playerGameSortValue(b.player));
+  const groups = [];
+  tagged.forEach((item) => {
+    const kickoff = playerGameSortValue(item.player);
+    const previous = groups.at(-1);
+    if (!previous || kickoff - previous.lastKickoff > 30 * 60 * 1000) {
+      groups.push({ mine: [], theirs: [], lastKickoff: kickoff });
+    } else {
+      previous.lastKickoff = kickoff;
+    }
+    groups.at(-1)[item.side].push(item.player);
+  });
+  return groups;
 }
 
 function historicalRosterSnapshots(matchup, roster, opponentRoster, users, playerContext, opponentContext) {

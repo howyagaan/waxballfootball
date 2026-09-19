@@ -1661,6 +1661,51 @@ body[data-theme="mnf"] .matchup-card {
   display: block;
 }
 
+.watch-columns.watch-columns-synced {
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(8, 14, 22, 0.48);
+}
+
+.watch-columns-synced .watch-team-column {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.watch-columns-synced .watch-team-heading {
+  padding: 0.75rem;
+}
+
+.watch-columns-synced .watch-team-heading header {
+  margin-bottom: 0;
+}
+
+.watch-columns-synced .watch-game-chunk {
+  min-width: 0;
+  border-top: 2px solid color-mix(in srgb, var(--muted) 55%, var(--line));
+  padding: 0.6rem 0.75rem;
+}
+
+.watch-columns-synced .watch-game-chunk .player-list {
+  margin-top: 0;
+}
+
+.watch-columns-synced .watch-game-chunk .player-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.watch-empty-slot {
+  display: grid;
+  place-items: center;
+  min-height: 2.25rem;
+  margin: 0;
+}
+
 .roster-board header {
   display: flex;
   align-items: center;
@@ -5415,13 +5460,48 @@ footer {
   }
 
   .matchup-versus-showpiece {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
     gap: 0.5rem;
+    padding: 0.75rem 0.45rem;
+  }
+
+  .matchup-versus-team {
+    align-self: start;
+    gap: 0.4rem;
+  }
+
+  .matchup-versus-team .avatar {
+    width: clamp(4rem, 22vw, 5.25rem);
+    height: clamp(4rem, 22vw, 5.25rem);
+  }
+
+  .matchup-versus-team .team-copy {
+    width: 100%;
+    text-align: center;
+  }
+
+  .matchup-versus-team .team-copy strong {
+    font-size: clamp(0.76rem, 3.7vw, 1rem);
+    line-height: 1.08;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .matchup-versus-team .team-copy .matchup-manager-score {
+    display: block;
+    margin-top: 0.28rem;
+    color: var(--teal);
+    font-size: clamp(0.95rem, 4.5vw, 1.2rem);
+    font-weight: 950;
+    line-height: 1;
   }
 
   .big-versus {
     justify-self: center;
-    width: 2.55rem;
-    height: 2.55rem;
+    width: 2.35rem;
+    height: 2.35rem;
   }
 
   .hero {
