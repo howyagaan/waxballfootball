@@ -1,6 +1,6 @@
 const API_BASE = "https://api.sleeper.app/v1";
 const PERMANENT_LINKED_LEAGUES = [
-  { id: "nic-redzone-remix", waxManager: "Nic Hamilton", leagueId: "1400270350368923648", rosterId: 2 },
+  { id: "nic-redzone-remix", waxManager: "Nic Hamilton", leagueId: "1400270350368923648", rosterId: 2, displayName: "Redzone Remix" },
 ];
 const CURRENT_LEAGUE_ID = "1312219624808419328";
 const ARCHIVE_2025_LEAGUE_ID = "1253094778665439232";
@@ -691,6 +691,7 @@ let temporaryLinkedLeagues = [];
 let temporaryLinkedLeagueDraft = null;
 let hiddenPermanentLeagueIds = loadRemovedLinkedLeagueIds();
 let pendingLeagueRemovalId = "";
+let expandedLeagueWatchIds = new Set();
 const permanentLinkedLeagueCache = new Map();
 
 init();
@@ -798,6 +799,12 @@ function init() {
   els.leagueRemoveModal?.addEventListener("click", (event) => {
     if (event.target === els.leagueRemoveModal) closeLeagueRemovalModal();
   });
+  document.addEventListener("toggle", (event) => {
+    const accordion = event.target.closest?.("[data-league-watch-id]");
+    if (!accordion) return;
+    if (accordion.open) expandedLeagueWatchIds.add(accordion.dataset.leagueWatchId);
+    else expandedLeagueWatchIds.delete(accordion.dataset.leagueWatchId);
+  }, true);
 
   document.addEventListener("change", async (event) => {
     const teamSelect = event.target.closest("[data-other-league-team]");
@@ -1558,6 +1565,10 @@ async function renderSelectedTeam() {
     return;
   }
   els.teamPanel.classList.remove("league-command-panel");
+  els.teamPanel.querySelectorAll("[data-league-watch-id]").forEach((accordion) => {
+    if (accordion.open) expandedLeagueWatchIds.add(accordion.dataset.leagueWatchId);
+    else expandedLeagueWatchIds.delete(accordion.dataset.leagueWatchId);
+  });
 
   const source = PAGE === "archive" ? archiveData : currentData;
   const history = archiveData.history;
@@ -1605,7 +1616,7 @@ async function renderSelectedTeam() {
         </div>
         ${temporaryLeagueEntryMarkup(roster.roster_id)}
         ${temporaryLeagueContexts.length
-          ? leagueWatchAccordion("Waxball", thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users, crossLeagueNotes), "", avatar(roster, source.users))
+          ? leagueWatchAccordion("Waxball", thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users, crossLeagueNotes), "", avatar(roster, source.users), "waxball")
           : thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users, crossLeagueNotes)}
         ${temporaryLeagueContexts.map((context) => temporaryLeagueWatchMarkup(context, crossLeagueNotes)).join("")}
       </article>
@@ -1614,20 +1625,16 @@ async function renderSelectedTeam() {
   const historicalRosterSnapshot = isHistoricalCurrentPreview()
     ? historicalRosterSnapshots(matchup, roster, opponentRoster, source.users, playerContext, opponentContext)
     : "";
-  const matchupFocusLabel = selectedRecapWeek ? `Week ${selectedRecapWeek} result` : "Current matchup";
   const matchupFocusResultClass = selectedRecapWeek ? selectedMatchupResultClass(matchup) : "";
 
   els.teamPanel.innerHTML = `
     ${selectedRecapWeek ? "" : tuesdayLastWeekResult(roster, source.rosters, source.users)}
     <div class="matchup-focus-card ${selectedIsHeated ? "heated-rivalry-card" : ""} ${matchupFocusResultClass}">
       <div class="matchup-focus-head">
-        <div>
-          <span class="metric-label">${escapeHtml(matchupFocusLabel)}</span>
-          ${matchup.detail ? `<p class="muted">${escapeHtml(matchup.detail)}</p>` : ""}
-        </div>
+        ${selectedRecapWeek ? `<span class="metric-label">Week ${selectedRecapWeek} result</span>` : ""}
         ${matchupScoreBadge(matchup)}
       </div>
-      ${matchupVersusShowpiece(roster, opponentRoster, source.users)}
+      ${matchupVersusShowpiece(roster, opponentRoster, source.users, matchup)}
       ${matchupHistoryPanel(roster, opponentRoster, source.users, { heatedRivalry: selectedIsHeated, recapWeek: selectedRecapWeek })}
       ${tuesdayNextMatchup(roster, source.rosters, source.users, selectedRecapWeek)}
     </div>
@@ -3508,24 +3515,24 @@ function scrollToSelectedTeamPanel() {
   });
 }
 
-function matchupVersusShowpiece(roster, opponentRoster, users) {
+function matchupVersusShowpiece(roster, opponentRoster, users, matchup) {
   return `
     <div class="matchup-versus-showpiece">
-      ${matchupVersusTeam(roster, users)}
+      ${matchupVersusTeam(roster, users, matchup?.mine)}
       <span class="big-versus">vs</span>
-      ${matchupVersusTeam(opponentRoster, users)}
+      ${matchupVersusTeam(opponentRoster, users, matchup?.opponent)}
     </div>
   `;
 }
 
-function matchupVersusTeam(roster, users) {
+function matchupVersusTeam(roster, users, matchupTeam) {
   if (!roster) return "";
   return `
     <div class="matchup-versus-team">
       ${avatar(roster, users)}
       <div class="team-copy">
         <strong>${escapeHtml(teamName(roster, users))}</strong>
-        <span class="username">${escapeHtml(currentPosition(roster, currentData.rosters))}</span>
+        <span class="matchup-manager-score">${matchupTeam ? scoreFor(matchupTeam).toFixed(2) : "--"}</span>
       </div>
     </div>
   `;
@@ -3787,10 +3794,10 @@ function playerCrossLeagueNotes(playerContext, opponentContext, temporaryContext
     { leagueKey: "waxball", leagueName: "Waxball", role: "own", players: watchPlayers(playerContext, false) },
     { leagueKey: "waxball", leagueName: "Waxball", role: "opponent", opponentName: waxballOpponentName, players: watchPlayers(opponentContext, true) },
     ...temporaryContexts.flatMap((context) => [
-      { leagueKey: context.id, leagueName: context.league.name || "Other League", role: "own", players: watchPlayers(context.ownContext, false) },
+      { leagueKey: context.id, leagueName: linkedLeagueName(context), role: "own", players: watchPlayers(context.ownContext, false) },
       {
         leagueKey: context.id,
-        leagueName: context.league.name || "Other League",
+        leagueName: linkedLeagueName(context),
         role: "opponent",
         opponentName: context.opponentRoster ? teamName(context.opponentRoster, context.users) : "Opponent",
         players: watchPlayers(context.opponentContext, true),
@@ -3853,9 +3860,14 @@ function saveRemovedLinkedLeagueIds() {
   }
 }
 
-function leagueWatchAccordion(name, content, removeId = "", managerAvatar = "") {
+function linkedLeagueName(context) {
+  return context.displayName || context.league?.name || "Other League";
+}
+
+function leagueWatchAccordion(name, content, removeId = "", managerAvatar = "", accordionId = removeId || name.toLowerCase().replace(/[^a-z0-9]+/g, "-")) {
+  const isOpen = expandedLeagueWatchIds.has(accordionId);
   return `
-    <details class="league-watch-accordion">
+    <details class="league-watch-accordion" data-league-watch-id="${escapeHtml(accordionId)}" ${isOpen ? "open" : ""}>
       <summary>
         ${managerAvatar}
         <strong>${escapeHtml(name)}</strong>
@@ -3881,7 +3893,7 @@ function temporaryLeagueWatchMarkup(context, crossLeagueNotes) {
         </div>
       </div>
   `;
-  return leagueWatchAccordion(context.league.name || "Other League", content, context.id, avatar(context.roster, context.users));
+  return leagueWatchAccordion(linkedLeagueName(context), content, context.id, avatar(context.roster, context.users), context.id);
 }
 
 function thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, users, crossLeagueNotes = new Map()) {
@@ -4006,8 +4018,8 @@ function watchListRows(players, fallback) {
           ${playerNameHtml(player)}
           <span class="watch-player-meta">
             ${escapeHtml([player.position, player.team, player.game.label || player.note].filter(Boolean).join(" · "))}
-            ${player.ownRelationshipNote ? `<span class="${player.ownRelationshipConflict ? "watch-overlap-conflict" : "watch-overlap-own"}"> · ${escapeHtml(player.ownRelationshipNote)}</span>` : ""}
-            ${player.opponentRelationshipNote ? `<span class="${player.opponentRelationshipConflict ? "watch-overlap-conflict" : "watch-overlap-opponent"}"> · ${escapeHtml(player.opponentRelationshipNote)}</span>` : ""}
+            ${player.ownRelationshipNote ? `<span class="watch-overlap-note ${player.ownRelationshipConflict ? "watch-overlap-conflict" : "watch-overlap-own"}">${escapeHtml(player.ownRelationshipNote)}</span>` : ""}
+            ${player.opponentRelationshipNote ? `<span class="watch-overlap-note ${player.opponentRelationshipConflict ? "watch-overlap-conflict" : "watch-overlap-opponent"}">${escapeHtml(player.opponentRelationshipNote)}</span>` : ""}
           </span>
         </li>
       `;
