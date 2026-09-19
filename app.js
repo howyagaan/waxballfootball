@@ -6,6 +6,7 @@ const CURRENT_LEAGUE_ID = "1312219624808419328";
 const ARCHIVE_2025_LEAGUE_ID = "1253094778665439232";
 const ARCHIVE_2025_DRAFT_ID = "1253094779571421184";
 const AUTO_REFRESH_MS = 60000;
+const REMOVED_LINKED_LEAGUES_STORAGE_KEY = "waxball-removed-linked-leagues";
 const WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
 const PAGE = document.body.dataset.page || "current";
 const EASTERN_TIME_ZONE = "America/New_York";
@@ -663,6 +664,10 @@ const els = {
   archivePprTop: document.querySelector("#archive-ppr-top"),
   playoffSummary: document.querySelector("#playoff-summary"),
   playoffList: document.querySelector("#playoff-list"),
+  leagueRemoveModal: document.querySelector("#league-remove-modal"),
+  leagueRemoveCopy: document.querySelector("#league-remove-copy"),
+  leagueRemoveCancel: document.querySelector("#league-remove-cancel"),
+  leagueRemoveConfirm: document.querySelector("#league-remove-confirm"),
   transactionSummary: document.querySelector("#transaction-summary"),
   transactionList: document.querySelector("#transaction-list"),
   championCard: document.querySelector("#champion-card"),
@@ -684,7 +689,8 @@ let previewedWeek = null;
 let weekCompleteThrough = null;
 let temporaryLinkedLeagues = [];
 let temporaryLinkedLeagueDraft = null;
-let hiddenPermanentLeagueIds = new Set();
+let hiddenPermanentLeagueIds = loadRemovedLinkedLeagueIds();
+let pendingLeagueRemovalId = "";
 const permanentLinkedLeagueCache = new Map();
 
 init();
@@ -736,11 +742,13 @@ function init() {
     }
     const removeLeague = event.target.closest("[data-other-league-remove]");
     if (removeLeague) {
-      if (PERMANENT_LINKED_LEAGUES.some((league) => league.id === removeLeague.dataset.otherLeagueRemove)) {
-        hiddenPermanentLeagueIds.add(removeLeague.dataset.otherLeagueRemove);
+      event.preventDefault();
+      event.stopPropagation();
+      pendingLeagueRemovalId = removeLeague.dataset.otherLeagueRemove;
+      if (els.leagueRemoveCopy) {
+        els.leagueRemoveCopy.textContent = `Remove ${removeLeague.dataset.otherLeagueName || "this league"}? It will stay removed.`;
       }
-      temporaryLinkedLeagues = temporaryLinkedLeagues.filter((league) => league.id !== removeLeague.dataset.otherLeagueRemove);
-      renderSelectedTeam();
+      if (els.leagueRemoveModal) els.leagueRemoveModal.hidden = false;
       return;
     }
     const leaderToggle = event.target.closest("[data-leader-toggle]");
@@ -775,6 +783,20 @@ function init() {
       renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
     }
     requestAnimationFrame(() => document.querySelector("#top")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  });
+  els.leagueRemoveCancel?.addEventListener("click", closeLeagueRemovalModal);
+  els.leagueRemoveConfirm?.addEventListener("click", () => {
+    if (!pendingLeagueRemovalId) return;
+    if (PERMANENT_LINKED_LEAGUES.some((league) => league.id === pendingLeagueRemovalId)) {
+      hiddenPermanentLeagueIds.add(pendingLeagueRemovalId);
+      saveRemovedLinkedLeagueIds();
+    }
+    temporaryLinkedLeagues = temporaryLinkedLeagues.filter((league) => league.id !== pendingLeagueRemovalId);
+    closeLeagueRemovalModal();
+    renderSelectedTeam();
+  });
+  els.leagueRemoveModal?.addEventListener("click", (event) => {
+    if (event.target === els.leagueRemoveModal) closeLeagueRemovalModal();
   });
 
   document.addEventListener("change", async (event) => {
@@ -1582,7 +1604,9 @@ async function renderSelectedTeam() {
           ${temporaryLeagueAddLink(roster.roster_id)}
         </div>
         ${temporaryLeagueEntryMarkup(roster.roster_id)}
-        ${thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users, crossLeagueNotes)}
+        ${temporaryLeagueContexts.length
+          ? leagueWatchAccordion("Waxball", thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users, crossLeagueNotes), "", avatar(roster, source.users))
+          : thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, source.users, crossLeagueNotes)}
         ${temporaryLeagueContexts.map((context) => temporaryLeagueWatchMarkup(context, crossLeagueNotes)).join("")}
       </article>
     `
@@ -3802,19 +3826,50 @@ function annotateWatchPlayers(players, leagueKey, role, notes) {
       ownRelationshipNote: relationship.own || "",
       ownRelationshipConflict: role === "opponent" && Boolean(relationship.own),
       opponentRelationshipNote: relationship.opponent || "",
+      opponentRelationshipConflict: role === "own" && Boolean(relationship.opponent),
     };
   });
+}
+
+function closeLeagueRemovalModal() {
+  pendingLeagueRemovalId = "";
+  if (els.leagueRemoveModal) els.leagueRemoveModal.hidden = true;
+}
+
+function loadRemovedLinkedLeagueIds() {
+  try {
+    const storedIds = JSON.parse(window.localStorage.getItem(REMOVED_LINKED_LEAGUES_STORAGE_KEY) || "[]");
+    return new Set(Array.isArray(storedIds) ? storedIds : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveRemovedLinkedLeagueIds() {
+  try {
+    window.localStorage.setItem(REMOVED_LINKED_LEAGUES_STORAGE_KEY, JSON.stringify([...hiddenPermanentLeagueIds]));
+  } catch {
+    // The in-memory removal still applies when browser storage is unavailable.
+  }
+}
+
+function leagueWatchAccordion(name, content, removeId = "", managerAvatar = "") {
+  return `
+    <details class="league-watch-accordion">
+      <summary>
+        ${managerAvatar}
+        <strong>${escapeHtml(name)}</strong>
+        ${removeId ? `<button type="button" data-other-league-remove="${escapeHtml(removeId)}" data-other-league-name="${escapeHtml(name)}" aria-label="Remove ${escapeHtml(name)}">×</button>` : ""}
+      </summary>
+      <div class="league-watch-content">${content}</div>
+    </details>
+  `;
 }
 
 function temporaryLeagueWatchMarkup(context, crossLeagueNotes) {
   const mine = annotateWatchPlayers(watchPlayers(context.ownContext, false), context.id, "own", crossLeagueNotes);
   const theirs = annotateWatchPlayers(watchPlayers(context.opponentContext, true), context.id, "opponent", crossLeagueNotes);
-  return `
-    <section class="temporary-league-watch">
-      <header class="temporary-league-title">
-        <strong>${escapeHtml(context.league.name || "Other League")}</strong>
-        <button type="button" data-other-league-remove="${escapeHtml(context.id)}" aria-label="Remove ${escapeHtml(context.league.name || "other league")}">×</button>
-      </header>
+  const content = `
       <div class="watch-columns">
         <div class="watch-team-column">
           <header>${avatar(context.roster, context.users)}<div><span class="metric-label">Your players</span><strong>${escapeHtml(context.roster ? teamName(context.roster, context.users) : "Your team")}</strong></div></header>
@@ -3825,8 +3880,8 @@ function temporaryLeagueWatchMarkup(context, crossLeagueNotes) {
           ${watchListRows(theirs, watchFallbackText("No opponent players"))}
         </div>
       </div>
-    </section>
   `;
+  return leagueWatchAccordion(context.league.name || "Other League", content, context.id, avatar(context.roster, context.users));
 }
 
 function thingsToWatchPanel(playerContext, opponentContext, matchup, roster, opponentRoster, users, crossLeagueNotes = new Map()) {
@@ -3952,7 +4007,7 @@ function watchListRows(players, fallback) {
           <span class="watch-player-meta">
             ${escapeHtml([player.position, player.team, player.game.label || player.note].filter(Boolean).join(" · "))}
             ${player.ownRelationshipNote ? `<span class="${player.ownRelationshipConflict ? "watch-overlap-conflict" : "watch-overlap-own"}"> · ${escapeHtml(player.ownRelationshipNote)}</span>` : ""}
-            ${player.opponentRelationshipNote ? `<span class="watch-overlap-opponent"> · ${escapeHtml(player.opponentRelationshipNote)}</span>` : ""}
+            ${player.opponentRelationshipNote ? `<span class="${player.opponentRelationshipConflict ? "watch-overlap-conflict" : "watch-overlap-opponent"}"> · ${escapeHtml(player.opponentRelationshipNote)}</span>` : ""}
           </span>
         </li>
       `;

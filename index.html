@@ -30,7 +30,7 @@
     <meta name="twitter:image" content="https://waxballfootball.com/assets/social/waxball-preview-full.jpg" />
     <link rel="icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" type="image/png" />
     <link rel="apple-touch-icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" />
-    <link rel="stylesheet" href="./styles.css?v=20260918-overlap-conflict" />
+    <link rel="stylesheet" href="./styles.css?v=20260919-mobile-watch-columns" />
   </head>
   <body data-page="current">
     <header class="topbar">
@@ -209,6 +209,18 @@
 
     </main>
 
+    <div id="league-remove-modal" class="league-remove-modal" hidden>
+      <div class="league-remove-dialog" role="dialog" aria-modal="true" aria-labelledby="league-remove-title">
+        <p class="eyebrow">Remove league</p>
+        <h2 id="league-remove-title">ARE YOU SURE?</h2>
+        <p id="league-remove-copy" class="muted">Remove this league from this page?</p>
+        <div class="league-remove-actions">
+          <button id="league-remove-cancel" class="button" type="button">Cancel</button>
+          <button id="league-remove-confirm" class="button primary" type="button">Remove League</button>
+        </div>
+      </div>
+    </div>
+
     <footer>
       Waxball HQ <span aria-hidden="true">|</span> Sleeper league data and NFL
       context refresh while the page is open. <a href="./archive-2025.html">2025 Archive</a>
@@ -217,6 +229,6 @@
     </footer>
 
     <script src="./assets/data/h2h-data.js"></script>
-    <script src="./app.js?v=20260918-overlap-conflict"></script>
+    <script src="./app.js?v=20260919-league-removal-copy"></script>
   </body>
 </html>
