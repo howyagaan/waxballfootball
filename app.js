@@ -2148,7 +2148,7 @@ async function saturdayTopPprAndSnfCopy() {
 }
 
 async function sundayTopPprAndSnfCopy() {
-  const topPlayer = await topPprPlayersForWeek(currentWeek, null, 1, { completedOnly: true });
+  const topPlayer = await topPprPlayersForWeek(currentWeek, null, 1);
   const snfText = saturdayFootballCopy(nflData?.events || []);
   const topPlayerText = topPlayer.length
     ? `Top Week ${currentWeek} Player So Far: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
@@ -2157,7 +2157,7 @@ async function sundayTopPprAndSnfCopy() {
 }
 
 async function mondayTopPprAndMnfCopy() {
-  const topPlayer = await topPprPlayersForWeek(currentWeek, null, 1, { completedOnly: true });
+  const topPlayer = await topPprPlayersForWeek(currentWeek, null, 1);
   const mnfText = mondayFootballCopy(nflData?.events || []);
   const topPlayerText = topPlayer.length
     ? `Top Week ${currentWeek} Player So Far: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
@@ -2200,10 +2200,16 @@ async function previousWeekTopPprCopy(options = {}) {
   return `Previous week top PPR players:\n${leaders}`;
 }
 
-async function topPprPlayersForWeek(week, teamFilter = null, limit = 3, options = {}) {
+async function topPprPlayersForWeek(week, teamFilter = null, limit = 3) {
   const players = await loadPlayers();
+  if (PAGE === "current" && Number(week) === Number(currentWeek) && currentData?.league?.league_id) {
+    const latestMatchups = await fetchOptionalJson(
+      `/league/${currentData.league.league_id}/matchups/${week}`,
+      currentData.matchupsByWeek?.[week] || [],
+    );
+    if (latestMatchups.length) currentData.matchupsByWeek[week] = latestMatchups;
+  }
   const matchups = currentData?.matchupsByWeek?.[week] || [];
-  const completedTeams = options.completedOnly ? completedNflTeamsThisWeek() : null;
   return matchups.flatMap((matchup) => {
     const roster = currentData.rosters.find((item) => Number(item.roster_id) === Number(matchup.roster_id));
     if (!roster) return [];
@@ -2214,21 +2220,8 @@ async function topPprPlayersForWeek(week, teamFilter = null, limit = 3, options 
   })
     .filter((item) => item.points > 0)
     .filter((item) => !teamFilter || teamFilter.has(item.player.team))
-    .filter((item) => !completedTeams || completedTeams.has(item.player.team))
     .sort((a, b) => b.points - a.points)
     .slice(0, limit);
-}
-
-function completedNflTeamsThisWeek() {
-  const start = fantasyWeekWindowStart();
-  const now = currentDate();
-  return new Set((nflData?.events || [])
-    .filter((event) => {
-      if (event.status?.type?.state !== "post") return false;
-      const date = new Date(event.date);
-      return date >= start && date <= now;
-    })
-    .flatMap((event) => nflTeamsForEvent(event)));
 }
 
 function finalGameScore(event) {
