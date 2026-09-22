@@ -352,7 +352,7 @@ const ARTICLES_2026 = [
     week: 2,
     headline: "STEEL HIS VIRGINITY!",
     url: "./articles/2026/week-2.html",
-    thumbnail: "./assets/articles/2026/week-2/week2articlecover.png",
+    thumbnail: "./assets/articles/2026/week-2/week2articlecover.png?v=2",
     published: true,
     publishedAt: "2026-09-22",
   },
