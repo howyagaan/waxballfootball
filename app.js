@@ -349,6 +349,14 @@ const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
 const ARTICLES_2026 = [
   {
+    week: 2,
+    headline: "STEEL HIS VIRGINITY!",
+    url: "./articles/2026/week-2.html",
+    thumbnail: "./assets/articles/2026/week-2/week2articlecover.png",
+    published: true,
+    publishedAt: "2026-09-22",
+  },
+  {
     week: 1,
     headline: "STAT FAG GAGS TEA HOUSE DOWN BOOTS IN WEEK 1",
     url: "./articles/2026/week-1.html",
@@ -1527,7 +1535,15 @@ function renderMatchups(matchups, rosters, users, week) {
     `;
     return;
   }
-  els.matchups.innerHTML = groups.map((pair) => matchupCard(pair, rosters, users, { heatedRivalry: heatedKeys.has(matchupPairKey(pair)) })).join("");
+  const completedSlate = isMatchupWeekCompleted(week);
+  const completedTags = completedSlate ? matchupWeekExtremeTags(groups) : new Map();
+  els.matchups.innerHTML = groups.map((pair) => matchupCard(pair, rosters, users, {
+    heatedRivalry: heatedKeys.has(matchupPairKey(pair)),
+    forceScores: completedSlate,
+    finalScores: completedSlate,
+    recapWeek: completedSlate ? Number(week) : null,
+    extremeTag: completedTags.get(matchupPairKey(pair)),
+  })).join("");
 }
 
 function renderTeamSelector(rosters, users) {
@@ -1584,7 +1600,9 @@ async function renderSelectedTeam() {
     ? selectedCompletedWeek
     : currentWeek;
   const selectedRecapWeek = isTuesdayMode() && Number(selectedMatchupWeek) === Number(selectedCompletedWeek) && !isTuesdayWeekPreviewActive() ? selectedCompletedWeek : null;
-  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[selectedMatchupWeek] || [], currentData.rosters, currentData.users, { forceScores: Boolean(selectedRecapWeek) });
+  const matchup = selectedTeamMatchup(roster, currentData.matchupsByWeek[selectedMatchupWeek] || [], currentData.rosters, currentData.users, {
+    forceScores: Boolean(selectedRecapWeek) || isMatchupWeekCompleted(selectedMatchupWeek),
+  });
   const opponentRoster = matchup.opponentRoster;
   const selectedIsHeated = isHeatedSelectedMatchup(matchup, currentData.matchupsByWeek[selectedMatchupWeek] || [], currentData.rosters, currentData.users);
   const rosterHasPlayers = [...(matchup.mine?.players || []), ...(roster.players || [])].some((playerId) => playerId !== "0");
@@ -1882,7 +1900,7 @@ function renderArticleArchive() {
   if (!els.articlesGrid || !els.articlesEmpty) return;
   const published = publishedArticles2026();
   els.articlesEmpty.toggleAttribute("hidden", published.length > 0);
-  els.articlesGrid.innerHTML = published.map((article) => articleCardMarkup(article)).join("");
+  els.articlesGrid.innerHTML = [...published].reverse().map((article) => articleCardMarkup(article)).join("");
 }
 
 function articleCardMarkup(article, options = {}) {
@@ -1895,13 +1913,20 @@ function articleCardMarkup(article, options = {}) {
         <div class="article-thumb">${thumbnail}</div>
         <div class="article-card-copy">
           <p class="eyebrow">Week ${escapeHtml(article.week)}</p>
-          <h3>${escapeHtml(article.headline)}</h3>
+          <h3>${articleHeadlineMarkup(article)}</h3>
           ${article.publishedAt ? `<p>${escapeHtml(formatArticleDate(article.publishedAt))}</p>` : ""}
           <span class="button primary">Read article</span>
         </div>
       </a>
     </article>
   `;
+}
+
+function articleHeadlineMarkup(article) {
+  const headline = escapeHtml(article?.headline || "");
+  return Number(article?.week) === 2
+    ? headline.replace(/\bHIS\b/, "<em>HIS</em>")
+    : headline;
 }
 
 function latestPriorWeekArticle() {
@@ -2189,7 +2214,7 @@ async function fridayTnfRecapCopy() {
 }
 
 async function previousWeekTopPprCopy(options = {}) {
-  const week = Math.max(1, currentWeek - 1);
+  const week = isTuesdayMode() ? (tuesdayRecapWeek() || Math.max(1, currentWeek - 1)) : Math.max(1, currentWeek - 1);
   const topPlayers = await topPprPlayersForWeek(week, null, 3);
   if (!topPlayers.length) {
     return options.fallback === false ? "" : nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || "";
@@ -2941,8 +2966,7 @@ function isTuesdayWeekPreviewActive() {
 function tuesdayRecapWeek() {
   if (!isTuesdayMode()) return 0;
   const completed = completedThroughCurrentSeasonWeek();
-  if (completed > 0) return completed;
-  return latestScoredMatchupWeek();
+  return Math.max(completed, latestScoredMatchupWeek());
 }
 
 function latestScoredMatchupWeek() {
@@ -3072,6 +3096,15 @@ function isDisplayedMatchupFinal() {
   const lastScored = Number(currentData?.league?.settings?.last_scored_leg || 0);
   if (lastScored >= currentWeek) return true;
   return Number(currentWeek) < Number(currentData?.week || currentWeek);
+}
+
+function isMatchupWeekCompleted(week) {
+  const targetWeek = Number(week || 0);
+  if (!targetWeek || !currentData?.league) return false;
+  if (isWeekCompletePreview() && targetWeek <= Number(weekCompleteThrough || currentWeek || 0)) return true;
+  const lastScored = Number(currentData.league.settings?.last_scored_leg || 0);
+  const completedThrough = completedThroughCurrentSeasonWeek();
+  return targetWeek <= Math.max(lastScored, completedThrough);
 }
 
 function matchupResultText(roster, opponentRoster, users, mineScore, opponentScore, options = {}) {
@@ -3302,7 +3335,10 @@ function h2hGameKey(game) {
 
 function currentSeasonCompletedH2HGames() {
   if (PAGE !== "current" || !currentData?.matchupsByWeek) return [];
-  const completedThrough = completedThroughCurrentSeasonWeek() || (isTuesdayMode() ? latestScoredMatchupWeek() : 0);
+  const completedThrough = Math.max(
+    completedThroughCurrentSeasonWeek(),
+    isTuesdayMode() ? latestScoredMatchupWeek() : 0,
+  );
   return Object.entries(currentData.matchupsByWeek).flatMap(([week, matchups]) => {
     if (Number(week) > completedThrough) return [];
     const grouped = groupBy(matchups, (matchup) => matchup.matchup_id || matchup.roster_id);

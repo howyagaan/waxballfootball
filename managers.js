@@ -75,6 +75,12 @@
       teams: ["poon messiah", "helloimpaul"],
       scores: [127.96, 120.56],
     },
+    { id: "2026-w2-m1", season: 2026, week: 2, stage: "Regular season", managers: ["Erik Ohno Dagoberg", "Jacob Moskovitz"], teams: ["Pamela Mari Ohno Dagoberg", "poonfullofsugar"], scores: [143.26, 124.28] },
+    { id: "2026-w2-m2", season: 2026, week: 2, stage: "Regular season", managers: ["Milo Manheim", "Miles Blue"], teams: ["Nacua Matata", "blueballs"], scores: [100.7, 145.36] },
+    { id: "2026-w2-m3", season: 2026, week: 2, stage: "Regular season", managers: ["Travis Roy Rogers", "Christian Engelhardt"], teams: ["darryluvr3000", "Steeler Virginity"], scores: [87.36, 126.52] },
+    { id: "2026-w2-m4", season: 2026, week: 2, stage: "Regular season", managers: ["Nic Hamilton", "Paul Legallet"], teams: ["Stat Fag", "helloimpaul"], scores: [117.5, 101.8] },
+    { id: "2026-w2-m5", season: 2026, week: 2, stage: "Regular season", managers: ["Jakob Cooper", "Sam Labovitz"], teams: ["Papi Coop", "mistahbigdick"], scores: [89.34, 104.82] },
+    { id: "2026-w2-m6", season: 2026, week: 2, stage: "Regular season", managers: ["Miles Elliot", "Will Price"], teams: ["Daddy Campbell", "poon messiah"], scores: [120.18, 110.78] },
   ];
   let matchups = mergeMatchups(data.matchups || [], CURRENT_SEASON_FALLBACK_MATCHUPS);
 

@@ -96,6 +96,12 @@ const H2H_CURRENT_SEASON_FALLBACK_MATCHUPS = [
     teams: ["poon messiah", "helloimpaul"],
     scores: [127.96, 120.56],
   },
+  { id: "2026-w2-m1", season: 2026, week: 2, stage: "Regular season", managers: ["Erik Ohno Dagoberg", "Jacob Moskovitz"], teams: ["Pamela Mari Ohno Dagoberg", "poonfullofsugar"], scores: [143.26, 124.28] },
+  { id: "2026-w2-m2", season: 2026, week: 2, stage: "Regular season", managers: ["Milo Manheim", "Miles Blue"], teams: ["Nacua Matata", "blueballs"], scores: [100.7, 145.36] },
+  { id: "2026-w2-m3", season: 2026, week: 2, stage: "Regular season", managers: ["Travis Roy Rogers", "Christian Engelhardt"], teams: ["darryluvr3000", "Steeler Virginity"], scores: [87.36, 126.52] },
+  { id: "2026-w2-m4", season: 2026, week: 2, stage: "Regular season", managers: ["Nic Hamilton", "Paul Legallet"], teams: ["Stat Fag", "helloimpaul"], scores: [117.5, 101.8] },
+  { id: "2026-w2-m5", season: 2026, week: 2, stage: "Regular season", managers: ["Jakob Cooper", "Sam Labovitz"], teams: ["Papi Coop", "mistahbigdick"], scores: [89.34, 104.82] },
+  { id: "2026-w2-m6", season: 2026, week: 2, stage: "Regular season", managers: ["Miles Elliot", "Will Price"], teams: ["Daddy Campbell", "poon messiah"], scores: [120.18, 110.78] },
 ];
 
 const h2hEls = {
@@ -356,11 +362,12 @@ function renderComparison(a, b) {
 
   const games = h2hMatchups
     .filter((game) => game.managers.includes(a) && game.managers.includes(b))
-    .sort((left, right) => right.season - left.season || left.week - right.week);
+    .sort((left, right) => right.season - left.season || right.week - left.week || String(right.id || "").localeCompare(String(left.id || "")));
   const summary = summarizeSeries(a, b, games);
   const rivalry = games.length ? comparisonRivalry(a, b, games, summary) : null;
 
   h2hEls.stats.querySelector("#h2h-rivalry-score").textContent = rivalry ? `${rivalryScoreOutOf100(rivalry)}/100` : "--";
+  h2hEls.stats.querySelector("#h2h-rivalry-season-change").innerHTML = rivalrySeasonChangeMarkup(a, b, games);
   h2hEls.series.innerHTML = games.length ? recordMarkup(a, b, summary) : "0-0";
   h2hEls.seriesNote.textContent = "";
   h2hEls.points.innerHTML = games.length ? pointsMarkup(a, b, summary) : "--";
@@ -383,6 +390,7 @@ function renderComparisonStatsShell() {
     <article id="h2h-rivalry-score-card" class="h2h-rivalry-score-card">
       <span>Rivalry score</span>
       <strong id="h2h-rivalry-score">--</strong>
+      <div id="h2h-rivalry-season-change" class="h2h-rivalry-season-change"></div>
     </article>
     <article id="h2h-record-card">
       <span>Record</span>
@@ -412,6 +420,37 @@ function comparisonRivalry(manager, opponent, games, summary) {
     averageMargin: summary.averageMargin,
     pointEdgePerGame: games.length ? (summary.aPoints - summary.bPoints) / games.length : 0,
   };
+}
+
+function rivalryScoreForGames(a, b, games) {
+  if (!games.length) return 0;
+  const summary = summarizeSeries(a, b, games);
+  return rivalryScoreOutOf100(comparisonRivalry(a, b, games, summary));
+}
+
+function rivalrySeasonChangeMarkup(a, b, games) {
+  const orderedGames = [...games].sort(
+    (left, right) => left.season - right.season || left.week - right.week || String(left.id).localeCompare(String(right.id)),
+  );
+  const history = orderedGames.filter((game) => Number(game.season) < 2026);
+  const seasonGames = orderedGames.filter((game) => Number(game.season) === 2026);
+
+  if (!seasonGames.length) {
+    return "";
+  }
+
+  let previousScore = rivalryScoreForGames(a, b, history);
+  const changes = seasonGames.map((game) => {
+    history.push(game);
+    const score = rivalryScoreForGames(a, b, history);
+    const change = score - previousScore;
+    previousScore = score;
+    const direction = change > 0 ? "is-up" : change < 0 ? "is-down" : "is-even";
+    const signedChange = change > 0 ? `+${change}` : String(change);
+    return `<span class="h2h-rivalry-change-item">WEEK ${game.week} <b class="${direction}">${signedChange}</b></span>`;
+  });
+
+  return `<span class="h2h-rivalry-change-label">2026 change</span><div class="h2h-rivalry-change-list">${changes.join("")}</div>`;
 }
 
 function refreshH2HStatRefs() {
