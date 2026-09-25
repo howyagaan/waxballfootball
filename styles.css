@@ -3816,6 +3816,28 @@ select {
     rgba(7, 12, 18, 0.48);
 }
 
+.wax-stat-card[role="button"],
+.recent-stat-card[role="button"] {
+  cursor: pointer;
+  transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.wax-stat-card[hidden],
+.recent-stat-card[hidden],
+.recent-stat-adjustments[hidden] {
+  display: none !important;
+}
+
+.wax-stat-card[role="button"]:hover,
+.wax-stat-card[role="button"]:focus-visible,
+.recent-stat-card[role="button"]:hover,
+.recent-stat-card[role="button"]:focus-visible {
+  border-color: rgba(0, 206, 190, 0.72);
+  box-shadow: 0 10px 28px rgba(0, 206, 190, 0.1);
+  outline: none;
+  transform: translateY(-2px);
+}
+
 .wax-stat-card > span,
 .wax-stats-note .eyebrow {
   color: var(--muted);
@@ -4285,6 +4307,23 @@ select {
   font-style: normal;
   font-weight: 850;
   line-height: 1.25;
+}
+
+.wax-stat-rank-dialog {
+  width: min(42rem, 100%);
+}
+
+.wax-stat-rank-list li {
+  cursor: default;
+}
+
+.wax-stat-rank-list li:hover,
+.wax-stat-rank-list li:focus-visible {
+  border-color: rgba(0, 206, 190, 0.28);
+  background:
+    radial-gradient(circle at 0% 50%, rgba(0, 206, 190, 0.16), transparent 34%),
+    rgba(7, 12, 18, 0.48);
+  transform: none;
 }
 
 .manager-section-divider {

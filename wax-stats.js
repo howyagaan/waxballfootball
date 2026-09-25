@@ -160,6 +160,7 @@
   const recentEl = document.querySelector("#wax-stats-recent");
   const filterEl = document.querySelector("#wax-stats-manager-filter");
   let playerPprRows = null;
+  let statLeaderboards = new Map();
 
   const score = (value) => Number(value || 0);
   const fmt = (value) => score(value).toFixed(2);
@@ -418,15 +419,15 @@
     }, new Map());
   }
 
-  function countWeeklyExtremes(rows, mode) {
+  function countWeeklyExtremes(rows, mode, includeAll = false) {
     const counts = new Map();
     groupByWeek(rows).forEach((weekRows) => {
       tiedRows(weekRows, (row) => row.points, mode).forEach((row) => {
         counts.set(row.manager, (counts.get(row.manager) || 0) + 1);
       });
     });
-    const entries = [...counts.entries()].map(([manager, count]) => ({ manager, count }));
-    return tiedRows(entries, (row) => row.count, "max");
+    const entries = managers.map((manager) => ({ manager, count: counts.get(manager) || 0 }));
+    return includeAll ? entries : tiedRows(entries, (row) => row.count, "max");
   }
 
   function managerAverages(rows) {
@@ -464,7 +465,7 @@
       }, new Map());
   }
 
-  function scheduleRows(mode) {
+  function scheduleRows(mode, includeAll = false) {
     const regularGames = regularSeasonGameRows();
     const seasonFinishMaps = new Map([...new Set(regularGames.map((game) => game.season))].map((season) => [season, regularSeasonFinishMap(season)]));
     const rows = [];
@@ -482,10 +483,10 @@
         record.finalFinish = FINAL_FINISH[game.season]?.[manager] || "--";
       });
     });
-    return tiedRows(rows, (row) => row.pointsAgainst, mode);
+    return includeAll ? rows : tiedRows(rows, (row) => row.pointsAgainst, mode);
   }
 
-  function seasonPfRows(mode) {
+  function seasonPfRows(mode, includeAll = false) {
     const rows = [];
     regularSeasonRows(sideRows()).forEach((row) => {
       let record = rows.find((item) => item.manager === row.manager && item.season === row.game.season);
@@ -496,10 +497,10 @@
       record.pointsFor += row.points;
       record.games += 1;
     });
-    return tiedRows(rows, (row) => row.pointsFor, mode);
+    return includeAll ? rows : tiedRows(rows, (row) => row.pointsFor, mode);
   }
 
-  function playoffPerformerRows() {
+  function playoffPerformerRows(includeAll = false) {
     const rows = sideRows().filter((row) => row.game.stage !== "Regular season");
     const byManager = managers.map((manager) => {
       const managerRows = rows.filter((row) => row.manager === manager);
@@ -513,10 +514,10 @@
         wins,
       };
     }).filter((row) => row.games > 0);
-    return tiedRows(byManager, (row) => row.average, "max");
+    return includeAll ? byManager : tiedRows(byManager, (row) => row.average, "max");
   }
 
-  function weeklyTopThreeRows() {
+  function weeklyTopThreeRows(includeAll = false) {
     const counts = new Map();
     groupByWeek(sideRows()).forEach((weekRows) => {
       [...weekRows]
@@ -524,11 +525,11 @@
         .slice(0, 3)
         .forEach((row) => counts.set(row.manager, (counts.get(row.manager) || 0) + 1));
     });
-    const entries = [...counts.entries()].map(([manager, count]) => ({ manager, count }));
-    return tiedRows(entries, (row) => row.count, "max");
+    const entries = managers.map((manager) => ({ manager, count: counts.get(manager) || 0 }));
+    return includeAll ? entries : tiedRows(entries, (row) => row.count, "max");
   }
 
-  function weeklyBottomThreeRows() {
+  function weeklyBottomThreeRows(includeAll = false) {
     const counts = new Map();
     groupByWeek(sideRows()).forEach((weekRows) => {
       [...weekRows]
@@ -536,11 +537,11 @@
         .slice(0, 3)
         .forEach((row) => counts.set(row.manager, (counts.get(row.manager) || 0) + 1));
     });
-    const entries = [...counts.entries()].map(([manager, count]) => ({ manager, count }));
-    return tiedRows(entries, (row) => row.count, "max");
+    const entries = managers.map((manager) => ({ manager, count: counts.get(manager) || 0 }));
+    return includeAll ? entries : tiedRows(entries, (row) => row.count, "max");
   }
 
-  function streaks(rows, resultType) {
+  function streaks(rows, resultType, includeAll = false) {
     const byManager = managers.map((manager) => {
       const managerRows = rows
         .filter((row) => row.manager === manager)
@@ -560,13 +561,67 @@
       });
       return best;
     });
-    return tiedRows(byManager, (row) => row.count, "max");
+    return includeAll ? byManager : tiedRows(byManager, (row) => row.count, "max");
   }
 
-  function statCard({ title, value, details, tone = "" }) {
+  function standingsCheckpointRows() {
+    const counts = new Map(managers.map((manager) => [manager, { manager, top: 0, bottom: 0 }]));
+    const regularRows = regularSeasonRows(sideRows());
+    const seasons = [...new Set(regularRows.map((row) => Number(row.game.season)))];
+    seasons.forEach((season) => {
+      const seasonRows = regularRows.filter((row) => Number(row.game.season) === season);
+      const weeks = [...new Set(seasonRows.map((row) => Number(row.game.week)))].sort((a, b) => a - b);
+      weeks.forEach((week) => {
+        const throughWeek = seasonRows.filter((row) => Number(row.game.week) <= week);
+        const standings = [...new Set(seasonRows.map((row) => row.manager))].map((manager) => {
+          const managerRows = throughWeek.filter((row) => row.manager === manager);
+          return {
+            manager,
+            wins: managerRows.filter((row) => row.result === "W").length,
+            pf: managerRows.reduce((sum, row) => sum + row.points, 0),
+          };
+        }).sort((a, b) => b.wins - a.wins || b.pf - a.pf || a.manager.localeCompare(b.manager));
+        if (!standings.length) return;
+        counts.get(standings[0].manager).top += 1;
+        counts.get(standings.at(-1).manager).bottom += 1;
+      });
+    });
+    return [...counts.values()];
+  }
+
+  function personalExtremeRows(rows, getValue, mode = "max") {
+    return managers.flatMap((manager) => {
+      const managerRows = rows.filter((row) => row.manager === manager);
+      if (!managerRows.length) return [];
+      return [tiedRows(managerRows, getValue, mode)[0]];
+    });
+  }
+
+  function rankedLeaderboard(rows, getValue, mode, label, detail) {
+    const ordered = [...rows].sort((a, b) => {
+      const difference = mode === "min" ? getValue(a) - getValue(b) : getValue(b) - getValue(a);
+      return Math.abs(difference) > EPSILON ? difference : label(a).localeCompare(label(b));
+    });
+    let previousValue = null;
+    let previousRank = 0;
+    return ordered.map((row, index) => {
+      const value = getValue(row);
+      const rank = previousValue !== null && Math.abs(value - previousValue) < EPSILON ? previousRank : index + 1;
+      previousValue = value;
+      previousRank = rank;
+      return {
+        rank,
+        label: label(row),
+        detail: detail(row),
+        managers: row.managers || (row.manager ? [row.manager] : row.game?.managers || []),
+      };
+    });
+  }
+
+  function statCard({ title, value, details, tone = "", managers: statManagers = [] }) {
     const detailItems = Array.isArray(details) ? details : [details];
     return `
-      <article class="wax-stat-card ${tone}">
+      <article class="wax-stat-card ${tone}" role="button" tabindex="0" data-wax-stat-key="${escapeHtml(title)}" data-wax-stat-managers="${escapeHtml(statManagers.join("||"))}" aria-label="Open ${escapeHtml(title)} leaderboard">
         <span>${escapeHtml(title)}</span>
         <strong>${escapeHtml(value)}</strong>
         <div class="wax-stat-details">
@@ -578,7 +633,7 @@
 
   function recentAdjustmentCard(adjustment) {
     return `
-      <article class="recent-stat-card ${adjustment.tone || ""}">
+      <article class="recent-stat-card ${adjustment.tone || ""}" role="button" tabindex="0" data-wax-stat-key="${escapeHtml(adjustment.title)}" data-wax-stat-managers="${escapeHtml((adjustment.managers || []).join("||"))}" aria-label="Open ${escapeHtml(adjustment.title)} leaderboard">
         <span>${escapeHtml(adjustment.title)}</span>
         <strong>${escapeHtml(adjustment.value)}</strong>
         <p>${adjustment.detail}</p>
@@ -860,6 +915,9 @@
     const bestPlayoffPerformer = playoffPerformerRows();
     const topThreeFinishes = weeklyTopThreeRows();
     const bottomThreeFinishes = weeklyBottomThreeRows();
+    const standingsCheckpoints = standingsCheckpointRows();
+    const weeksTopTable = tiedRows(standingsCheckpoints, (row) => row.top, "max");
+    const weeksBottomTable = tiedRows(standingsCheckpoints, (row) => row.bottom, "max");
     const mostLoyal = tiedRows(loyaltyRows, (row) => row.kept, "max");
     const leastLoyal = tiedRows(loyaltyRows, (row) => row.kept, "min");
     const recentAdjustments = [...recordAdjustmentRows(), ...playerPprAdjustmentRows()]
@@ -1035,20 +1093,115 @@
         tone: "is-red",
         managers: managerList(bottomThreeFinishes),
       },
+      {
+        title: "Weeks top of table",
+        value: `${weeksTopTable[0]?.top || 0}`,
+        details: weeksTopTable.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.top} ${row.top === 1 ? "week" : "weeks"} in 1st</span>`),
+        tone: "is-green",
+        managers: managerList(weeksTopTable),
+      },
+      {
+        title: "Weeks bottom of table",
+        value: `${weeksBottomTable[0]?.bottom || 0}`,
+        details: weeksBottomTable.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.bottom} ${row.bottom === 1 ? "week" : "weeks"} in last</span>`),
+        tone: "is-red",
+        managers: managerList(weeksBottomTable),
+      },
     ];
-    const shownStats = selectedManager ? statItems.filter((stat) => stat.managers.includes(selectedManager)) : statItems;
-    const shownAdjustments = selectedManager
-      ? recentAdjustments.filter((adjustment) => (adjustment.managers || []).includes(selectedManager))
-      : recentAdjustments;
 
+    const allWinStreaks = streaks(rows, "W", true);
+    const allLossStreaks = streaks(rows, "L", true);
+    const matchupLabel = (row) => `${row.game.managers?.[0]} vs ${row.game.managers?.[1]}`;
+    const matchupDetail = (row, value) => `${value} pts • ${gameLabel(row.game)}`;
+    statLeaderboards = new Map([
+      ["Highest one-week score", rankedLeaderboard(personalExtremeRows(rows, (row) => row.points, "max"), (row) => row.points, "max", (row) => row.manager, (row) => `${fmt(row.points)} pts • ${gameLabel(row.game)}`)],
+      ["Lowest one-week score", rankedLeaderboard(personalExtremeRows(rows, (row) => row.points, "min"), (row) => row.points, "min", (row) => row.manager, (row) => `${fmt(row.points)} pts • ${gameLabel(row.game)}`)],
+      ["Lowest score in win", rankedLeaderboard(personalExtremeRows(wins, (row) => row.points, "min"), (row) => row.points, "min", (row) => row.manager, (row) => `${fmt(row.points)} pts • ${gameLabel(row.game)}`)],
+      ["Highest score in loss", rankedLeaderboard(personalExtremeRows(losses, (row) => row.points, "max"), (row) => row.points, "max", (row) => row.manager, (row) => `${fmt(row.points)} pts • ${gameLabel(row.game)}`)],
+      ["Highest rostered-player PPR week", rankedLeaderboard(playerRows, (row) => row.points, "max", (row) => row.playerName, (row) => `${fmt(row.points)} pts • ${row.manager} • ${gameLabel(row.game)}`)],
+      ["Longest win streak", rankedLeaderboard(allWinStreaks, (row) => row.count, "max", (row) => row.manager, (row) => row.start ? `${row.count} wins • ${gameLabel(row.start)} to ${gameLabel(row.end)}` : "No wins")],
+      ["Longest losing streak", rankedLeaderboard(allLossStreaks, (row) => row.count, "max", (row) => row.manager, (row) => row.start ? `${row.count} losses • ${gameLabel(row.start)} to ${gameLabel(row.end)}` : "No losses")],
+      ["Biggest blowout", rankedLeaderboard(gameRecords, (row) => row.margin, "max", matchupLabel, (row) => matchupDetail(row, fmt(row.margin)))],
+      ["Tightest game", rankedLeaderboard(gameRecords, (row) => row.margin, "min", matchupLabel, (row) => matchupDetail(row, fmt(row.margin)))],
+      ["Highest combined score", rankedLeaderboard(gameRecords, (row) => row.total, "max", matchupLabel, (row) => matchupDetail(row, fmt(row.total)))],
+      ["Lowest combined score", rankedLeaderboard(gameRecords, (row) => row.total, "min", matchupLabel, (row) => matchupDetail(row, fmt(row.total)))],
+      ["Most weekly high scores", rankedLeaderboard(countWeeklyExtremes(rows, "max", true), (row) => row.count, "max", (row) => row.manager, (row) => `${row.count} weekly high ${row.count === 1 ? "score" : "scores"}`)],
+      ["Most weekly low scores", rankedLeaderboard(countWeeklyExtremes(rows, "min", true), (row) => row.count, "max", (row) => row.manager, (row) => `${row.count} weekly low ${row.count === 1 ? "score" : "scores"}`)],
+      ["Best average score", rankedLeaderboard(averages, (row) => row.average, "max", (row) => row.manager, (row) => `${fmt(row.average)} pts • ${row.games} games`)],
+      ["Worst average score", rankedLeaderboard(averages, (row) => row.average, "min", (row) => row.manager, (row) => `${fmt(row.average)} pts • ${row.games} games`)],
+      ["Most PF in a regular season", rankedLeaderboard(seasonPfRows("max", true), (row) => row.pointsFor, "max", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsFor)} PF • ${row.games} games`)],
+      ["Least PF in a regular season", rankedLeaderboard(seasonPfRows("min", true), (row) => row.pointsFor, "min", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsFor)} PF • ${row.games} games`)],
+      ["Most brutal schedule", rankedLeaderboard(scheduleRows("max", true), (row) => row.pointsAgainst, "max", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsAgainst)} PA • regular season ${row.regularFinish}`)],
+      ["Easiest schedule", rankedLeaderboard(scheduleRows("min", true), (row) => row.pointsAgainst, "min", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsAgainst)} PA • regular season ${row.regularFinish}`)],
+      ["Best playoff performer", rankedLeaderboard(playoffPerformerRows(true), (row) => row.average, "max", (row) => row.manager, (row) => `${fmt(row.average)} pts avg. • ${row.games} games`)],
+      ["Most loyal manager", rankedLeaderboard(loyaltyRows, (row) => row.kept, "max", (row) => `${row.manager} • ${row.season}`, (row) => `${row.kept} of ${row.drafted} draft picks kept`)],
+      ["Least loyal manager", rankedLeaderboard(loyaltyRows, (row) => row.kept, "min", (row) => `${row.manager} • ${row.season}`, (row) => `${row.kept} of ${row.drafted} draft picks kept`)],
+      ["Most weekly top-three finishes", rankedLeaderboard(weeklyTopThreeRows(true), (row) => row.count, "max", (row) => row.manager, (row) => `${row.count} top-three ${row.count === 1 ? "finish" : "finishes"}`)],
+      ["Most weekly bottom-three finishes", rankedLeaderboard(weeklyBottomThreeRows(true), (row) => row.count, "max", (row) => row.manager, (row) => `${row.count} bottom-three ${row.count === 1 ? "finish" : "finishes"}`)],
+      ["Weeks top of table", rankedLeaderboard(standingsCheckpoints, (row) => row.top, "max", (row) => row.manager, (row) => `${row.top} ${row.top === 1 ? "week" : "weeks"} in 1st`)],
+      ["Weeks bottom of table", rankedLeaderboard(standingsCheckpoints, (row) => row.bottom, "max", (row) => row.manager, (row) => `${row.bottom} ${row.bottom === 1 ? "week" : "weeks"} in last`)],
+    ]);
     if (recentEl) {
-      recentEl.closest(".recent-stat-adjustments").hidden = !shownAdjustments.length;
-      recentEl.innerHTML = shownAdjustments.map(recentAdjustmentCard).join("");
+      recentEl.innerHTML = recentAdjustments.map(recentAdjustmentCard).join("");
     }
 
-    allEl.innerHTML = shownStats.length
-      ? shownStats.map(statCard).join("")
-      : `<p class="wax-stats-empty">No Wax Stats involve ${escapeHtml(selectedManager)} yet.</p>`;
+    allEl.innerHTML = statItems.map(statCard).join("");
+    applyManagerFilter(selectedManager);
+  }
+
+  function applyManagerFilter(selectedManager = filterEl?.value || "") {
+    const matchesManager = (card) => {
+      const cardManagers = String(card.dataset.waxStatManagers || "").split("||").filter(Boolean);
+      return !selectedManager || cardManagers.includes(selectedManager);
+    };
+    allEl?.querySelectorAll(".wax-stat-card").forEach((card) => {
+      card.hidden = !matchesManager(card);
+    });
+    if (recentEl) {
+      const recentCards = [...recentEl.querySelectorAll(".recent-stat-card")];
+      recentCards.forEach((card) => {
+        card.hidden = !matchesManager(card);
+      });
+      recentEl.closest(".recent-stat-adjustments").hidden = !recentCards.some((card) => !card.hidden);
+    }
+  }
+
+  function closeStatLeaderboard() {
+    const popover = document.querySelector("#wax-stat-leaderboard");
+    if (popover) popover.hidden = true;
+  }
+
+  function showStatLeaderboard(title) {
+    const rows = statLeaderboards.get(title) || [];
+    const selectedManager = filterEl?.value || "";
+    let popover = document.querySelector("#wax-stat-leaderboard");
+    if (!popover) {
+      popover = document.createElement("aside");
+      popover.id = "wax-stat-leaderboard";
+      popover.className = "manager-rank-popover";
+      popover.setAttribute("aria-modal", "true");
+      popover.setAttribute("role", "dialog");
+      document.body.appendChild(popover);
+    }
+    popover.setAttribute("aria-label", `${title} leaderboard`);
+    popover.innerHTML = `
+      <div class="manager-rank-dialog wax-stat-rank-dialog">
+        <button class="manager-rank-close" type="button" data-close-wax-stat aria-label="Close leaderboard">&times;</button>
+        <p class="eyebrow">Wax Stats leaderboard</p>
+        <h3>${escapeHtml(title)}</h3>
+        <ol class="manager-rank-list wax-stat-rank-list">
+          ${rows.map((row) => `
+            <li class="${selectedManager && row.managers.includes(selectedManager) ? "is-active" : ""}">
+              <span>${row.rank}</span>
+              <strong>${escapeHtml(row.label)}</strong>
+              <em>${escapeHtml(row.detail)}</em>
+            </li>
+          `).join("")}
+        </ol>
+      </div>
+    `;
+    popover.hidden = false;
+    popover.querySelector(".manager-rank-close")?.focus();
   }
 
   function populateManagerFilter() {
@@ -1057,7 +1210,8 @@
     filterEl.innerHTML = `<option value="">All managers</option>${options.map((manager) => (
       `<option value="${escapeHtml(manager)}">${escapeHtml(manager)}</option>`
     )).join("")}`;
-    filterEl.addEventListener("change", () => render());
+    filterEl.addEventListener("input", () => applyManagerFilter());
+    filterEl.addEventListener("change", () => applyManagerFilter());
   }
 
   async function loadPlayerPprStat() {
@@ -1068,6 +1222,25 @@
     }
     render();
   }
+
+  document.addEventListener("click", (event) => {
+    const card = event.target.closest("[data-wax-stat-key]");
+    if (card && !event.target.closest("a")) {
+      showStatLeaderboard(card.dataset.waxStatKey);
+      return;
+    }
+    const popover = event.target.closest("#wax-stat-leaderboard");
+    if (popover && (event.target === popover || event.target.closest("[data-close-wax-stat]"))) closeStatLeaderboard();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeStatLeaderboard();
+    const card = event.target.closest?.("[data-wax-stat-key]");
+    if (card && (event.key === "Enter" || event.key === " ")) {
+      event.preventDefault();
+      showStatLeaderboard(card.dataset.waxStatKey);
+    }
+  });
 
   if (allEl) {
     populateManagerFilter();
