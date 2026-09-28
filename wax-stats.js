@@ -1187,6 +1187,7 @@
     popover.innerHTML = `
       <div class="manager-rank-dialog wax-stat-rank-dialog">
         <button class="manager-rank-close" type="button" data-close-wax-stat aria-label="Close leaderboard">&times;</button>
+        <button class="share-capture-button" type="button" data-share-capture data-share-title="Wax Stats - ${escapeHtml(title)}">Share</button>
         <p class="eyebrow">Wax Stats leaderboard</p>
         <h3>${escapeHtml(title)}</h3>
         <ol class="manager-rank-list wax-stat-rank-list">

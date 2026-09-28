@@ -29,7 +29,7 @@
     <meta name="twitter:image" content="https://waxballfootball.com/assets/social/waxball-rivals-preview.jpg" />
     <link rel="icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" type="image/png" />
     <link rel="apple-touch-icon" href="https://sleepercdn.com/avatars/thumbs/d67df8318914ca45733a411d66cbc8dd" />
-    <link rel="stylesheet" href="./styles.css?v=20260922-hide-empty-season-change" />
+    <link rel="stylesheet" href="./styles.css?v=20260928-compact-share-icon" />
   </head>
   <body data-page="h2h">
     <header class="topbar">
@@ -69,6 +69,7 @@
       </section>
 
       <section id="fiercest-rival" class="h2h-board h2h-rival-board" aria-live="polite">
+        <button class="share-capture-button h2h-share-button" type="button" data-share-capture data-share-target="#fiercest-rival" data-share-title="Waxball Fiercest Rival" hidden>Share</button>
         <p class="eyebrow h2h-compare-title">Who is your fiercest rival?</p>
         <div class="h2h-board-top h2h-rival-top">
           <label class="h2h-team-select">
@@ -81,6 +82,7 @@
       </section>
 
       <section id="compare" class="h2h-board" aria-live="polite">
+        <button class="share-capture-button h2h-share-button" type="button" data-share-capture data-share-target="#compare" data-share-title="Waxball Rivalry" hidden>Share</button>
         <p class="eyebrow h2h-compare-title">Compare managers</p>
         <div class="h2h-board-top">
           <label class="h2h-team-select">
@@ -128,6 +130,7 @@
     </footer>
 
     <script src="./assets/data/h2h-data.js"></script>
-    <script src="./h2h.js?v=20260922-hide-empty-season-change"></script>
+    <script src="./share-capture.js?v=20260928-icon"></script>
+    <script src="./h2h.js?v=20260928-conditional-share"></script>
   </body>
 </html>

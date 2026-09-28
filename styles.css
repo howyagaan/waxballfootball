@@ -4071,7 +4071,12 @@ select {
 .manager-profile-head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 1rem;
+}
+
+.manager-profile-head > div {
+  min-width: 0;
 }
 
 .manager-profile-head h2 {
@@ -4244,6 +4249,109 @@ select {
   cursor: pointer;
   font-size: 1.5rem;
   line-height: 1;
+}
+
+.share-capture-button {
+  display: inline-grid;
+  width: 1.75rem;
+  min-height: 1.75rem;
+  place-items: center;
+  border: 1px solid rgba(0, 206, 190, 0.55);
+  border-radius: 999px;
+  padding: 0;
+  background: rgba(0, 206, 190, 0.12);
+  color: var(--teal);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.share-capture-button[hidden] {
+  display: none !important;
+}
+
+.share-capture-button svg {
+  width: 0.82rem;
+  height: 0.82rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.share-capture-button:hover,
+.share-capture-button:focus-visible {
+  border-color: var(--teal);
+  background: rgba(0, 206, 190, 0.22);
+  outline: none;
+}
+
+.share-capture-button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.manager-rank-dialog > .share-capture-button {
+  position: absolute;
+  top: 0.85rem;
+  right: 3.25rem;
+}
+
+.manager-profile-share {
+  margin-left: auto;
+}
+
+.h2h-board {
+  position: relative;
+}
+
+.h2h-share-button {
+  position: absolute;
+  z-index: 2;
+  top: 1rem;
+  right: 1rem;
+}
+
+.share-capture-measure {
+  position: fixed;
+  z-index: -1;
+  left: -100000px;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.share-capture-toast {
+  position: fixed;
+  z-index: 120;
+  left: 50%;
+  bottom: 1.25rem;
+  opacity: 0;
+  border: 1px solid rgba(0, 206, 190, 0.55);
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  background: #101923;
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  font-weight: 900;
+  pointer-events: none;
+  transform: translate(-50%, 0.5rem);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.share-capture-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.share-capture-toast.is-error {
+  border-color: rgba(255, 93, 120, 0.72);
+  color: #ff5d78;
 }
 
 .manager-rank-list {
@@ -5730,6 +5838,41 @@ footer {
     min-height: 0;
     padding: 1.6rem 0 0.2rem;
     gap: 0.9rem;
+  }
+
+  .archive-hero {
+    padding-top: 1.2rem;
+    padding-bottom: 0.45rem;
+  }
+
+  .archive-hero .hero-main {
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .archive-hero .hero-main .eyebrow,
+  .archive-hero .hero-main h1,
+  .archive-hero .hero-main p:not(.eyebrow) {
+    margin: 0;
+  }
+
+  .archive-hero .hero-main p:not(.eyebrow) {
+    margin-top: 0.25rem;
+    line-height: 1.38;
+    white-space: normal;
+  }
+
+  .archive-hero .hero-actions {
+    margin-top: 0.55rem;
+  }
+
+  .managers-hero .hero-main h1 {
+    padding-bottom: 0.04em;
+  }
+
+  .managers-hero + .manager-bubble-board,
+  .wax-stats-hero + .wax-stats-filter {
+    margin-top: 0.55rem;
   }
 
   .hero-main {

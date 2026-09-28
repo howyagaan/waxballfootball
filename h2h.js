@@ -354,6 +354,11 @@ function highlightH2HGame(gameId) {
 }
 
 function renderComparison(a, b) {
+  const shareButton = document.querySelector('[data-share-target="#compare"]');
+  if (shareButton) {
+    shareButton.hidden = !a || !b;
+    shareButton.dataset.shareTitle = a && b ? `${a} vs ${b} - Waxball Rivalry` : "Waxball Rivalry";
+  }
   if (!a || !b) {
     renderEmptyComparison();
     return;
@@ -464,12 +469,18 @@ function refreshH2HStatRefs() {
 
 function renderRivalManager(manager) {
   if (!h2hEls.rivalStats || !h2hEls.rivalVerdict) return;
+  const shareButton = document.querySelector('[data-share-target="#fiercest-rival"]');
   if (!manager) {
     h2hEls.rivalStats.innerHTML = "";
     h2hEls.rivalVerdict.innerHTML = "";
+    if (shareButton) shareButton.hidden = true;
     return;
   }
   const { facts, fiercest, rankedRivals } = managerFacts(manager);
+  if (shareButton) {
+    shareButton.hidden = !fiercest;
+    shareButton.dataset.shareTitle = fiercest ? `${manager} and ${fiercest.opponent} - Fiercest Rival` : "Waxball Fiercest Rival";
+  }
   h2hEls.rivalStats.innerHTML = facts.map(managerFactCard).join("");
   h2hEls.rivalVerdict.innerHTML = fiercest ? fierceVerdictMarkup(manager, fiercest, rankedRivals) : "";
 }

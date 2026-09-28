@@ -442,6 +442,7 @@
             <p class="eyebrow">Manager database</p>
             <h2>${escapeHtml(profile.manager)}</h2>
           </div>
+          <button class="share-capture-button manager-profile-share" type="button" data-share-capture data-share-title="${escapeHtml(profile.manager)} - Manager Database">Share</button>
         </header>
         <p class="manager-rank-hint">Click Rank for full standings</p>
 
@@ -496,6 +497,7 @@
     popover.innerHTML = `
       <div class="manager-rank-dialog" role="dialog" aria-modal="true" aria-label="${escapeHtml(board.title)} standings">
         <button class="manager-rank-close" type="button" aria-label="Close stat standings">×</button>
+        <button class="share-capture-button" type="button" data-share-capture data-share-title="Waxball - ${escapeHtml(board.title)}">Share</button>
         <p class="eyebrow">League Rank</p>
         <h3>${escapeHtml(board.title)}</h3>
         ${board.note ? `<p class="manager-rank-note">${escapeHtml(board.note)}</p>` : ""}
