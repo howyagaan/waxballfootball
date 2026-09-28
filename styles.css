@@ -4447,6 +4447,32 @@ select {
     border-color 160ms ease,
     background 160ms ease,
     transform 160ms ease;
+  position: relative;
+  padding-right: 2.75rem;
+}
+
+.rank-line-share {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 1.4rem;
+  min-height: 1.4rem;
+}
+
+.rank-line-share svg {
+  width: 0.68rem;
+  height: 0.68rem;
+}
+
+.rank-line-title[data-share-only] {
+  display: none;
+  grid-column: 1 / -1;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .manager-rank-list li.is-active {

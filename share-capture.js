@@ -52,8 +52,16 @@
       ".manager-rank-hint",
       "[data-share-helper]",
     ].join(", ")).forEach((node) => node.remove());
-    clone.querySelectorAll("[data-share-only]").forEach((node) => {
-      node.style.display = "block";
+    const isIndividualShare = target.matches(".manager-stat-card, .manager-rank-list li");
+    if (isIndividualShare) {
+      clone.querySelectorAll("[data-share-only]").forEach((node) => {
+        node.style.display = "block";
+      });
+    }
+    [clone, ...clone.querySelectorAll("*")].forEach((node) => {
+      if (node.style.display === "grid" || node.style.display === "inline-grid") {
+        node.style.gridTemplateRows = "none";
+      }
     });
     clone.removeAttribute("id");
     clone.style.width = `${width}px`;
@@ -70,12 +78,24 @@
       const profileHead = clone.querySelector(".manager-profile-head");
       const profileTitle = clone.querySelector(".manager-profile-head > div");
       const managerName = clone.querySelector(".manager-profile-head h2");
+      const avatar = clone.querySelector(".manager-profile-avatar");
+      clone.querySelectorAll(".manager-profile-card, .manager-stat-strip, .manager-high-low, .manager-season-grid").forEach((node) => {
+        node.style.height = "auto";
+      });
       if (profileHead) profileHead.style.flexWrap = "nowrap";
       if (profileTitle) {
         profileTitle.style.width = "auto";
         profileTitle.style.flex = "1 1 auto";
       }
       if (managerName) managerName.style.whiteSpace = "nowrap";
+      if (avatar) {
+        const avatarSize = avatar.style.width || "3.6rem";
+        avatar.style.width = avatarSize;
+        avatar.style.height = avatarSize;
+        avatar.style.minWidth = avatarSize;
+        avatar.style.flex = "0 0 auto";
+        avatar.style.aspectRatio = "1 / 1";
+      }
     }
     return clone;
   }
@@ -90,7 +110,7 @@
     measuringHost.style.width = `${sourceWidth}px`;
     measuringHost.appendChild(clone);
     document.body.appendChild(measuringHost);
-    const sourceHeight = Math.max(180, Math.ceil(clone.scrollHeight), Math.ceil(clone.offsetHeight));
+    const sourceHeight = Math.max(1, Math.ceil(clone.scrollHeight), Math.ceil(clone.offsetHeight));
     measuringHost.remove();
 
     const width = sourceWidth;
@@ -123,6 +143,7 @@
   function targetFor(button) {
     const selector = button.dataset.shareTarget;
     if (selector) return document.querySelector(selector);
+    if (button.closest(".manager-rank-list li")) return button.closest(".manager-rank-list li");
     if (button.closest(".manager-stat-card")) return button.closest(".manager-stat-card");
     if (button.closest(".manager-profile-card")) return button.closest(".manager-database");
     return button.closest(".manager-rank-dialog, .manager-profile-card, .wax-stat-card, .recent-stat-card, .h2h-rival-verdict, .h2h-board, .h2h-rival-board");

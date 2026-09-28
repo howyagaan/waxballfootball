@@ -190,9 +190,11 @@
         <ol class="manager-rank-list">
           ${board.rows.map((row) => `
             <li class="${row.manager === activeManager ? "is-active" : ""}" style="${managerStyle(row.manager)}" data-manager-profile="${escapeHtml(row.manager)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(row.manager)} database">
+              <small class="rank-line-title" data-share-only>${escapeHtml(board.title)}</small>
               <span>#${row.rank}</span>
               <strong>${escapeHtml(row.manager)}</strong>
               <em>${escapeHtml(row.display)}</em>
+              <button class="share-capture-button rank-line-share" type="button" data-share-capture data-share-title="${escapeHtml(row.manager)} - ${escapeHtml(board.title)}">Share</button>
             </li>
           `).join("")}
         </ol>

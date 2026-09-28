@@ -1195,9 +1195,11 @@
         <ol class="manager-rank-list wax-stat-rank-list">
           ${rows.map((row) => `
             <li class="${selectedManager && row.managers.includes(selectedManager) ? "is-active" : ""}">
+              <small class="rank-line-title" data-share-only>${escapeHtml(title)}</small>
               <span>${row.rank}</span>
               <strong>${escapeHtml(row.label)}</strong>
               <em>${escapeHtml(row.detail)}</em>
+              <button class="share-capture-button rank-line-share" type="button" data-share-capture data-share-title="${escapeHtml(row.label)} - ${escapeHtml(title)}">Share</button>
             </li>
           `).join("")}
         </ol>

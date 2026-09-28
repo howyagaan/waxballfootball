@@ -446,6 +446,7 @@
           </div>
           <button class="share-capture-button manager-profile-share" type="button" data-share-capture data-share-title="${escapeHtml(profile.manager)} - Manager Database">Share</button>
         </header>
+        <p class="manager-rank-hint">Click Rank for full standings</p>
         <section class="manager-stat-strip" aria-label="${escapeHtml(manager)} all-time stats">
           ${statCard("All-time record", `${profile.wins}-${profile.losses}`, leaderboards, "record", manager)}
           ${statCard("Average score", pts(profile.average), leaderboards, "average", manager)}
@@ -515,9 +516,11 @@
               tabindex="0"
               aria-label="Open ${escapeHtml(row.manager)} database"
             >
+              <small class="rank-line-title" data-share-only>${escapeHtml(board.title)}</small>
               <span>#${row.rank}</span>
               <strong>${escapeHtml(row.manager)}</strong>
               <em>${escapeHtml(row.display)}</em>
+              <button class="share-capture-button rank-line-share" type="button" data-share-capture data-share-title="${escapeHtml(row.manager)} - ${escapeHtml(board.title)}">Share</button>
             </li>
           `).join("")}
         </ol>
