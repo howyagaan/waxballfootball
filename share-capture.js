@@ -73,24 +73,23 @@
     wrapper.appendChild(clone);
     const markup = new XMLSerializer().serializeToString(wrapper);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%">${markup}</foreignObject></svg>`;
-    const source = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
-
-    try {
-      const image = new Image();
-      image.decoding = "async";
+    const source = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    const image = new Image();
+    image.decoding = "async";
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("Screenshot image could not be loaded."));
       image.src = source;
-      await image.decode();
-      const scale = Math.min(2, 4096 / Math.max(width, height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(width * scale));
-      canvas.height = Math.max(1, Math.round(height * scale));
-      const context = canvas.getContext("2d");
-      context.scale(scale, scale);
-      context.drawImage(image, 0, 0, width, height);
-      return await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Screenshot creation failed.")), "image/png"));
-    } finally {
-      URL.revokeObjectURL(source);
-    }
+    });
+    const scale = Math.min(2, 4096 / Math.max(width, height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Screenshot canvas is unavailable.");
+    context.scale(scale, scale);
+    context.drawImage(image, 0, 0, width, height);
+    return await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Screenshot creation failed.")), "image/png"));
   }
 
   function targetFor(button) {
@@ -137,6 +136,7 @@
         notify("Screenshot downloaded");
       }
     } catch (error) {
+      console.error("Waxball screenshot error:", error);
       if (error?.name !== "AbortError") notify("Could not create screenshot", true);
     } finally {
       button.disabled = false;
