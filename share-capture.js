@@ -41,7 +41,20 @@
       const value = sourceSelects[index]?.value;
       [...select.options].forEach((option) => option.toggleAttribute("selected", option.value === value));
     });
-    clone.querySelectorAll(`${BUTTON_SELECTOR}, .manager-rank-close`).forEach((node) => node.remove());
+    clone.querySelectorAll([
+      "button:not(.manager-rank-button)",
+      "input",
+      "select",
+      "textarea",
+      ".h2h-picker",
+      ".h2h-see-history",
+      ".manager-rank-close",
+      ".manager-rank-hint",
+      "[data-share-helper]",
+    ].join(", ")).forEach((node) => node.remove());
+    clone.querySelectorAll("[data-share-only]").forEach((node) => {
+      node.style.display = "block";
+    });
     clone.removeAttribute("id");
     clone.style.width = `${width}px`;
     clone.style.maxWidth = "none";
@@ -51,25 +64,40 @@
     clone.style.margin = "0";
     clone.style.transform = "none";
     clone.style.boxSizing = "border-box";
+    clone.style.boxShadow = "none";
+    clone.style.backgroundColor = "#0d141d";
+    if (target.classList.contains("manager-database")) {
+      const profileHead = clone.querySelector(".manager-profile-head");
+      const profileTitle = clone.querySelector(".manager-profile-head > div");
+      const managerName = clone.querySelector(".manager-profile-head h2");
+      if (profileHead) profileHead.style.flexWrap = "nowrap";
+      if (profileTitle) {
+        profileTitle.style.width = "auto";
+        profileTitle.style.flex = "1 1 auto";
+      }
+      if (managerName) managerName.style.whiteSpace = "nowrap";
+    }
     return clone;
   }
 
   async function elementToPng(target) {
     await document.fonts?.ready;
     const rect = target.getBoundingClientRect();
-    const width = Math.max(320, Math.ceil(rect.width));
-    const clone = prepareClone(target, width);
+    const sourceWidth = Math.max(320, Math.ceil(rect.width));
+    const clone = prepareClone(target, sourceWidth);
     const measuringHost = document.createElement("div");
     measuringHost.className = "share-capture-measure";
-    measuringHost.style.width = `${width}px`;
+    measuringHost.style.width = `${sourceWidth}px`;
     measuringHost.appendChild(clone);
     document.body.appendChild(measuringHost);
-    const height = Math.max(180, Math.ceil(clone.scrollHeight));
+    const sourceHeight = Math.max(180, Math.ceil(clone.scrollHeight), Math.ceil(clone.offsetHeight));
     measuringHost.remove();
 
+    const width = sourceWidth;
+    const height = sourceHeight;
     const wrapper = document.createElement("div");
     wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-    wrapper.style.cssText = `width:${width}px;height:${height}px;background:#0d141d;color:#f5f8fb;overflow:hidden;`;
+    wrapper.style.cssText = `box-sizing:border-box;width:${width}px;height:${height}px;overflow:hidden;background:transparent;`;
     wrapper.appendChild(clone);
     const markup = new XMLSerializer().serializeToString(wrapper);
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%">${markup}</foreignObject></svg>`;
@@ -81,13 +109,13 @@
       image.onerror = () => reject(new Error("Screenshot image could not be loaded."));
       image.src = source;
     });
-    const scale = Math.min(2, 4096 / Math.max(width, height));
+    const renderScale = Math.min(Math.max(3, 2400 / width), 8192 / Math.max(width, height));
     const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(width * scale));
-    canvas.height = Math.max(1, Math.round(height * scale));
+    canvas.width = Math.max(1, Math.round(width * renderScale));
+    canvas.height = Math.max(1, Math.round(height * renderScale));
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Screenshot canvas is unavailable.");
-    context.scale(scale, scale);
+    context.scale(renderScale, renderScale);
     context.drawImage(image, 0, 0, width, height);
     return await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Screenshot creation failed.")), "image/png"));
   }
@@ -95,6 +123,8 @@
   function targetFor(button) {
     const selector = button.dataset.shareTarget;
     if (selector) return document.querySelector(selector);
+    if (button.closest(".manager-stat-card")) return button.closest(".manager-stat-card");
+    if (button.closest(".manager-profile-card")) return button.closest(".manager-database");
     return button.closest(".manager-rank-dialog, .manager-profile-card, .wax-stat-card, .recent-stat-card, .h2h-rival-verdict, .h2h-board, .h2h-rival-board");
   }
 
@@ -116,16 +146,17 @@
   async function share(button) {
     const target = targetFor(button);
     if (!target) return;
+    const title = button.dataset.shareTitle || target.getAttribute("aria-label") || document.title || "Waxball";
     const previousHtml = button.innerHTML;
     button.disabled = true;
     button.textContent = "CREATING...";
     try {
       const blob = await elementToPng(target);
-      const title = button.dataset.shareTitle || target.getAttribute("aria-label") || document.title || "Waxball";
       const filename = `${slug(title)}.png`;
       const file = new File([blob], filename, { type: "image/png" });
+      const pageUrl = /^https?:/i.test(window.location.href) ? window.location.href : undefined;
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ title, files: [file] });
+        await navigator.share({ title, text: "Open the interactive Waxball panel", files: [file], ...(pageUrl ? { url: pageUrl } : {}) });
       } else {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");

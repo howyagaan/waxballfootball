@@ -4155,6 +4155,31 @@ select {
   padding: 0.9rem;
 }
 
+.manager-stat-card {
+  position: relative;
+}
+
+.manager-stat-share {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+}
+
+.manager-stat-card > span:not(.manager-stat-owner) {
+  padding-right: 2rem;
+}
+
+.manager-stat-owner[data-share-only] {
+  display: none;
+  margin-bottom: 0.6rem;
+  padding-right: 0;
+  color: var(--manager-readable-color);
+  font-size: 0.82rem;
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .manager-stat-strip span,
 .manager-high-low span,
 .manager-season-card > span {
@@ -5617,8 +5642,26 @@ footer {
   }
 
   nav {
-    margin-inline: -0.2rem;
+    display: grid;
+    width: 100%;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, auto);
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.12rem;
+    margin-inline: 0;
     padding-bottom: 0.1rem;
+    white-space: nowrap;
+  }
+
+  body:is([data-page="wax-stats"], [data-page="managers"], [data-page="archive"], [data-page="archive-2024"]) .topbar nav > a,
+  body:is([data-page="wax-stats"], [data-page="managers"], [data-page="archive"], [data-page="archive-2024"]) .topbar nav > .nav-archives > summary {
+    padding: 0.38rem 0.2rem;
+    font-size: clamp(0.64rem, 2.75vw, 0.78rem);
+  }
+
+  .topbar nav .nav-divider {
+    display: none;
   }
 
   .nav-archives div {
@@ -5632,6 +5675,11 @@ footer {
   .topbar nav .nav-stats div {
     left: 0;
     right: auto;
+  }
+
+  .topbar nav .nav-archives:last-child div {
+    right: 0;
+    left: auto;
   }
 
   body.has-avatar-rail main,

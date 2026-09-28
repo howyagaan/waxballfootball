@@ -390,7 +390,9 @@
 
   function statCard(label, value, leaderboards, key, manager) {
     return `
-      <article>
+      <article class="manager-stat-card">
+        <span class="manager-stat-owner" data-share-only>${escapeHtml(manager)}</span>
+        <button class="share-capture-button manager-stat-share" type="button" data-share-capture data-share-title="${escapeHtml(manager)} - ${escapeHtml(label)}">Share</button>
         <span>${label}</span>
         <strong>${value}</strong>
         ${rankBadge(leaderboards, key, manager)}
@@ -444,8 +446,6 @@
           </div>
           <button class="share-capture-button manager-profile-share" type="button" data-share-capture data-share-title="${escapeHtml(profile.manager)} - Manager Database">Share</button>
         </header>
-        <p class="manager-rank-hint">Click Rank for full standings</p>
-
         <section class="manager-stat-strip" aria-label="${escapeHtml(manager)} all-time stats">
           ${statCard("All-time record", `${profile.wins}-${profile.losses}`, leaderboards, "record", manager)}
           ${statCard("Average score", pts(profile.average), leaderboards, "average", manager)}
@@ -457,13 +457,17 @@
         </section>
 
         <section class="manager-high-low" aria-label="${escapeHtml(manager)} best and worst games">
-          <article>
+          <article class="manager-stat-card">
+            <span class="manager-stat-owner" data-share-only>${escapeHtml(manager)}</span>
+            <button class="share-capture-button manager-stat-share" type="button" data-share-capture data-share-title="${escapeHtml(manager)} - Highest score">Share</button>
             <span>Highest score</span>
             <strong>${pts(profile.high?.points)}</strong>
             ${rankBadge(leaderboards, "high", manager)}
             <p>${escapeHtml(gameLine(profile.high))}</p>
           </article>
-          <article>
+          <article class="manager-stat-card">
+            <span class="manager-stat-owner" data-share-only>${escapeHtml(manager)}</span>
+            <button class="share-capture-button manager-stat-share" type="button" data-share-capture data-share-title="${escapeHtml(manager)} - Lowest score">Share</button>
             <span>Lowest score</span>
             <strong>${pts(profile.low?.points)}</strong>
             ${rankBadge(leaderboards, "low", manager)}
