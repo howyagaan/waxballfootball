@@ -573,7 +573,7 @@ function fierceVerdictMarkup(manager, rivalry, rankedRivals = []) {
     ${nextRivals.length ? `
       <div class="h2h-next-rivals" aria-label="Next fiercest rivals">
         ${nextRivals.map((nextRival, index) => `
-          <button type="button" data-h2h-rival-entry data-manager-a="${escapeHtml(manager)}" data-manager-b="${escapeHtml(nextRival.opponent)}">
+          <button type="button" data-share-content data-h2h-rival-entry data-manager-a="${escapeHtml(manager)}" data-manager-b="${escapeHtml(nextRival.opponent)}">
             <span>#${index + 2}</span>
             <strong>${escapeHtml(shortManagerName(nextRival.opponent))}</strong>
             <em>${rivalryScoreOutOf100(nextRival)}/100</em>

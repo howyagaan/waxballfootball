@@ -42,10 +42,11 @@
       [...select.options].forEach((option) => option.toggleAttribute("selected", option.value === value));
     });
     clone.querySelectorAll([
-      "button:not(.manager-rank-button)",
+      "button:not(.manager-rank-button):not([data-share-content])",
       "input",
       "select",
       "textarea",
+      ".h2h-board-top",
       ".h2h-picker",
       ".h2h-see-history",
       ".manager-rank-close",
