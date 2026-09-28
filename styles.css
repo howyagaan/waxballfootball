@@ -3084,12 +3084,24 @@ select {
 }
 
 .h2h-rival-verdict {
+  position: relative;
   border: 1px solid rgba(0, 206, 190, 0.38);
   border-radius: 20px;
   background:
     radial-gradient(circle at 15% 10%, rgba(0, 206, 190, 0.16), transparent 30%),
     rgba(0, 206, 190, 0.08);
   padding: clamp(1rem, 3vw, 1.25rem);
+}
+
+.fiercest-panel-share {
+  position: absolute;
+  z-index: 2;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.fiercest-panel-share + .h2h-rival-summary {
+  padding-right: 2rem;
 }
 
 .h2h-rival-verdict:empty {
@@ -3804,6 +3816,7 @@ select {
 }
 
 .wax-stat-card {
+  position: relative;
   display: flex;
   min-height: 13rem;
   flex-direction: column;
@@ -3814,6 +3827,21 @@ select {
   background:
     radial-gradient(circle at 12% 0%, rgba(0, 206, 190, 0.11), transparent 35%),
     rgba(7, 12, 18, 0.48);
+}
+
+.recent-stat-card {
+  position: relative;
+}
+
+.wax-stat-share {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+}
+
+.wax-stat-card > span,
+.recent-stat-card > span {
+  padding-right: 2.1rem;
 }
 
 .wax-stat-card[role="button"],
@@ -4313,8 +4341,21 @@ select {
 .h2h-share-button {
   position: absolute;
   z-index: 2;
+  width: auto;
   top: 1rem;
   right: 1rem;
+  padding-inline: 0.65rem;
+}
+
+.h2h-share-button:not([hidden]) ~ .h2h-board-top {
+  margin-top: 0.5rem;
+}
+
+.h2h-share-button:not([hidden]) + .h2h-compare-title {
+  display: flex;
+  min-height: 1.75rem;
+  align-items: center;
+  padding-right: 5.5rem;
 }
 
 .share-capture-measure {

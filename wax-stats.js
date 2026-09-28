@@ -622,6 +622,7 @@
     const detailItems = Array.isArray(details) ? details : [details];
     return `
       <article class="wax-stat-card ${tone}" role="button" tabindex="0" data-wax-stat-key="${escapeHtml(title)}" data-wax-stat-managers="${escapeHtml(statManagers.join("||"))}" aria-label="Open ${escapeHtml(title)} leaderboard">
+        <button class="share-capture-button wax-stat-share" type="button" data-share-capture data-share-title="Wax Stats - ${escapeHtml(title)}">Share</button>
         <span>${escapeHtml(title)}</span>
         <strong>${escapeHtml(value)}</strong>
         <div class="wax-stat-details">
@@ -634,6 +635,7 @@
   function recentAdjustmentCard(adjustment) {
     return `
       <article class="recent-stat-card ${adjustment.tone || ""}" role="button" tabindex="0" data-wax-stat-key="${escapeHtml(adjustment.title)}" data-wax-stat-managers="${escapeHtml((adjustment.managers || []).join("||"))}" aria-label="Open ${escapeHtml(adjustment.title)} leaderboard">
+        <button class="share-capture-button wax-stat-share" type="button" data-share-capture data-share-title="Wax Stats - ${escapeHtml(adjustment.title)}">Share</button>
         <span>${escapeHtml(adjustment.title)}</span>
         <strong>${escapeHtml(adjustment.value)}</strong>
         <p>${adjustment.detail}</p>
@@ -1236,6 +1238,7 @@
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeStatLeaderboard();
+    if (event.target.closest?.("[data-share-capture]")) return;
     const card = event.target.closest?.("[data-wax-stat-key]");
     if (card && (event.key === "Enter" || event.key === " ")) {
       event.preventDefault();

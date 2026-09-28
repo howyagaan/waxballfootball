@@ -550,6 +550,7 @@ function fierceVerdictMarkup(manager, rivalry, rankedRivals = []) {
   const facts = fierceVerdictFacts(manager, rivalry);
   const nextRivals = rankedRivals.slice(1, 3);
   return `
+    <button class="share-capture-button fiercest-panel-share" type="button" data-share-capture data-share-target="#h2h-rival-verdict" data-share-title="${escapeHtml(manager)} and ${escapeHtml(rivalry.opponent)} - Fiercest Rival">Share</button>
     <div class="h2h-rival-summary">
       <div class="h2h-rival-name-block">
         <span class="h2h-rival-heading">Fiercest rival</span>

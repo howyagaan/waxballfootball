@@ -12,7 +12,7 @@
 
   function enhanceShareButtons(root = document) {
     root.querySelectorAll?.(BUTTON_SELECTOR).forEach((button) => {
-      if (button.disabled || button.querySelector("svg")) return;
+      if (button.disabled || button.hasAttribute("data-share-text") || button.querySelector("svg")) return;
       button.innerHTML = SHARE_ICON;
       button.setAttribute("aria-label", "Share screenshot");
       button.setAttribute("title", "Share screenshot");
@@ -95,7 +95,7 @@
   function targetFor(button) {
     const selector = button.dataset.shareTarget;
     if (selector) return document.querySelector(selector);
-    return button.closest(".manager-rank-dialog, .manager-profile-card, .h2h-board, .h2h-rival-board");
+    return button.closest(".manager-rank-dialog, .manager-profile-card, .wax-stat-card, .recent-stat-card, .h2h-rival-verdict, .h2h-board, .h2h-rival-board");
   }
 
   function notify(message, isError = false) {
