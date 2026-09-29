@@ -9,6 +9,22 @@ const AUTO_REFRESH_MS = 60000;
 const REMOVED_LINKED_LEAGUES_STORAGE_KEY = "waxball-removed-linked-leagues";
 const WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
 const PAGE = document.body.dataset.page || "current";
+const RECORDED_STANDINGS_2026 = {
+  2: [
+    "Nic Hamilton",
+    "Christian Engelhardt",
+    "Erik Ohno Dagoberg",
+    "Jakob Cooper",
+    "Sam Labovitz",
+    "Miles Blue",
+    "Milo Manheim",
+    "Will Price",
+    "Travis Roy Rogers",
+    "Miles Elliot",
+    "Paul Legallet",
+    "Jacob Moskovitz",
+  ],
+};
 const EASTERN_TIME_ZONE = "America/New_York";
 const TIME_ZONE_LABELS = {
   "America/New_York": "ET",
@@ -348,6 +364,14 @@ const PRESENTATION_PREVIEW = QUERY_PARAMS.get("presentation") || document.body.d
 const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
 const ARTICLES_2026 = [
+  {
+    week: 3,
+    headline: "MOMMY AND DADDY ON TOP",
+    url: "./articles/2026/week-3.html",
+    thumbnail: "./assets/articles/2026/week-3/week3articlecover.png?v=1",
+    published: true,
+    publishedAt: "2026-09-29",
+  },
   {
     week: 2,
     headline: "STEEL HIS VIRGINITY!",
@@ -1410,10 +1434,17 @@ function renderStandings(rosters, users) {
 
 function standingMovement(roster, rosters, users) {
   const completedWeek = completedThroughCurrentSeasonWeek();
-  if (!isDisplayedMatchupFinal() || completedWeek <= 1 || !currentData?.matchupsByWeek?.[completedWeek - 1]) return "";
+  if (completedWeek <= 1 || !currentData?.matchupsByWeek?.[completedWeek - 1]) return "";
   const previousRosters = standingsThroughWeek(rosters, currentData.matchupsByWeek, completedWeek - 1);
-  const beforeRank = sortRosters(previousRosters, users).findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
-  const afterRank = sortRosters(rosters, users).findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
+  const completedRosters = standingsThroughWeek(rosters, currentData.matchupsByWeek, completedWeek);
+  const recordedPreviousOrder = Number(currentData?.league?.season) === 2026
+    ? RECORDED_STANDINGS_2026[completedWeek - 1]
+    : null;
+  const manager = ownerIdentityName(roster, users);
+  const beforeRank = recordedPreviousOrder
+    ? recordedPreviousOrder.indexOf(manager) + 1
+    : sortRosters(previousRosters, users).findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
+  const afterRank = sortRosters(completedRosters, users).findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
   if (!beforeRank || !afterRank || beforeRank === afterRank) return `<span class="standings-movement neutral">-</span>`;
   const movement = beforeRank - afterRank;
   const direction = movement > 0 ? "up" : "down";
@@ -4544,10 +4575,11 @@ function displayWeek(league, state = {}) {
 
 function completedThroughWeek(league, state = {}) {
   if (league?.status === "complete") return clampWeek(league.settings?.last_scored_leg || league.settings?.leg || 18);
+  const lastScoredWeek = Number(league?.settings?.last_scored_leg || 0);
   const previousWeek = Number(state?.previous_week || 0);
   const stateWeek = Number(state?.display_week || state?.week || 1);
   const leagueWeek = Number(league?.settings?.leg || stateWeek || 1);
-  return Math.max(0, Math.min(18, Math.max(previousWeek, Math.min(stateWeek, leagueWeek) - 1)));
+  return Math.max(0, Math.min(18, Math.max(lastScoredWeek, previousWeek, Math.min(stateWeek, leagueWeek) - 1)));
 }
 
 function finalGame(bracket) {

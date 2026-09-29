@@ -15,6 +15,12 @@
     { id: "2026-w2-m4", season: 2026, week: 2, stage: "Regular season", managers: ["Nic Hamilton", "Paul Legallet"], teams: ["Stat Fag", "helloimpaul"], scores: [117.5, 101.8] },
     { id: "2026-w2-m5", season: 2026, week: 2, stage: "Regular season", managers: ["Jakob Cooper", "Sam Labovitz"], teams: ["Papi Coop", "mistahbigdick"], scores: [89.34, 104.82] },
     { id: "2026-w2-m6", season: 2026, week: 2, stage: "Regular season", managers: ["Miles Elliot", "Will Price"], teams: ["Daddy Campbell", "poon messiah"], scores: [120.18, 110.78] },
+    { id: "2026-w3-m1", season: 2026, week: 3, stage: "Regular season", managers: ["Miles Elliot", "Nic Hamilton"], teams: ["Daddy Campbell", "Stat Fag"], scores: [169.18, 102.24] },
+    { id: "2026-w3-m2", season: 2026, week: 3, stage: "Regular season", managers: ["Jakob Cooper", "Christian Engelhardt"], teams: ["Papi Coop", "Steeler Virginity"], scores: [120.32, 114.46] },
+    { id: "2026-w3-m3", season: 2026, week: 3, stage: "Regular season", managers: ["Milo Manheim", "Paul Legallet"], teams: ["Nacua Matata", "helloimpaul"], scores: [111.74, 118.88] },
+    { id: "2026-w3-m4", season: 2026, week: 3, stage: "Regular season", managers: ["Miles Blue", "Jacob Moskovitz"], teams: ["blueballs", "poonfullofsugar"], scores: [115.98, 93.46] },
+    { id: "2026-w3-m5", season: 2026, week: 3, stage: "Regular season", managers: ["Erik Ohno Dagoberg", "Travis Roy Rogers"], teams: ["Pamela Mari Ohno Dagoberg", "darryluvr3000"], scores: [156.24, 102.14] },
+    { id: "2026-w3-m6", season: 2026, week: 3, stage: "Regular season", managers: ["Sam Labovitz", "Will Price"], teams: ["mistahbigdick", "poon messiah"], scores: [123.14, 102.28] },
   ];
   const MANAGER_COLORS = {
     "Christian Engelhardt": "255, 20, 147",
@@ -128,6 +134,54 @@
         topThreeCounts.set(row.manager, (topThreeCounts.get(row.manager) || 0) + 1);
       });
     });
+    const standingsPodiumCounts = new Map();
+    [...new Set(matchups.filter((game) => game.stage === "Regular season").map((game) => Number(game.season)))].forEach((season) => {
+      const seasonGames = matchups.filter((game) => Number(game.season) === season && game.stage === "Regular season");
+      const seasonManagers = [...new Set(seasonGames.flatMap((game) => game.managers || []))];
+      const totals = new Map(seasonManagers.map((manager) => [manager, { wins: 0, losses: 0, pf: 0 }]));
+      const maxWeek = Math.max(0, ...seasonGames.map((game) => Number(game.week) || 0));
+      for (let week = 1; week <= maxWeek; week += 1) {
+        seasonGames.filter((game) => Number(game.week) === week).forEach((game) => {
+          const [first, second] = game.managers;
+          const firstScore = Number(game.scores?.[0] || 0);
+          const secondScore = Number(game.scores?.[1] || 0);
+          totals.get(first).pf += firstScore;
+          totals.get(second).pf += secondScore;
+          if (firstScore > secondScore) {
+            totals.get(first).wins += 1;
+            totals.get(second).losses += 1;
+          } else if (secondScore > firstScore) {
+            totals.get(second).wins += 1;
+            totals.get(first).losses += 1;
+          }
+        });
+        [...seasonManagers].sort((a, b) => {
+          const first = totals.get(a);
+          const second = totals.get(b);
+          return second.wins - first.wins || first.losses - second.losses || second.pf - first.pf;
+        }).slice(0, 3).forEach((manager) => {
+          standingsPodiumCounts.set(manager, (standingsPodiumCounts.get(manager) || 0) + 1);
+        });
+      }
+    });
+    const blowoutRows = matchups.map((game) => {
+      const firstScore = Number(game.scores?.[0] || 0);
+      const secondScore = Number(game.scores?.[1] || 0);
+      const winnerIndex = firstScore >= secondScore ? 0 : 1;
+      return {
+        manager: game.managers[winnerIndex],
+        value: Math.abs(firstScore - secondScore),
+        display: `${fmt(Math.abs(firstScore - secondScore))}pts - ${game.season} W${game.week} vs ${game.managers[winnerIndex === 0 ? 1 : 0]}`,
+      };
+    });
+    const standingsThroughWeek = (throughWeek) => profiles.map((profile) => {
+      const managerRows = rows.filter((candidate) => candidate.manager === profile.manager && Number(candidate.game.season) === 2026 && Number(candidate.game.week) <= throughWeek);
+      const wins = managerRows.filter((row) => row.points > row.oppPoints).length;
+      const losses = managerRows.filter((row) => row.points < row.oppPoints).length;
+      const pf = managerRows.reduce((sum, row) => sum + row.points, 0);
+      const pa = managerRows.reduce((sum, row) => sum + row.oppPoints, 0);
+      return { manager: profile.manager, value: (wins * 1000000) + pf, display: managerRows.length ? `${wins}-${losses}, ${fmt(pf)}pts PF, ${fmt(pa)}pts PA` : "0-0" };
+    }).filter((row) => row.display !== "0-0");
     return {
       standings2026w1: { title: "Week 1 Standings", rows: rankRows(profiles.map((profile) => {
         const row = rows.find((candidate) => (
@@ -157,6 +211,7 @@
           display: managerRows.length ? `${wins}-${losses}, ${fmt(pf)}pts PF, ${fmt(pa)}pts PA` : "0-0",
         };
       }).filter((row) => row.display !== "0-0")) },
+      standings2026w3: { title: "Week 3 Standings", rows: rankRows(standingsThroughWeek(3)) },
       weekScore2026w2: { title: "Week 2 Scores", rows: rankRows(rows.filter((row) => Number(row.game.season) === 2026 && Number(row.game.week) === 2).map((row) => ({ manager: row.manager, value: row.points, display: pts(row.points) }))) },
       pa2026w2: { title: "2026 Points Against Through Week 2", rows: rankRows(profiles.map((profile) => {
         const value = rows.filter((row) => row.manager === profile.manager && Number(row.game.season) === 2026 && Number(row.game.week) <= 2).reduce((sum, row) => sum + row.oppPoints, 0);
@@ -168,6 +223,8 @@
       pa: { title: "All-Time Points Against", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pa, display: pts(profile.pa) }))) },
       pointDiff: { title: "All-Time Point Difference", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pf - profile.pa, display: `${profile.pf >= profile.pa ? "+" : "-"}${fmt(Math.abs(profile.pf - profile.pa))}` }))) },
       weeklyTopThree: { title: "Weekly Top-Three Finishes", rows: rankRows(managers.map((manager) => ({ manager, value: topThreeCounts.get(manager) || 0, display: `${topThreeCounts.get(manager) || 0} finishes` }))) },
+      standingsPodiums: { title: "Weeks Ended on the Podium", rows: rankRows(managers.map((manager) => ({ manager, value: standingsPodiumCounts.get(manager) || 0, display: `${standingsPodiumCounts.get(manager) || 0} weeks` }))) },
+      blowoutMargins: { title: "Largest Blowout Margins", rows: rankRows(blowoutRows) },
     };
   }
 
@@ -260,7 +317,12 @@
       }));
       document.querySelectorAll("[data-article-avatar-manager]").forEach((avatar) => {
         const src = avatars.get(avatar.dataset.articleAvatarManager);
-        if (src) avatar.innerHTML = `<img src="${escapeHtml(src)}" alt="" loading="lazy" />`;
+        if (!src) return;
+        const fallback = avatar.textContent;
+        avatar.innerHTML = `<img src="${escapeHtml(src)}" alt="" loading="lazy" />`;
+        avatar.querySelector("img")?.addEventListener("error", () => {
+          avatar.textContent = fallback;
+        }, { once: true });
       });
     } catch {
       // Initials remain visible when Sleeper is unavailable.

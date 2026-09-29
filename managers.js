@@ -11,6 +11,7 @@
     chrissy511: "Christian Engelhardt",
     darryluvr: "Travis Roy Rogers",
     darryluvr3000: "Travis Roy Rogers",
+    dicklesscameltoe: "Nic Hamilton",
     erikohno: "Erik Ohno Dagoberg",
     eviandon: "Milo Manheim",
     helloimpaul: "Paul Legallet",
@@ -156,7 +157,6 @@
   const teamName = (user = {}) => user.metadata?.team_name || user.display_name || user.username || "Unknown team";
 
   const isRegular = (game) => String(game.stage || "").toLowerCase() === "regular season";
-  const isEligibleScoreRecord = (row) => !(Number(row.game.season) === 2026 && Number(row.game.week) === 3);
   const managerRows = (manager) => matchups.flatMap((game) => {
     const index = game.managers.indexOf(manager);
     if (index === -1) return [];
@@ -243,14 +243,13 @@
 
   function buildProfile(manager) {
     const rows = managerRows(manager);
-    const scoreRecordRows = rows.filter(isEligibleScoreRecord);
     const seasons = [...new Set(rows.map((row) => row.game.season))].sort();
     const summaries = seasons.map((season) => seasonSummary(manager, season)).filter(Boolean);
     const wins = rows.filter((row) => row.result === "W").length;
     const total = rows.reduce((sum, row) => sum + row.points, 0);
     const against = rows.reduce((sum, row) => sum + row.opponentPoints, 0);
-    const high = scoreRecordRows.reduce((best, row) => !best || row.points > best.points ? row : best, null);
-    const low = scoreRecordRows.reduce((worst, row) => !worst || row.points < worst.points ? row : worst, null);
+    const high = rows.reduce((best, row) => !best || row.points > best.points ? row : best, null);
+    const low = rows.reduce((worst, row) => !worst || row.points < worst.points ? row : worst, null);
     const playoffRows = rows.filter((row) => !isRegular(row.game));
     const playoffWins = playoffRows.filter((row) => row.result === "W").length;
 

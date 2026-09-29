@@ -5422,6 +5422,97 @@ body[data-page="archive-2024"] .season-notes-grid p {
   font-weight: 900;
 }
 
+.article-player-swap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: clamp(0.65rem, 2vw, 1rem);
+  align-items: center;
+  border: 2px solid rgba(0, 206, 184, 0.42);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 93, 120, 0.1), rgba(0, 206, 184, 0.12)), rgba(18, 24, 32, 0.94);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.article-player-swap > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.article-player-swap span,
+.article-player-swap b {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 1000;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.article-player-swap strong {
+  color: var(--ink);
+  font-size: clamp(1rem, 3vw, 1.35rem);
+}
+
+.article-player-swap em {
+  color: var(--teal);
+  font-size: clamp(1.15rem, 3.4vw, 1.55rem);
+  font-weight: 1000;
+}
+
+.article-player-swap > b {
+  grid-column: 1 / -1;
+  justify-self: center;
+  border-radius: 999px;
+  background: rgba(255, 93, 120, 0.12);
+  color: #ff8ba0;
+  padding: 0.45rem 0.8rem;
+}
+
+.article-player-swap > b em {
+  color: inherit;
+  font-size: inherit;
+}
+
+.article-player-swap-arrow,
+.article-up-arrow {
+  color: var(--teal) !important;
+  font-size: 1.45rem !important;
+  font-weight: 1000;
+}
+
+.article-week3 .wax-article-copy,
+.article-week3 .article-matchup-panel,
+.article-week3 .article-standing-panel,
+.article-week3 .article-trend-snapshot,
+.article-week3 .article-player-swap {
+  margin-block: 0;
+}
+
+.article-week3 .wax-article-copy {
+  padding-block: clamp(0.8rem, 2.2vw, 1.25rem);
+}
+
+.article-week3 .wax-article-standalone-divider {
+  margin-block: clamp(1.15rem, 3vw, 1.8rem);
+}
+
+.article-week3 .article-matchup-panel:not(.is-preview):not([aria-label*="Week 4 preview"]) .article-matchup-teams strong,
+.article-week3 .article-trend-snapshot em,
+.article-week3 .article-standing-panel em {
+  font-style: italic;
+}
+
+@media (max-width: 620px) {
+  .article-player-swap {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .article-player-swap strong {
+    overflow-wrap: anywhere;
+  }
+}
+
 @media (max-width: 620px) {
   .article-trend-snapshot {
     grid-template-columns: 1fr;

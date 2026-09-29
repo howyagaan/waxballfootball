@@ -7,6 +7,7 @@ const H2H_OWNER_REAL_NAMES = {
   bigboybluey: "Miles Blue",
   erikohno: "Erik Ohno Dagoberg",
   eviandon: "Milo Manheim",
+  dicklesscameltoe: "Nic Hamilton",
   pigmanbigman: "Nic Hamilton",
   "10w5l": "Jacob Moskovitz",
   "daddy campbell": "Miles Elliot",

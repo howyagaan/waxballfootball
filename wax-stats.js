@@ -80,6 +80,7 @@
     chrissy511: "Christian Engelhardt",
     darryluvr: "Travis Roy Rogers",
     darryluvr3000: "Travis Roy Rogers",
+    dicklesscameltoe: "Nic Hamilton",
     erikohno: "Erik Ohno Dagoberg",
     eviandon: "Milo Manheim",
     helloimpaul: "Paul Legallet",
