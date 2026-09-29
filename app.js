@@ -1417,10 +1417,9 @@ function renderStandings(rosters, users) {
     .map((roster, index) => {
       const record = `${stat(roster, "wins")}-${stat(roster, "losses")}`;
       const selected = Number(selectedRosterId) === Number(roster.roster_id);
-      const movement = standingMovement(roster, rosters, users);
       return `
         <tr class="${selected ? "selected-row" : ""}">
-          <td class="rank">${index + 1}${movement}</td>
+          <td class="rank">${index + 1}</td>
           <td>${teamCell(roster, users)}</td>
           <td>${record}</td>
           <td>${points(roster, "fpts")}</td>
@@ -1430,25 +1429,6 @@ function renderStandings(rosters, users) {
     })
     .join("");
   els.standings.innerHTML = rows || `<tr><td colspan="5">No standings available.</td></tr>`;
-}
-
-function standingMovement(roster, rosters, users) {
-  const completedWeek = completedThroughCurrentSeasonWeek();
-  if (completedWeek <= 1 || !currentData?.matchupsByWeek?.[completedWeek - 1]) return "";
-  const previousRosters = standingsThroughWeek(rosters, currentData.matchupsByWeek, completedWeek - 1);
-  const completedRosters = standingsThroughWeek(rosters, currentData.matchupsByWeek, completedWeek);
-  const recordedPreviousOrder = Number(currentData?.league?.season) === 2026
-    ? RECORDED_STANDINGS_2026[completedWeek - 1]
-    : null;
-  const manager = ownerIdentityName(roster, users);
-  const beforeRank = recordedPreviousOrder
-    ? recordedPreviousOrder.indexOf(manager) + 1
-    : sortRosters(previousRosters, users).findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
-  const afterRank = sortRosters(completedRosters, users).findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
-  if (!beforeRank || !afterRank || beforeRank === afterRank) return `<span class="standings-movement neutral">-</span>`;
-  const movement = beforeRank - afterRank;
-  const direction = movement > 0 ? "up" : "down";
-  return `<span class="standings-movement ${direction}">${movement > 0 ? "+" : ""}${movement}</span>`;
 }
 
 function renderStandingsHeader(isDraftOrder) {
