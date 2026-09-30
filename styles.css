@@ -2199,6 +2199,26 @@ strong {
   font-weight: 1000;
 }
 
+.standings-movement {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.standings-movement.up {
+  color: #27e882;
+}
+
+.standings-movement.down {
+  color: #ff5f57;
+}
+
+.standings-movement.neutral {
+  color: var(--muted);
+}
+
 .team-cell {
   display: flex;
   align-items: center;

@@ -9,22 +9,6 @@ const AUTO_REFRESH_MS = 60000;
 const REMOVED_LINKED_LEAGUES_STORAGE_KEY = "waxball-removed-linked-leagues";
 const WEEKS = Array.from({ length: 18 }, (_, index) => index + 1);
 const PAGE = document.body.dataset.page || "current";
-const RECORDED_STANDINGS_2026 = {
-  2: [
-    "Nic Hamilton",
-    "Christian Engelhardt",
-    "Erik Ohno Dagoberg",
-    "Jakob Cooper",
-    "Sam Labovitz",
-    "Miles Blue",
-    "Milo Manheim",
-    "Will Price",
-    "Travis Roy Rogers",
-    "Miles Elliot",
-    "Paul Legallet",
-    "Jacob Moskovitz",
-  ],
-};
 const EASTERN_TIME_ZONE = "America/New_York";
 const TIME_ZONE_LABELS = {
   "America/New_York": "ET",
@@ -1417,9 +1401,10 @@ function renderStandings(rosters, users) {
     .map((roster, index) => {
       const record = `${stat(roster, "wins")}-${stat(roster, "losses")}`;
       const selected = Number(selectedRosterId) === Number(roster.roster_id);
+      const movement = standingMovement(roster, rosters, users);
       return `
         <tr class="${selected ? "selected-row" : ""}">
-          <td class="rank">${index + 1}</td>
+          <td class="rank">${index + 1}${movement}</td>
           <td>${teamCell(roster, users)}</td>
           <td>${record}</td>
           <td>${points(roster, "fpts")}</td>
@@ -1429,6 +1414,22 @@ function renderStandings(rosters, users) {
     })
     .join("");
   els.standings.innerHTML = rows || `<tr><td colspan="5">No standings available.</td></tr>`;
+}
+
+function standingMovement(roster, rosters, users) {
+  const completedWeek = completedThroughCurrentSeasonWeek();
+  if (completedWeek <= 1 || !currentData?.matchupsByWeek?.[completedWeek - 1]) return "";
+  const previousRosters = standingsThroughWeek(rosters, currentData.matchupsByWeek, completedWeek - 1);
+  const beforeRank = sortRosters(previousRosters, users)
+    .findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
+  const afterRank = sortRosters(rosters, users)
+    .findIndex((item) => Number(item.roster_id) === Number(roster.roster_id)) + 1;
+  if (!beforeRank || !afterRank || beforeRank === afterRank) {
+    return `<span class="standings-movement neutral">-</span>`;
+  }
+  const movement = beforeRank - afterRank;
+  const direction = movement > 0 ? "up" : "down";
+  return `<span class="standings-movement ${direction}">${movement > 0 ? "+" : ""}${movement}</span>`;
 }
 
 function renderStandingsHeader(isDraftOrder) {
