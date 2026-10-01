@@ -1641,7 +1641,13 @@ async function renderSelectedTeam() {
     ? `
       <article class="things-watch-panel">
         <div class="watch-panel-title">
-          <span class="metric-label">Players to Watch</span>
+          <div class="watch-panel-heading">
+            <span class="metric-label">Players to Watch</span>
+            <span class="watch-lineup-key" aria-label="Lineup status key">
+              <span class="watch-lineup-badge is-starting">S</span> Starting
+              <span class="watch-lineup-badge is-benched">B</span> Benched
+            </span>
+          </div>
           ${temporaryLeagueAddLink(roster.roster_id)}
         </div>
         ${temporaryLeagueEntryMarkup(roster.roster_id)}
@@ -4050,7 +4056,10 @@ function matchupScoreLine(matchup, roster, opponentRoster, users) {
 }
 
 function watchPlayers(context, hateWatch) {
-  const players = [...(context?.starters || []), ...(context?.bench || [])]
+  const players = [
+    ...(context?.starters || []).map((player) => ({ ...player, lineupStatus: "starting" })),
+    ...(context?.bench || []).map((player) => ({ ...player, lineupStatus: "benched" })),
+  ]
     .map((player) => ({ ...player, game: playerGameWindow(player) }))
     .filter((player) => player.game.isTarget)
     .sort((a, b) =>
@@ -4087,7 +4096,10 @@ function watchListRows(players, fallback) {
           && playerGameSortValue(player) - playerGameSortValue(players[index - 1]) > 30 * 60 * 1000;
         return `
         <li class="${startsNewGameWindow ? "watch-game-divider" : ""}">
-          ${playerNameHtml(player)}
+          <span class="watch-player-name">
+            ${playerNameHtml(player)}
+            <span class="watch-lineup-badge is-${escapeHtml(player.lineupStatus || "benched")}" aria-label="${player.lineupStatus === "starting" ? "Starting" : "Benched"}">${player.lineupStatus === "starting" ? "S" : "B"}</span>
+          </span>
           <span class="watch-player-meta">
             ${escapeHtml([player.position, player.team, player.game.label || player.note].filter(Boolean).join(" · "))}
             ${player.ownRelationshipNote ? `<span class="watch-overlap-note ${player.ownRelationshipConflict ? "watch-overlap-conflict" : "watch-overlap-own"}">${escapeHtml(player.ownRelationshipNote)}</span>` : ""}

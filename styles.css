@@ -1027,6 +1027,33 @@ body[data-theme="mnf"] .matchup-card {
   margin-bottom: 0.75rem;
 }
 
+.watch-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: nowrap;
+  gap: 0.45rem 0.7rem;
+}
+
+.watch-lineup-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 850;
+  margin-left: auto;
+  position: relative;
+  top: -1px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.watch-lineup-key .watch-lineup-badge + .watch-lineup-badge {
+  margin-left: 0.3rem;
+}
+
 .other-league-link {
   border: 0;
   background: transparent;
@@ -2708,6 +2735,34 @@ select {
 .player-list strong {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.watch-player-name {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.4rem;
+  color: var(--ink);
+  text-align: left;
+}
+
+.player-list .watch-lineup-badge,
+.watch-lineup-key .watch-lineup-badge {
+  display: inline;
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0;
+  color: #27e47b;
+  font-size: 0.68rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.player-list .watch-lineup-badge.is-benched,
+.watch-lineup-key .watch-lineup-badge.is-benched {
+  color: #ff5d78;
 }
 
 .player-list span {
