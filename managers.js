@@ -138,8 +138,13 @@
   const managerStyle = (manager) => {
     const color = managerColor(manager);
     const [r, g, b] = color.split(",").map((part) => Number(part.trim()));
-    const readable = ((r * 299 + g * 587 + b * 114) / 1000) < 70 ? "245, 248, 251" : color;
-    return `--manager-color-rgb: ${color}; --manager-color: rgb(${color}); --manager-readable-color: rgb(${readable});`;
+    const readable = manager === "Jakob Cooper"
+      ? "0, 0, 0"
+      : ((r * 299 + g * 587 + b * 114) / 1000) < 70 ? "245, 248, 251" : color;
+    const textShadow = manager === "Jakob Cooper"
+      ? "0 0 6px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 255, 255, 0.72)"
+      : "none";
+    return `--manager-color-rgb: ${color}; --manager-color: rgb(${color}); --manager-readable-color: rgb(${readable}); --manager-text-shadow: ${textShadow};`;
   };
   const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const initials = (name) => name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
@@ -290,9 +295,49 @@
     });
   }
 
+  function averageStandingPositions() {
+    const positions = new Map();
+    const regularGames = matchups.filter(isRegular);
+    const seasons = [...new Set(regularGames.map((game) => Number(game.season)))];
+
+    seasons.forEach((season) => {
+      const seasonGames = regularGames.filter((game) => Number(game.season) === season);
+      const seasonManagers = [...new Set(seasonGames.flatMap((game) => game.managers))];
+      const weeks = [...new Set(seasonGames.map((game) => Number(game.week)))].sort((a, b) => a - b);
+
+      weeks.forEach((week) => {
+        const standings = seasonManagers.map((manager) => {
+          const rows = seasonGames
+            .filter((game) => Number(game.week) <= week && game.managers.includes(manager))
+            .map((game) => {
+              const index = game.managers.indexOf(manager);
+              const points = Number(game.scores[index]);
+              const opponentPoints = Number(game.scores[index === 0 ? 1 : 0]);
+              return { points, won: points > opponentPoints };
+            });
+          return {
+            manager,
+            wins: rows.filter((row) => row.won).length,
+            pf: rows.reduce((sum, row) => sum + row.points, 0),
+          };
+        }).sort((a, b) => b.wins - a.wins || b.pf - a.pf || a.manager.localeCompare(b.manager));
+
+        standings.forEach((row, index) => {
+          const current = positions.get(row.manager) || { total: 0, weeks: 0 };
+          current.total += index + 1;
+          current.weeks += 1;
+          positions.set(row.manager, current);
+        });
+      });
+    });
+
+    return new Map([...positions].map(([manager, row]) => [manager, row.total / row.weeks]));
+  }
+
   function buildLeaderboards() {
     const profiles = managers.map(buildProfile).filter((profile) => profile.games);
     const ratio = (top, bottom) => bottom ? top / bottom : 0;
+    const averagePositions = averageStandingPositions();
     return {
       record: {
         title: "All-Time Record",
@@ -356,6 +401,15 @@
             display: `${profile.playoffRecord} (${games ? Math.round((wins / games) * 100) : 0}%)`,
           };
         })),
+      },
+      averagePosition: {
+        title: "Average Standings Position",
+        note: "Average table position after every completed regular-season week.",
+        rows: rankRows(profiles.map((profile) => ({
+          manager: profile.manager,
+          value: averagePositions.get(profile.manager) || Number.MAX_SAFE_INTEGER,
+          display: fmt(averagePositions.get(profile.manager)),
+        })), "asc"),
       },
       high: {
         title: "Highest Personal Score",
@@ -451,11 +505,12 @@
         <section class="manager-stat-strip" aria-label="${escapeHtml(manager)} all-time stats">
           ${statCard("All-time record", `${profile.wins}-${profile.losses}`, leaderboards, "record", manager)}
           ${statCard("Average score", pts(profile.average), leaderboards, "average", manager)}
+          ${statCard("Average points against", pts(profile.games ? profile.pa / profile.games : 0), leaderboards, "avgPa", manager)}
           ${statCard("Points for", pts(profile.pf), leaderboards, "pf", manager)}
           ${statCard("Points against", pts(profile.pa), leaderboards, "pa", manager)}
-          ${statCard("Average points against", pts(profile.games ? profile.pa / profile.games : 0), leaderboards, "avgPa", manager)}
           ${statCard("Point difference", `${profile.pf >= profile.pa ? "+" : "-"}${pts(Math.abs(profile.pf - profile.pa))}`, leaderboards, "pointDiff", manager)}
           ${statCard("Playoff record", profile.playoffRecord, leaderboards, "playoff", manager)}
+          ${statCard("Average standings position", fmt(leaderboards.averagePosition.rows.find((row) => row.manager === manager)?.value), leaderboards, "averagePosition", manager)}
         </section>
 
         <section class="manager-high-low" aria-label="${escapeHtml(manager)} best and worst games">

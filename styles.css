@@ -2883,6 +2883,31 @@ select {
   max-width: 47rem;
 }
 
+@media (min-width: 821px) {
+  .h2h-hero .hero-main {
+    gap: 0.35rem;
+  }
+
+  .h2h-hero .hero-main .eyebrow,
+  .h2h-hero .hero-main h1,
+  .h2h-hero .hero-main p:not(.eyebrow) {
+    margin: 0;
+  }
+
+  .h2h-hero .hero-main p:not(.eyebrow) {
+    margin-top: -0.35rem;
+  }
+
+  .managers-hero .hero-main h1 {
+    line-height: 0.92;
+    padding-bottom: 0;
+  }
+
+  .managers-hero .hero-main p:not(.eyebrow) {
+    margin-top: -1.75rem;
+  }
+}
+
 .h2h-board {
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -3891,6 +3916,18 @@ select {
   color: #ff5d78;
 }
 
+@media (min-width: 821px) {
+  .wax-stats-grid-extra {
+    align-items: start;
+  }
+
+  .wax-stat-card {
+    min-height: 0;
+    align-self: start;
+    justify-content: flex-start;
+  }
+}
+
 .wax-stat-details {
   display: grid;
   gap: 0.65rem;
@@ -4079,6 +4116,7 @@ select {
   border-radius: 50%;
   background: linear-gradient(145deg, rgba(var(--manager-color-rgb), 0.24), rgba(var(--manager-color-rgb), 0.09));
   color: var(--manager-readable-color);
+  text-shadow: var(--manager-text-shadow, none);
   font-size: 1.35rem;
   font-weight: 1000;
   letter-spacing: 0.04em;
@@ -4122,6 +4160,7 @@ select {
 .manager-rank-hint {
   margin: -0.2rem 0 0;
   color: var(--manager-readable-color);
+  text-shadow: var(--manager-text-shadow, none);
   font-size: 0.82rem;
   font-weight: 1000;
   letter-spacing: 0.1em;
@@ -4174,6 +4213,7 @@ select {
   margin-bottom: 0.6rem;
   padding-right: 0;
   color: var(--manager-readable-color);
+  text-shadow: var(--manager-text-shadow, none);
   font-size: 0.82rem;
   font-weight: 1000;
   letter-spacing: 0.08em;
@@ -4197,8 +4237,15 @@ select {
   display: block;
   margin-top: 0.35rem;
   color: var(--manager-readable-color);
+  text-shadow: var(--manager-text-shadow, none);
   font-size: clamp(1.45rem, 3vw, 2.25rem);
   line-height: 0.95;
+}
+
+@media (min-width: 821px) {
+  .manager-stat-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .manager-season-card > strong.is-gold {
@@ -4495,6 +4542,7 @@ select {
 .manager-rank-list span {
   grid-row: span 2;
   color: var(--manager-readable-color);
+  text-shadow: var(--manager-text-shadow, none);
   font-weight: 1000;
 }
 

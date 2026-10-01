@@ -566,7 +566,14 @@
   }
 
   function standingsCheckpointRows() {
-    const counts = new Map(managers.map((manager) => [manager, { manager, top: 0, bottom: 0 }]));
+    const counts = new Map(managers.map((manager) => [manager, {
+      manager,
+      top: 0,
+      bottom: 0,
+      positionTotal: 0,
+      checkpoints: 0,
+      averagePosition: 0,
+    }]));
     const regularRows = regularSeasonRows(sideRows());
     const seasons = [...new Set(regularRows.map((row) => Number(row.game.season)))];
     seasons.forEach((season) => {
@@ -585,9 +592,17 @@
         if (!standings.length) return;
         counts.get(standings[0].manager).top += 1;
         counts.get(standings.at(-1).manager).bottom += 1;
+        standings.forEach((row, index) => {
+          const count = counts.get(row.manager);
+          count.positionTotal += index + 1;
+          count.checkpoints += 1;
+        });
       });
     });
-    return [...counts.values()];
+    return [...counts.values()].map((row) => ({
+      ...row,
+      averagePosition: row.checkpoints ? row.positionTotal / row.checkpoints : 0,
+    }));
   }
 
   function personalExtremeRows(rows, getValue, mode = "max") {
@@ -919,6 +934,11 @@
     const topThreeFinishes = weeklyTopThreeRows();
     const bottomThreeFinishes = weeklyBottomThreeRows();
     const standingsCheckpoints = standingsCheckpointRows();
+    const bestAveragePosition = tiedRows(
+      standingsCheckpoints.filter((row) => row.checkpoints),
+      (row) => row.averagePosition,
+      "min",
+    );
     const weeksTopTable = tiedRows(standingsCheckpoints, (row) => row.top, "max");
     const weeksBottomTable = tiedRows(standingsCheckpoints, (row) => row.bottom, "max");
     const mostLoyal = tiedRows(loyaltyRows, (row) => row.kept, "max");
@@ -1097,6 +1117,13 @@
         managers: managerList(bottomThreeFinishes),
       },
       {
+        title: "Best average standings position",
+        value: `${fmt(bestAveragePosition[0]?.averagePosition)}`,
+        details: bestAveragePosition.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${fmt(row.averagePosition)} average position across ${row.checkpoints} completed weeks</span>`),
+        tone: "is-green",
+        managers: managerList(bestAveragePosition),
+      },
+      {
         title: "Weeks top of table",
         value: `${weeksTopTable[0]?.top || 0}`,
         details: weeksTopTable.map((row) => `<b>${escapeHtml(row.manager)}</b><span>${row.top} ${row.top === 1 ? "week" : "weeks"} in 1st</span>`),
@@ -1111,6 +1138,37 @@
         managers: managerList(weeksBottomTable),
       },
     ];
+
+    const statOrder = [
+      "Highest one-week score",
+      "Lowest one-week score",
+      "Best average score",
+      "Worst average score",
+      "Most weekly high scores",
+      "Most weekly low scores",
+      "Highest rostered-player PPR week",
+      "Lowest score in win",
+      "Highest score in loss",
+      "Highest combined score",
+      "Lowest combined score",
+      "Biggest blowout",
+      "Tightest game",
+      "Most PF in a regular season",
+      "Least PF in a regular season",
+      "Most brutal schedule",
+      "Easiest schedule",
+      "Best playoff performer",
+      "Best average standings position",
+      "Weeks top of table",
+      "Weeks bottom of table",
+      "Most weekly top-three finishes",
+      "Most weekly bottom-three finishes",
+      "Longest win streak",
+      "Longest losing streak",
+      "Most loyal manager",
+      "Least loyal manager",
+    ];
+    statItems.sort((a, b) => statOrder.indexOf(a.title) - statOrder.indexOf(b.title));
 
     const allWinStreaks = streaks(rows, "W", true);
     const allLossStreaks = streaks(rows, "L", true);
@@ -1141,6 +1199,7 @@
       ["Least loyal manager", rankedLeaderboard(loyaltyRows, (row) => row.kept, "min", (row) => `${row.manager} • ${row.season}`, (row) => `${row.kept} of ${row.drafted} draft picks kept`)],
       ["Most weekly top-three finishes", rankedLeaderboard(weeklyTopThreeRows(true), (row) => row.count, "max", (row) => row.manager, (row) => `${row.count} top-three ${row.count === 1 ? "finish" : "finishes"}`)],
       ["Most weekly bottom-three finishes", rankedLeaderboard(weeklyBottomThreeRows(true), (row) => row.count, "max", (row) => row.manager, (row) => `${row.count} bottom-three ${row.count === 1 ? "finish" : "finishes"}`)],
+      ["Best average standings position", rankedLeaderboard(standingsCheckpoints.filter((row) => row.checkpoints), (row) => row.averagePosition, "min", (row) => row.manager, (row) => `${fmt(row.averagePosition)} average position • ${row.checkpoints} completed weeks`)],
       ["Weeks top of table", rankedLeaderboard(standingsCheckpoints, (row) => row.top, "max", (row) => row.manager, (row) => `${row.top} ${row.top === 1 ? "week" : "weeks"} in 1st`)],
       ["Weeks bottom of table", rankedLeaderboard(standingsCheckpoints, (row) => row.bottom, "max", (row) => row.manager, (row) => `${row.bottom} ${row.bottom === 1 ? "week" : "weeks"} in last`)],
     ]);
