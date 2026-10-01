@@ -90,6 +90,20 @@
     waxobwaxkovitz: "Jacob Moskovitz",
     willyboyp: "Will Price",
   };
+  const MANAGER_COLORS = {
+    "Christian Engelhardt": "255, 20, 147",
+    "Erik Ohno Dagoberg": "176, 32, 64",
+    "Jacob Moskovitz": "34, 197, 94",
+    "Jakob Cooper": "192, 192, 192",
+    "Miles Blue": "86, 185, 255",
+    "Miles Elliot": "255, 184, 77",
+    "Milo Manheim": "255, 93, 120",
+    "Nic Hamilton": "0, 206, 184",
+    "Paul Legallet": "250, 204, 21",
+    "Sam Labovitz": "255, 138, 31",
+    "Travis Roy Rogers": "168, 85, 247",
+    "Will Price": "245, 248, 251",
+  };
   const ARCHIVE_PLAYER_PPR_ROWS = [
     {
       manager: "Sam Labovitz",
@@ -165,6 +179,17 @@
 
   const score = (value) => Number(value || 0);
   const fmt = (value) => score(value).toFixed(2);
+  const managerRowStyle = (rowManagers = []) => {
+    if (rowManagers.length !== 1) return "";
+    const manager = rowManagers[0];
+    const color = MANAGER_COLORS[manager];
+    if (!color) return "";
+    const readable = manager === "Jakob Cooper" ? "0, 0, 0" : color;
+    const textShadow = manager === "Jakob Cooper"
+      ? "0 0 6px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 255, 255, 0.72)"
+      : "none";
+    return `--manager-color-rgb: ${color}; --manager-color: rgb(${color}); --manager-readable-color: rgb(${readable}); --manager-text-shadow: ${textShadow};`;
+  };
   const ordinal = (n) => {
     const suffix = n % 10 === 1 && n % 100 !== 11 ? "st" : n % 10 === 2 && n % 100 !== 12 ? "nd" : n % 10 === 3 && n % 100 !== 13 ? "rd" : "th";
     return `${n}${suffix}`;
@@ -1254,7 +1279,7 @@
         <h3>${escapeHtml(title)}</h3>
         <ol class="manager-rank-list wax-stat-rank-list">
           ${rows.map((row) => `
-            <li class="${selectedManager && row.managers.includes(selectedManager) ? "is-active" : ""}">
+            <li class="${selectedManager && row.managers.includes(selectedManager) ? "is-active" : ""}" style="${managerRowStyle(row.managers)}">
               <small class="rank-line-title" data-share-only>${escapeHtml(title)}</small>
               <span>${row.rank}</span>
               <strong>${escapeHtml(row.label)}</strong>

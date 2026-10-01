@@ -3917,13 +3917,7 @@ select {
 }
 
 @media (min-width: 821px) {
-  .wax-stats-grid-extra {
-    align-items: start;
-  }
-
   .wax-stat-card {
-    min-height: 0;
-    align-self: start;
     justify-content: flex-start;
   }
 }
