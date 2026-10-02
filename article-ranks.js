@@ -26,7 +26,7 @@
     "Christian Engelhardt": "255, 20, 147",
     "Erik Ohno Dagoberg": "176, 32, 64",
     "Jacob Moskovitz": "34, 197, 94",
-    "Jakob Cooper": "192, 192, 192",
+    "Jakob Cooper": "142, 161, 255",
     "Miles Blue": "86, 185, 255",
     "Miles Elliot": "255, 184, 77",
     "Milo Manheim": "255, 93, 120",
@@ -64,7 +64,8 @@
     const color = MANAGER_COLORS[manager] || "0, 206, 184";
     const [r, g, b] = color.split(",").map((part) => Number(part.trim()));
     const readable = ((r * 299 + g * 587 + b * 114) / 1000) < 70 ? "245, 248, 251" : color;
-    return `--manager-color-rgb: ${color}; --manager-color: rgb(${color}); --manager-readable-color: rgb(${readable});`;
+    const textStroke = "0 transparent";
+    return `--manager-color-rgb: ${color}; --manager-color: rgb(${color}); --manager-readable-color: rgb(${readable}); --manager-text-stroke: ${textStroke};`;
   };
 
   function mergeMatchups(...groups) {

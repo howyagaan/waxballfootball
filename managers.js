@@ -121,7 +121,7 @@
     "Christian Engelhardt": "255, 20, 147",
     "Erik Ohno Dagoberg": "176, 32, 64",
     "Jacob Moskovitz": "34, 197, 94",
-    "Jakob Cooper": "192, 192, 192",
+    "Jakob Cooper": "142, 161, 255",
     "Miles Blue": "86, 185, 255",
     "Miles Elliot": "255, 184, 77",
     "Milo Manheim": "255, 93, 120",
@@ -138,13 +138,9 @@
   const managerStyle = (manager) => {
     const color = managerColor(manager);
     const [r, g, b] = color.split(",").map((part) => Number(part.trim()));
-    const readable = manager === "Jakob Cooper"
-      ? "0, 0, 0"
-      : ((r * 299 + g * 587 + b * 114) / 1000) < 70 ? "245, 248, 251" : color;
-    const textShadow = manager === "Jakob Cooper"
-      ? "0 0 6px rgba(255, 255, 255, 0.95), 0 0 14px rgba(255, 255, 255, 0.72)"
-      : "none";
-    return `--manager-color-rgb: ${color}; --manager-color: rgb(${color}); --manager-readable-color: rgb(${readable}); --manager-text-shadow: ${textShadow};`;
+    const readable = ((r * 299 + g * 587 + b * 114) / 1000) < 70 ? "245, 248, 251" : color;
+    const textStroke = "0 transparent";
+    return `--manager-color-rgb: ${color}; --manager-color: rgb(${color}); --manager-readable-color: rgb(${readable}); --manager-text-shadow: none; --manager-text-stroke: ${textStroke};`;
   };
   const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const initials = (name) => name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();

@@ -436,6 +436,20 @@ body[data-theme="midweek"] .hero {
   font-weight: 400;
 }
 
+.article-manager-name {
+  color: var(--article-manager-color);
+}
+
+.article-manager-name.is-jakob {
+  color: rgb(142, 161, 255);
+  -webkit-text-stroke: 0 transparent;
+  text-shadow: none;
+}
+
+.article-matchup-panel > a span {
+  white-space: nowrap;
+}
+
 .hero-main .hero-copy-loading {
   display: flex;
   align-items: center;
@@ -4182,6 +4196,8 @@ select {
   border-radius: 50%;
   background: linear-gradient(145deg, rgba(var(--manager-color-rgb), 0.24), rgba(var(--manager-color-rgb), 0.09));
   color: var(--manager-readable-color);
+  -webkit-text-stroke: var(--manager-text-stroke, 0 transparent);
+  paint-order: stroke fill;
   text-shadow: var(--manager-text-shadow, none);
   font-size: 1.35rem;
   font-weight: 1000;
@@ -4226,6 +4242,8 @@ select {
 .manager-rank-hint {
   margin: -0.2rem 0 0;
   color: var(--manager-readable-color);
+  -webkit-text-stroke: var(--manager-text-stroke, 0 transparent);
+  paint-order: stroke fill;
   text-shadow: var(--manager-text-shadow, none);
   font-size: 0.82rem;
   font-weight: 1000;
@@ -4279,6 +4297,8 @@ select {
   margin-bottom: 0.6rem;
   padding-right: 0;
   color: var(--manager-readable-color);
+  -webkit-text-stroke: var(--manager-text-stroke, 0 transparent);
+  paint-order: stroke fill;
   text-shadow: var(--manager-text-shadow, none);
   font-size: 0.82rem;
   font-weight: 1000;
@@ -4303,6 +4323,8 @@ select {
   display: block;
   margin-top: 0.35rem;
   color: var(--manager-readable-color);
+  -webkit-text-stroke: var(--manager-text-stroke, 0 transparent);
+  paint-order: stroke fill;
   text-shadow: var(--manager-text-shadow, none);
   font-size: clamp(1.45rem, 3vw, 2.25rem);
   line-height: 0.95;
@@ -4608,6 +4630,8 @@ select {
 .manager-rank-list span {
   grid-row: span 2;
   color: var(--manager-readable-color);
+  -webkit-text-stroke: var(--manager-text-stroke, 0 transparent);
+  paint-order: stroke fill;
   text-shadow: var(--manager-text-shadow, none);
   font-weight: 1000;
 }
