@@ -2033,7 +2033,17 @@ function setHeroCopy(copy) {
     if (/^(TNF|SNF|MNF) game:|^Next NFL game:/.test(line)) {
       lineElement.classList.add("hero-game-preview-line");
     }
-    lineElement.textContent = line;
+    const statusPattern = /\[\[(STARTED|BENCHED|UNROSTERED)\]\]/g;
+    let cursor = 0;
+    for (const match of line.matchAll(statusPattern)) {
+      lineElement.append(document.createTextNode(line.slice(cursor, match.index)));
+      const status = document.createElement("span");
+      status.className = `hero-lineup-status is-${match[1].toLowerCase()}`;
+      status.textContent = `(${match[1][0]}${match[1].slice(1).toLowerCase()})`;
+      lineElement.append(status);
+      cursor = match.index + match[0].length;
+    }
+    lineElement.append(document.createTextNode(line.slice(cursor)));
     els.heroCopy.appendChild(lineElement);
   });
   els.heroCopy.hidden = !text;
@@ -2171,7 +2181,7 @@ async function thursdayTopPprCopy() {
   const topPlayer = await topPprPlayersForWeek(currentWeek, new Set(nflTeamsForEvent(thursdayGame)), 1);
   if (!topPlayer.length) return "";
   const leader = topPlayer[0];
-  return `Thursday top PPR player: ${leader.player.name} (${leader.points.toFixed(2)}) for ${ownerIdentityName(leader.roster, currentData.users)}.`;
+  return topPprLeaderCopy("Thursday top PPR player", leader);
 }
 
 async function saturdayTopPprAndSnfCopy() {
@@ -2184,7 +2194,7 @@ async function saturdayTopPprAndSnfCopy() {
     if (topPlayer.length) {
       const leader = topPlayer[0];
       const day = easternParts(recapGame.date).weekday === 5 ? "Friday" : "Thursday";
-      topPlayerText = `${day} top PPR player: ${leader.player.name} (${leader.points.toFixed(2)}) for ${ownerIdentityName(leader.roster, currentData.users)}.`;
+      topPlayerText = topPprLeaderCopy(`${day} top PPR player`, leader);
     }
   }
   return [topPlayerText, snfText].filter(Boolean).join("\n");
@@ -2194,7 +2204,7 @@ async function sundayTopPprAndSnfCopy() {
   const topPlayer = await topPprPlayersForWeek(currentWeek, null, 1);
   const snfText = saturdayFootballCopy(nflData?.events || []);
   const topPlayerText = topPlayer.length
-    ? `Top Week ${currentWeek} Player So Far: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
+    ? topPprLeaderCopy(`Top Week ${currentWeek} Player So Far`, topPlayer[0])
     : "";
   return [topPlayerText, snfText].filter(Boolean).join("\n");
 }
@@ -2203,7 +2213,7 @@ async function mondayTopPprAndMnfCopy() {
   const topPlayer = await topPprPlayersForWeek(currentWeek, null, 1);
   const mnfText = mondayFootballCopy(nflData?.events || []);
   const topPlayerText = topPlayer.length
-    ? `Top Week ${currentWeek} Player So Far: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
+    ? topPprLeaderCopy(`Top Week ${currentWeek} Player So Far`, topPlayer[0])
     : "";
   return [topPlayerText, mnfText].filter(Boolean).join("\n");
 }
@@ -2226,7 +2236,7 @@ async function fridayTnfRecapCopy() {
   const score = finalGameScore(tnf);
   const scoreText = score ? ` ${score}.` : ".";
   const leaderText = topPlayer.length
-    ? ` Top PPR player: ${topPlayer[0].player.name} (${topPlayer[0].points.toFixed(2)}) for ${ownerIdentityName(topPlayer[0].roster, currentData.users)}.`
+    ? ` ${topPprLeaderCopy("Top PPR player", topPlayer[0])}`
     : " Top PPR player will appear once Sleeper scores the rostered TNF players.";
   return `TNF final: ${parsed.shortName}${scoreText}${leaderText}`;
 }
@@ -2253,18 +2263,38 @@ async function topPprPlayersForWeek(week, teamFilter = null, limit = 3) {
     if (latestMatchups.length) currentData.matchupsByWeek[week] = latestMatchups;
   }
   const matchups = currentData?.matchupsByWeek?.[week] || [];
-  return matchups.flatMap((matchup) => {
+  const rosteredPlayers = matchups.flatMap((matchup) => {
     const roster = currentData.rosters.find((item) => Number(item.roster_id) === Number(matchup.roster_id));
     if (!roster) return [];
     return Object.entries(matchup.players_points || {}).map(([playerId, points]) => {
       const player = playerSummary(playerId, players);
-      return player ? { roster, player, points: Number(points) || 0 } : null;
+      const started = (matchup.starters || []).map(String).includes(String(playerId));
+      return player ? { roster, player, points: Number(points) || 0, lineupStatus: started ? "started" : "benched" } : null;
     }).filter(Boolean);
-  })
+  });
+  const season = Number(currentData?.league?.season || currentDate().getFullYear());
+  const weeklyStats = await fetchOptionalJson(`/stats/nfl/regular/${season}/${week}`, {});
+  const fullLeaguePlayers = Object.entries(weeklyStats || {}).map(([playerId, stats]) => {
+    const player = playerSummary(playerId, players);
+    const points = Number(stats?.pts_ppr);
+    if (!player || !Number.isFinite(points)) return null;
+    const rostered = rosteredPlayers.find((item) => String(item.player.id) === String(playerId));
+    return rostered ? { ...rostered, points } : { roster: null, player, points, lineupStatus: "unrostered" };
+  }).filter(Boolean);
+  const candidates = fullLeaguePlayers.length ? fullLeaguePlayers : rosteredPlayers;
+  return candidates
     .filter((item) => item.points > 0)
     .filter((item) => !teamFilter || teamFilter.has(item.player.team))
     .sort((a, b) => b.points - a.points)
     .slice(0, limit);
+}
+
+function topPprLeaderCopy(label, leader) {
+  const player = `${leader.player.name} (${leader.points.toFixed(2)})`;
+  if (!leader.roster) return `${label}: ${player} [[UNROSTERED]].`;
+  const owner = ownerIdentityName(leader.roster, currentData.users);
+  const status = leader.lineupStatus === "started" ? "STARTED" : "BENCHED";
+  return `${label}: ${player} for ${owner} [[${status}]].`;
 }
 
 function finalGameScore(event) {
@@ -2965,9 +2995,9 @@ function targetMatchdayWeekdays(events) {
     2: [3, 4],
     3: [4],
     4: [4],
-    5: [0],
-    6: [0],
-    0: [0],
+    5: [0, 1],
+    6: [0, 1],
+    0: [0, 1],
     1: [1],
   };
   return windows[referenceDay] || [];
@@ -3976,7 +4006,7 @@ function groupedWatchPlayers(mine, theirs) {
   const tagged = [
     ...mine.map((player) => ({ side: "mine", player })),
     ...theirs.map((player) => ({ side: "theirs", player })),
-  ].sort((a, b) => playerGameSortValue(a.player) - playerGameSortValue(b.player));
+  ].sort((a, b) => watchPlayerSort(a.player, b.player));
   const groups = [];
   tagged.forEach((item) => {
     const kickoff = playerGameSortValue(item.player);
@@ -4062,16 +4092,23 @@ function watchPlayers(context, hateWatch) {
   ]
     .map((player) => ({ ...player, game: playerGameWindow(player) }))
     .filter((player) => player.game.isTarget)
-    .sort((a, b) =>
-      playerGameSortValue(a) - playerGameSortValue(b)
-      || watchPositionRank(a.position) - watchPositionRank(b.position)
-      || playerSurname(a.name).localeCompare(playerSurname(b.name), undefined, { sensitivity: "base" })
-      || a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-    );
+    .sort(watchPlayerSort);
   return players.map((player) => ({
     ...player,
     note: hateWatch ? `Hate-watch ${player.position || "player"} usage` : `${player.position || "Player"} usage watch`,
   }));
+}
+
+function watchPlayerSort(a, b) {
+  return playerGameSortValue(a) - playerGameSortValue(b)
+    || lineupStatusRank(a.lineupStatus) - lineupStatusRank(b.lineupStatus)
+    || watchPositionRank(a.position) - watchPositionRank(b.position)
+    || playerSurname(a.name).localeCompare(playerSurname(b.name), undefined, { sensitivity: "base" })
+    || a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+}
+
+function lineupStatusRank(status) {
+  return status === "starting" ? 0 : 1;
 }
 
 function watchPositionRank(position) {
@@ -4120,6 +4157,7 @@ function watchFallbackText(prefix) {
 
 function targetWindowFallbackLabel() {
   const targetWeekdays = targetMatchdayWeekdays(nflData?.events || []);
+  if (targetWeekdays.includes(0) && targetWeekdays.includes(1)) return "Sunday and Monday games";
   const labels = {
     0: "Sunday's games",
     1: "Monday night's game",

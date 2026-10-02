@@ -414,6 +414,23 @@ body[data-theme="midweek"] .hero {
   display: block;
 }
 
+.hero-lineup-status {
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.hero-lineup-status.is-started {
+  color: #27e47b;
+}
+
+.hero-lineup-status.is-benched {
+  color: #ffad42;
+}
+
+.hero-lineup-status.is-unrostered {
+  color: var(--muted);
+}
+
 .hero-game-preview-line {
   color: var(--muted);
   font-weight: 400;
