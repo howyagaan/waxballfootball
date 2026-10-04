@@ -2293,8 +2293,8 @@ function topPprLeaderCopy(label, leader) {
   const player = `${leader.player.name} (${leader.points.toFixed(2)})`;
   if (!leader.roster) return `${label}: ${player} [[UNROSTERED]].`;
   const owner = ownerIdentityName(leader.roster, currentData.users);
-  const status = leader.lineupStatus === "started" ? "STARTED" : "BENCHED";
-  return `${label}: ${player} for ${owner} [[${status}]].`;
+  const status = leader.lineupStatus === "benched" ? " [[BENCHED]]" : "";
+  return `${label}: ${player} for ${owner}${status}.`;
 }
 
 function finalGameScore(event) {
