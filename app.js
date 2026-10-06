@@ -349,6 +349,14 @@ const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
 const ARTICLES_2026 = [
   {
+    week: 4,
+    headline: "COMEBACK KID COMES BACK",
+    url: "./articles/2026/week-4.html",
+    thumbnail: "./assets/articles/2026/week-4/week4articlecover.png?v=1",
+    published: true,
+    publishedAt: "2026-10-06",
+  },
+  {
     week: 3,
     headline: "MOMMY AND DADDY ON TOP",
     url: "./articles/2026/week-3.html",

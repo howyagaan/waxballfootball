@@ -2,7 +2,7 @@
   const managerAliases = {
     "Christian Engelhardt": ["Christian Engelhardt", "Steeler Virginity", "Christian"],
     "Erik Ohno Dagoberg": ["Erik Ohno Dagoberg", "Pamela Mari Ohno Dagoberg", "Erik"],
-    "Jacob Moskovitz": ["Jacob Moskovitz", "poonfullofsugar", "Mosko"],
+    "Jacob Moskovitz": ["Jacob Moskovitz", "poonfullofsugar", "comeback kid", "Mosko"],
     "Jakob Cooper": ["Jakob Cooper", "Papi Coop", "Havi"],
     "Miles Blue": ["Miles Blue", "blueballs", "Miles B", "Blue"],
     "Miles Elliot": ["Miles Elliot", "Daddy Campbell", "Miles E", "Miles"],
