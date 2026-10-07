@@ -2374,6 +2374,13 @@ function currentPosition(roster, rosters, users = currentData?.users || []) {
   return rank ? `#${rank}` : "--";
 }
 
+function currentMatchupStanding(roster, rosters) {
+  if (!roster) return "--";
+  const position = currentPosition(roster, rosters);
+  const record = `${stat(roster, "wins")}-${stat(roster, "losses")}`;
+  return `${position} · ${record}`;
+}
+
 function teamNameByRosterId(rosterId) {
   const roster = currentData?.rosters?.find((item) => Number(item.roster_id) === Number(rosterId));
   return roster ? teamName(roster, currentData.users) : "team view";
@@ -4307,7 +4314,9 @@ function matchupWeekExtremeTags(groups) {
 
 function matchupTeam(matchup, rosters, users, leads, side = "", options = {}) {
   const roster = rosters.find((item) => item.roster_id === matchup.roster_id);
-  const scoreLabel = options.forceScores || shouldShowMatchupScores() ? scoreFor(matchup).toFixed(2) : currentPosition(roster, rosters);
+  const scoreLabel = options.forceScores || shouldShowMatchupScores()
+    ? scoreFor(matchup).toFixed(2)
+    : currentMatchupStanding(roster, rosters);
   const isSelected = Number(selectedRosterId) === Number(matchup.roster_id);
   const resultState = options.finalScores ? options.tied ? "result-tie" : leads ? "result-win" : "result-loss" : "";
   const selectedResult = isSelected && options.finalScores && !options.tied
