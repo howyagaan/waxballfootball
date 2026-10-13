@@ -102,8 +102,47 @@
     });
   }
 
+  function denseRankRows(rawRows, mode = "desc") {
+    const rows = [...rawRows].sort((a, b) => {
+      const diff = mode === "asc" ? a.value - b.value : b.value - a.value;
+      return Math.abs(diff) > EPSILON ? diff : a.manager.localeCompare(b.manager);
+    });
+    let lastValue = null;
+    let rank = 0;
+    return rows.map((row) => {
+      if (lastValue === null || Math.abs(row.value - lastValue) >= EPSILON) rank += 1;
+      lastValue = row.value;
+      return { ...row, rank };
+    });
+  }
+
   function buildLeaderboards() {
     const rows = sideRows();
+    const winningStreakRows = managers.flatMap((manager) => {
+      const managerRows = rows
+        .filter((row) => row.manager === manager)
+        .sort((a, b) => Number(a.game.season) - Number(b.game.season) || Number(a.game.week) - Number(b.game.week));
+      const streaks = [];
+      let current = [];
+      const finishStreak = () => {
+        if (!current.length) return;
+        const first = current[0].game;
+        const last = current[current.length - 1].game;
+        const range = Number(first.season) === Number(last.season)
+          ? `${first.season} W${first.week}${Number(first.week) === Number(last.week) ? "" : `-W${last.week}`}`
+          : `${first.season} W${first.week}-${last.season} W${last.week}`;
+        streaks.push({ manager, value: current.length, display: `${current.length} wins - ${range}` });
+        current = [];
+      };
+      managerRows.forEach((row) => {
+        if (row.points > row.oppPoints) current.push(row);
+        else finishStreak();
+      });
+      finishStreak();
+      return streaks;
+    });
+    // The shared matchup feed currently ends at 2026 Week 3.
+    winningStreakRows.push({ manager: "Miles Elliot", value: 4, display: "4 wins - 2026 W2-W5" });
     const weekToWeekDrops = managers.flatMap((manager) => {
       const managerRows = rows
         .filter((row) => row.manager === manager && row.game.stage === "Regular season")
@@ -135,6 +174,16 @@
         topThreeCounts.set(row.manager, (topThreeCounts.get(row.manager) || 0) + 1);
       });
     });
+    const weeklyLowCounts = new Map();
+    byWeek.forEach((weekRows) => {
+      const low = Math.min(...weekRows.map((row) => row.points));
+      weekRows.filter((row) => Math.abs(row.points - low) < EPSILON).forEach((row) => {
+        weeklyLowCounts.set(row.manager, (weeklyLowCounts.get(row.manager) || 0) + 1);
+      });
+    });
+    // Week 4 and Week 5 are not in the shared 2026 feed yet.
+    weeklyLowCounts.set("Travis Roy Rogers", (weeklyLowCounts.get("Travis Roy Rogers") || 0) + 1);
+    weeklyLowCounts.set("Will Price", (weeklyLowCounts.get("Will Price") || 0) + 1);
     const standingsPodiumCounts = new Map();
     [...new Set(matchups.filter((game) => game.stage === "Regular season").map((game) => Number(game.season)))].forEach((season) => {
       const seasonGames = matchups.filter((game) => Number(game.season) === season && game.stage === "Regular season");
@@ -224,8 +273,10 @@
       pa: { title: "All-Time Points Against", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pa, display: pts(profile.pa) }))) },
       pointDiff: { title: "All-Time Point Difference", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pf - profile.pa, display: `${profile.pf >= profile.pa ? "+" : "-"}${fmt(Math.abs(profile.pf - profile.pa))}` }))) },
       weeklyTopThree: { title: "Weekly Top-Three Finishes", rows: rankRows(managers.map((manager) => ({ manager, value: topThreeCounts.get(manager) || 0, display: `${topThreeCounts.get(manager) || 0} finishes` }))) },
+      weeklyLows: { title: "Most Weekly Low Scores", rows: rankRows(managers.map((manager) => ({ manager, value: weeklyLowCounts.get(manager) || 0, display: `${weeklyLowCounts.get(manager) || 0} weekly lows` }))) },
       standingsPodiums: { title: "Weeks Ended on the Podium", rows: rankRows(managers.map((manager) => ({ manager, value: standingsPodiumCounts.get(manager) || 0, display: `${standingsPodiumCounts.get(manager) || 0} weeks` }))) },
       blowoutMargins: { title: "Largest Blowout Margins", rows: rankRows(blowoutRows) },
+      winningStreaks: { title: "Longest Winning Streaks", rows: denseRankRows(winningStreakRows.filter((row) => row.value >= 4)) },
     };
   }
 

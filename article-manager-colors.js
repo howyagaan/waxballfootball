@@ -46,7 +46,7 @@
         }
         aliasPattern.lastIndex = 0;
         const parent = node.parentElement;
-        if (!parent || parent.closest("script, style, .article-manager-name, .article-matchup-panel")) {
+        if (!parent || parent.closest("script, style, .article-manager-name, .article-manager-neutral, .article-matchup-panel")) {
           return NodeFilter.FILTER_REJECT;
         }
         return NodeFilter.FILTER_ACCEPT;

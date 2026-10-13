@@ -547,6 +547,23 @@ body[data-theme="midweek"] .hero {
   text-align: right;
 }
 
+.article-week5-schedule div > span em {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72em;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.article-week5-schedule div > strong {
+  color: var(--teal);
+  font-size: clamp(0.62rem, 1.8vw, 0.78rem);
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .article-week4-scoreboard strong {
   color: var(--teal);
 }
@@ -5365,6 +5382,16 @@ body[data-page="archive-2024"] .season-notes-grid p {
   margin-top: 0;
 }
 
+/* Cover-to-intro blocks should meet without the card's generic row gap. */
+.wax-article-card > .wax-article-image + .wax-article-copy {
+  margin-top: calc(-1 * clamp(1rem, 3vw, 1.6rem));
+  padding-top: 0;
+}
+
+.wax-article-card > .wax-article-image + .wax-article-copy > :first-child {
+  margin-top: 0;
+}
+
 .wax-article-copy:last-child h2,
 .wax-article-copy:last-child h3,
 .wax-article-copy:last-child h4 {
@@ -5615,9 +5642,7 @@ body[data-page="archive-2024"] .season-notes-grid p {
   font-weight: 1000;
   letter-spacing: 0.08em;
   text-align: center;
-  text-decoration: underline;
-  text-decoration-thickness: 0.12em;
-  text-underline-offset: 0.18em;
+  text-decoration: none;
   text-transform: uppercase;
 }
 
