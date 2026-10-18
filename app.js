@@ -1,5 +1,4 @@
 const API_BASE = "https://api.sleeper.app/v1";
-const PROJECTIONS_API_BASE = "https://api.sleeper.com/projections/nfl";
 const PERMANENT_LINKED_LEAGUES = [
   { id: "nic-redzone-remix", waxManager: "Nic Hamilton", leagueId: "1400270350368923648", rosterId: 2, displayName: "Redzone Remix" },
 ];
@@ -885,7 +884,6 @@ async function loadAll() {
     const [current, archive, nfl] = await Promise.all([
       loadSeason(currentLeagueId, {
         includeTransactions: true,
-        includeProjections: true,
         matchupWeeks: PAGE === "current" || isHistoricalCurrentPreview() ? "available" : null,
       }),
       loadSeason(ARCHIVE_2025_LEAGUE_ID, {
@@ -943,13 +941,10 @@ async function loadSeason(leagueId, options = {}) {
   const matchupWeeks = options.matchupWeeks === "available"
     ? availableMatchupWeeks(week)
     : options.matchupWeeks || (options.includeDraft ? [week, 15, 16, 17] : [week]);
-  const [matchupsByWeek, projections] = await Promise.all([
-    loadMatchupsForWeeks(leagueId, matchupWeeks),
-    options.includeProjections ? loadSleeperProjections(league.season, week) : Promise.resolve({}),
-  ]);
+  const matchupsByWeek = await loadMatchupsForWeeks(leagueId, matchupWeeks);
   const history = buildHistory(league, rosters, users, winnersBracket, losersBracket);
 
-  return { league, rosters, users, state, week, winnersBracket, losersBracket, transactions, draftPicks, matchupsByWeek, projections, history };
+  return { league, rosters, users, state, week, winnersBracket, losersBracket, transactions, draftPicks, matchupsByWeek, history };
 }
 
 function applyDraftCompletePreview(data) {
@@ -1150,20 +1145,6 @@ async function loadMatchupsForWeeks(leagueId, weeks) {
     uniqueWeeks.map(async (week) => [week, await fetchOptionalJson(`/league/${leagueId}/matchups/${week}`, [])]),
   );
   return Object.fromEntries(entries);
-}
-
-async function loadSleeperProjections(season, week) {
-  const params = new URLSearchParams({ season_type: "regular" });
-  ["QB", "RB", "WR", "TE", "K", "DEF"].forEach((position) => params.append("position[]", position));
-  try {
-    const response = await fetch(`${PROJECTIONS_API_BASE}/${season}/${week}?${params}`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Sleeper projections returned ${response.status}`);
-    const projections = await response.json();
-    return Object.fromEntries(projections.map((projection) => [String(projection.player_id), projection]));
-  } catch (error) {
-    console.warn("Sleeper projections unavailable.", error);
-    return {};
-  }
 }
 
 async function loadTransactions(leagueId) {
@@ -1443,7 +1424,7 @@ function renderStandings(rosters, users) {
   const projection = standingsProjectionState(currentData?.week);
   const useProjection = showProjectedStandings && projection.active;
   const displayedRosters = useProjection
-    ? standingsThroughWeek(rosters, projectedMatchupsByWeek(), currentData?.week || currentWeek)
+    ? standingsThroughWeek(rosters, currentData?.matchupsByWeek || {}, currentData?.week || currentWeek)
     : rosters;
   const projectedResults = useProjection ? projectedResultsByRoster() : new Map();
   const regularRanks = new Map(sortRosters(rosters, users).map((roster, index) => [Number(roster.roster_id), index + 1]));
@@ -1476,28 +1457,10 @@ function projectedStandingMovement(roster, projectedRank, regularRanks) {
   return `<span class="standings-movement ${movement > 0 ? "up" : "down"}">${movement > 0 ? "+" : ""}${movement}</span>`;
 }
 
-function projectedMatchupsByWeek() {
-  const week = Number(currentData?.week || currentWeek);
-  const matchupsByWeek = currentData?.matchupsByWeek || {};
-  const liveWeek = (matchupsByWeek[week] || []).map((matchup) => ({
-    ...matchup,
-    points: projectedRosterScore(matchup),
-    custom_points: null,
-  }));
-  return { ...matchupsByWeek, [week]: liveWeek };
-}
-
-function projectedRosterScore(matchup) {
-  return (matchup?.starters || []).reduce((total, playerId) => {
-    const projection = currentData?.projections?.[String(playerId)];
-    return total + projectedFantasyPoints(projection, currentData?.league?.scoring_settings || {});
-  }, 0);
-}
-
 function projectedResultsByRoster() {
   const results = new Map();
   const week = Number(currentData?.week || currentWeek);
-  const grouped = groupBy(projectedMatchupsByWeek()[week] || [], (matchup) => matchup.matchup_id || matchup.roster_id);
+  const grouped = groupBy(currentData?.matchupsByWeek?.[week] || [], (matchup) => matchup.matchup_id || matchup.roster_id);
   for (const pair of grouped.values()) {
     const [first, second] = pair;
     if (!first || !second) continue;
@@ -1507,26 +1470,6 @@ function projectedResultsByRoster() {
     results.set(Number(second.roster_id), firstScore === secondScore ? "T" : secondScore > firstScore ? "W" : "L");
   }
   return results;
-}
-
-function projectedFantasyPoints(projection, scoring) {
-  const stats = projection?.stats || {};
-  let total = Object.entries(scoring).reduce((sum, [key, value]) => {
-    if (key.startsWith("pts_allow_") || key.startsWith("yds_allow_")) return sum;
-    return sum + Number(stats[key] || 0) * Number(value || 0);
-  }, 0);
-
-  const pointsAllowed = Number(stats.pts_allow);
-  if (Number.isFinite(pointsAllowed)) {
-    const bucket = pointsAllowed === 0 ? "pts_allow_0"
-      : pointsAllowed <= 6 ? "pts_allow_1_6"
-        : pointsAllowed <= 13 ? "pts_allow_7_13"
-          : pointsAllowed <= 20 ? "pts_allow_14_20"
-            : pointsAllowed <= 27 ? "pts_allow_21_27"
-              : pointsAllowed <= 34 ? "pts_allow_28_34" : "pts_allow_35p";
-    total += Number(scoring[bucket] || 0);
-  }
-  return total;
 }
 
 function standingsProjectionState(week) {
@@ -1543,10 +1486,7 @@ function standingsProjectionState(week) {
   const now = currentDate();
   if (now < opensAt) return { active: false, reason: `Available after TNF halftime · ${formatCountdownTarget(opensAt)}` };
   if (now >= closesAt) return { active: false, reason: "Week complete · final table shown" };
-  if (currentData && !Object.keys(currentData.projections || {}).length) {
-    return { active: false, reason: "Sleeper projections are temporarily unavailable" };
-  }
-  return { active: true, reason: "Based off current Sleeper projections" };
+  return { active: true, reason: "Based off live/current Sleeper totals (not projections)" };
 }
 
 function easternDateTime({ year, month, day, hour = 0, minute = 0 }) {
