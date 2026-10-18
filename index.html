@@ -161,6 +161,17 @@
         </div>
       </section>
 
+      <div id="standings-projection-control" class="standings-projection-control" hidden>
+        <label for="standings-projection-toggle">
+          <span>
+            <strong>If the week ended now</strong>
+            <small id="standings-projection-status">Available after TNF halftime</small>
+          </span>
+          <input id="standings-projection-toggle" type="checkbox" role="switch" />
+          <span class="standings-switch" aria-hidden="true"></span>
+        </label>
+      </div>
+
       <section class="mobile-table-card">
         <table class="fit-table">
           <thead id="standings-head">
@@ -229,6 +240,6 @@
     </footer>
 
     <script src="./assets/data/h2h-data.js"></script>
-    <script src="./app.js?v=20261007-matchup-records"></script>
+    <script src="./app.js?v=20261018-projected-results"></script>
   </body>
 </html>

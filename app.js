@@ -1,4 +1,5 @@
 const API_BASE = "https://api.sleeper.app/v1";
+const PROJECTIONS_API_BASE = "https://api.sleeper.com/projections/nfl";
 const PERMANENT_LINKED_LEAGUES = [
   { id: "nic-redzone-remix", waxManager: "Nic Hamilton", leagueId: "1400270350368923648", rosterId: 2, displayName: "Redzone Remix" },
 ];
@@ -682,6 +683,9 @@ const els = {
   standingsTitle: document.querySelector("#standings-title"),
   standingsEyebrow: document.querySelector("#standings-eyebrow"),
   standingsAction: document.querySelector("#standings-action"),
+  standingsProjectionControl: document.querySelector("#standings-projection-control"),
+  standingsProjectionToggle: document.querySelector("#standings-projection-toggle"),
+  standingsProjectionStatus: document.querySelector("#standings-projection-status"),
   standingsHead: document.querySelector("#standings-head"),
   standingsNote: document.querySelector("#standings-note"),
   refreshStamp: document.querySelector("#refresh-stamp"),
@@ -724,6 +728,7 @@ let temporaryLinkedLeagueDraft = null;
 let hiddenPermanentLeagueIds = loadRemovedLinkedLeagueIds();
 let pendingLeagueRemovalId = "";
 let expandedLeagueWatchIds = new Set();
+let showProjectedStandings = false;
 const permanentLinkedLeagueCache = new Map();
 
 init();
@@ -764,6 +769,10 @@ function init() {
       renderDraftScoutReport(els.draftScoutSelect.value);
     });
   }
+  els.standingsProjectionToggle?.addEventListener("change", () => {
+    showProjectedStandings = Boolean(els.standingsProjectionToggle.checked);
+    if (currentData) renderStandings(currentData.rosters, currentData.users);
+  });
   document.addEventListener("click", (event) => {
     const addLeague = event.target.closest("[data-other-league-start]");
     if (addLeague) {
@@ -876,6 +885,7 @@ async function loadAll() {
     const [current, archive, nfl] = await Promise.all([
       loadSeason(currentLeagueId, {
         includeTransactions: true,
+        includeProjections: true,
         matchupWeeks: PAGE === "current" || isHistoricalCurrentPreview() ? "available" : null,
       }),
       loadSeason(ARCHIVE_2025_LEAGUE_ID, {
@@ -933,10 +943,13 @@ async function loadSeason(leagueId, options = {}) {
   const matchupWeeks = options.matchupWeeks === "available"
     ? availableMatchupWeeks(week)
     : options.matchupWeeks || (options.includeDraft ? [week, 15, 16, 17] : [week]);
-  const matchupsByWeek = await loadMatchupsForWeeks(leagueId, matchupWeeks);
+  const [matchupsByWeek, projections] = await Promise.all([
+    loadMatchupsForWeeks(leagueId, matchupWeeks),
+    options.includeProjections ? loadSleeperProjections(league.season, week) : Promise.resolve({}),
+  ]);
   const history = buildHistory(league, rosters, users, winnersBracket, losersBracket);
 
-  return { league, rosters, users, state, week, winnersBracket, losersBracket, transactions, draftPicks, matchupsByWeek, history };
+  return { league, rosters, users, state, week, winnersBracket, losersBracket, transactions, draftPicks, matchupsByWeek, projections, history };
 }
 
 function applyDraftCompletePreview(data) {
@@ -1137,6 +1150,20 @@ async function loadMatchupsForWeeks(leagueId, weeks) {
     uniqueWeeks.map(async (week) => [week, await fetchOptionalJson(`/league/${leagueId}/matchups/${week}`, [])]),
   );
   return Object.fromEntries(entries);
+}
+
+async function loadSleeperProjections(season, week) {
+  const params = new URLSearchParams({ season_type: "regular" });
+  ["QB", "RB", "WR", "TE", "K", "DEF"].forEach((position) => params.append("position[]", position));
+  try {
+    const response = await fetch(`${PROJECTIONS_API_BASE}/${season}/${week}?${params}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Sleeper projections returned ${response.status}`);
+    const projections = await response.json();
+    return Object.fromEntries(projections.map((projection) => [String(projection.player_id), projection]));
+  } catch (error) {
+    console.warn("Sleeper projections unavailable.", error);
+    return {};
+  }
 }
 
 async function loadTransactions(leagueId) {
@@ -1413,15 +1440,25 @@ function renderStandings(rosters, users) {
     return;
   }
 
-  const rows = sortRosters(rosters, users)
+  const projection = standingsProjectionState(currentData?.week);
+  const useProjection = showProjectedStandings && projection.active;
+  const displayedRosters = useProjection
+    ? standingsThroughWeek(rosters, projectedMatchupsByWeek(), currentData?.week || currentWeek)
+    : rosters;
+  const projectedResults = useProjection ? projectedResultsByRoster() : new Map();
+  const regularRanks = new Map(sortRosters(rosters, users).map((roster, index) => [Number(roster.roster_id), index + 1]));
+  const rows = sortRosters(displayedRosters, users)
     .map((roster, index) => {
-      const record = `${stat(roster, "wins")}-${stat(roster, "losses")}`;
+      const ties = stat(roster, "ties");
+      const record = `${stat(roster, "wins")}-${stat(roster, "losses")}${ties ? `-${ties}` : ""}`;
       const selected = Number(selectedRosterId) === Number(roster.roster_id);
-      const movement = standingMovement(roster, rosters, users);
+      const movement = useProjection
+        ? projectedStandingMovement(roster, index + 1, regularRanks)
+        : standingMovement(roster, rosters, users);
       return `
-        <tr class="${selected ? "selected-row" : ""}">
+        <tr class="${selected ? "selected-row" : ""} ${useProjection ? "projected-row" : ""}">
           <td class="rank">${index + 1}${movement}</td>
-          <td>${teamCell(roster, users)}</td>
+          <td>${teamCell(roster, users, { projectedResult: projectedResults.get(Number(roster.roster_id)) })}</td>
           <td>${record}</td>
           <td>${points(roster, "fpts")}</td>
           <td>${points(roster, "fpts_against")}</td>
@@ -1430,6 +1467,103 @@ function renderStandings(rosters, users) {
     })
     .join("");
   els.standings.innerHTML = rows || `<tr><td colspan="5">No standings available.</td></tr>`;
+}
+
+function projectedStandingMovement(roster, projectedRank, regularRanks) {
+  const currentRank = regularRanks.get(Number(roster.roster_id));
+  if (!currentRank || currentRank === projectedRank) return `<span class="standings-movement neutral">-</span>`;
+  const movement = currentRank - projectedRank;
+  return `<span class="standings-movement ${movement > 0 ? "up" : "down"}">${movement > 0 ? "+" : ""}${movement}</span>`;
+}
+
+function projectedMatchupsByWeek() {
+  const week = Number(currentData?.week || currentWeek);
+  const matchupsByWeek = currentData?.matchupsByWeek || {};
+  const liveWeek = (matchupsByWeek[week] || []).map((matchup) => ({
+    ...matchup,
+    points: projectedRosterScore(matchup),
+    custom_points: null,
+  }));
+  return { ...matchupsByWeek, [week]: liveWeek };
+}
+
+function projectedRosterScore(matchup) {
+  return (matchup?.starters || []).reduce((total, playerId) => {
+    const projection = currentData?.projections?.[String(playerId)];
+    return total + projectedFantasyPoints(projection, currentData?.league?.scoring_settings || {});
+  }, 0);
+}
+
+function projectedResultsByRoster() {
+  const results = new Map();
+  const week = Number(currentData?.week || currentWeek);
+  const grouped = groupBy(projectedMatchupsByWeek()[week] || [], (matchup) => matchup.matchup_id || matchup.roster_id);
+  for (const pair of grouped.values()) {
+    const [first, second] = pair;
+    if (!first || !second) continue;
+    const firstScore = scoreFor(first);
+    const secondScore = scoreFor(second);
+    results.set(Number(first.roster_id), firstScore === secondScore ? "T" : firstScore > secondScore ? "W" : "L");
+    results.set(Number(second.roster_id), firstScore === secondScore ? "T" : secondScore > firstScore ? "W" : "L");
+  }
+  return results;
+}
+
+function projectedFantasyPoints(projection, scoring) {
+  const stats = projection?.stats || {};
+  let total = Object.entries(scoring).reduce((sum, [key, value]) => {
+    if (key.startsWith("pts_allow_") || key.startsWith("yds_allow_")) return sum;
+    return sum + Number(stats[key] || 0) * Number(value || 0);
+  }, 0);
+
+  const pointsAllowed = Number(stats.pts_allow);
+  if (Number.isFinite(pointsAllowed)) {
+    const bucket = pointsAllowed === 0 ? "pts_allow_0"
+      : pointsAllowed <= 6 ? "pts_allow_1_6"
+        : pointsAllowed <= 13 ? "pts_allow_7_13"
+          : pointsAllowed <= 20 ? "pts_allow_14_20"
+            : pointsAllowed <= 27 ? "pts_allow_21_27"
+              : pointsAllowed <= 34 ? "pts_allow_28_34" : "pts_allow_35p";
+    total += Number(scoring[bucket] || 0);
+  }
+  return total;
+}
+
+function standingsProjectionState(week) {
+  const games = SLEEPER_MATCHDAY_SCHEDULE[`2026-${Number(week)}`] || [];
+  const thursday = games
+    .map((game) => new Date(game[1]))
+    .filter((date) => easternParts(date).weekday === 4)
+    .sort((a, b) => a - b)[0];
+  if (!thursday) return { active: false, reason: "Available during the live scoring window" };
+
+  const opensAt = new Date(thursday.getTime() + 90 * 60 * 1000);
+  const thursdayParts = easternParts(thursday);
+  const closesAt = easternDateTime({ ...thursdayParts, day: thursdayParts.day + 5, hour: 3 });
+  const now = currentDate();
+  if (now < opensAt) return { active: false, reason: `Available after TNF halftime · ${formatCountdownTarget(opensAt)}` };
+  if (now >= closesAt) return { active: false, reason: "Week complete · final table shown" };
+  if (currentData && !Object.keys(currentData.projections || {}).length) {
+    return { active: false, reason: "Sleeper projections are temporarily unavailable" };
+  }
+  return { active: true, reason: "Based off current Sleeper projections" };
+}
+
+function easternDateTime({ year, month, day, hour = 0, minute = 0 }) {
+  const targetUtc = Date.UTC(year, month - 1, day, hour, minute);
+  const guess = new Date(targetUtc);
+  const actual = new Intl.DateTimeFormat("en-US", {
+    timeZone: EASTERN_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(guess);
+  const value = (type) => Number(actual.find((part) => part.type === type)?.value || 0);
+  const actualUtc = Date.UTC(value("year"), value("month") - 1, value("day"), value("hour"), value("minute"));
+  return new Date(targetUtc + (targetUtc - actualUtc));
 }
 
 function standingMovement(roster, rosters, users) {
@@ -1449,8 +1583,16 @@ function standingMovement(roster, rosters, users) {
 }
 
 function renderStandingsHeader(isDraftOrder) {
-  if (els.standingsEyebrow) els.standingsEyebrow.textContent = isDraftOrder ? "Draft room" : "Sleeper live";
-  if (els.standingsTitle) els.standingsTitle.textContent = isDraftOrder ? "Draft Order" : "League Table";
+  const projection = standingsProjectionState(currentData?.week);
+  if (!projection.active) showProjectedStandings = false;
+  if (els.standingsProjectionControl) els.standingsProjectionControl.hidden = isDraftOrder || PAGE !== "current";
+  if (els.standingsProjectionToggle) {
+    els.standingsProjectionToggle.disabled = !projection.active;
+    els.standingsProjectionToggle.checked = showProjectedStandings && projection.active;
+  }
+  if (els.standingsProjectionStatus) els.standingsProjectionStatus.textContent = projection.reason;
+  if (els.standingsEyebrow) els.standingsEyebrow.textContent = isDraftOrder ? "Draft room" : showProjectedStandings && projection.active ? "Live projection" : "Sleeper live";
+  if (els.standingsTitle) els.standingsTitle.textContent = isDraftOrder ? "Draft Order" : showProjectedStandings && projection.active ? "Projected League Table" : "League Table";
   if (els.standingsAction) els.standingsAction.textContent = isDraftOrder ? "Draft Order" : "League Table";
   const standingsTable = els.standings?.closest("table");
   standingsTable?.classList.toggle("draft-order-table", isDraftOrder);
@@ -4576,7 +4718,7 @@ function trueFirstName(name) {
   return String(name || "").trim().split(/\s+/)[0] || "";
 }
 
-function teamCell(roster, users) {
+function teamCell(roster, users, options = {}) {
   const tag = PAGE === "current" ? "button" : "div";
   const attrs = PAGE === "current"
     ? `type="button" data-roster-link="${escapeHtml(roster.roster_id)}" aria-label="Open ${escapeHtml(teamName(roster, users))} team page"`
@@ -4585,11 +4727,17 @@ function teamCell(roster, users) {
     <${tag} class="team-cell" ${attrs}>
       ${avatar(roster, users)}
       <div class="team-copy">
-        <strong>${escapeHtml(teamName(roster, users))}</strong>
+        <strong>${escapeHtml(teamName(roster, users))}${projectedResultBadge(options.projectedResult)}</strong>
         <span class="username">${escapeHtml(ownerIdentityName(roster, users))}</span>
       </div>
     </${tag}>
   `;
+}
+
+function projectedResultBadge(result) {
+  if (!result) return "";
+  const className = result === "W" ? "win" : result === "L" ? "loss" : "tie";
+  return `<b class="projected-result ${className}" aria-label="Projected ${result === "W" ? "win" : result === "L" ? "loss" : "tie"}">${result}</b>`;
 }
 
 function managerCell(roster, users, options = {}) {

@@ -2388,6 +2388,96 @@ strong {
   overflow: hidden;
 }
 
+.standings-projection-control {
+  margin: -0.15rem 0 0.85rem;
+}
+
+.standings-projection-control label {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: 3.8rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0f151d;
+  cursor: pointer;
+}
+
+.standings-projection-control label > span:first-child {
+  display: grid;
+  gap: 0.15rem;
+  margin-right: auto;
+}
+
+.standings-projection-control strong {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.standings-projection-control small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.standings-projection-control small:empty {
+  display: none;
+}
+
+.standings-projection-control input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.standings-switch {
+  position: relative;
+  flex: 0 0 2.8rem;
+  width: 2.8rem;
+  height: 1.55rem;
+  border: 1px solid #45505f;
+  border-radius: 999px;
+  background: #1b2430;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.standings-switch::after {
+  content: "";
+  position: absolute;
+  top: 0.18rem;
+  left: 0.2rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.standings-projection-control input:checked + .standings-switch {
+  border-color: var(--teal);
+  background: rgba(0, 206, 184, 0.24);
+}
+
+.standings-projection-control input:checked + .standings-switch::after {
+  transform: translateX(1.28rem);
+  background: var(--teal);
+}
+
+.standings-projection-control input:focus-visible + .standings-switch {
+  outline: 3px solid rgba(0, 206, 184, 0.3);
+  outline-offset: 2px;
+}
+
+.standings-projection-control label:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.projected-row .rank {
+  color: var(--teal);
+}
+
 .fit-table {
   width: 100%;
   border-collapse: collapse;
@@ -2527,6 +2617,27 @@ button.team-cell:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.projected-result {
+  display: inline-block;
+  margin-left: 0.38rem;
+  font-size: 0.72em;
+  font-weight: 1000;
+  line-height: 1;
+  vertical-align: 0.08em;
+}
+
+.projected-result.win {
+  color: #27e882;
+}
+
+.projected-result.loss {
+  color: #ff5f57;
+}
+
+.projected-result.tie {
+  color: var(--muted);
 }
 
 .team-copy span {
