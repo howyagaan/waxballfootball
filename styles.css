@@ -2619,8 +2619,24 @@ button.team-cell:focus-visible {
   white-space: nowrap;
 }
 
+.team-copy strong {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  overflow: visible;
+}
+
+.team-copy strong .team-name-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .projected-result {
   display: inline-block;
+  flex: 0 0 auto;
   margin-left: 0.38rem;
   font-size: 0.72em;
   font-weight: 1000;

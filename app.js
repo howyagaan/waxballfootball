@@ -4667,7 +4667,7 @@ function teamCell(roster, users, options = {}) {
     <${tag} class="team-cell" ${attrs}>
       ${avatar(roster, users)}
       <div class="team-copy">
-        <strong>${escapeHtml(teamName(roster, users))}${projectedResultBadge(options.projectedResult)}</strong>
+        <strong><span class="team-name-text">${escapeHtml(teamName(roster, users))}</span>${projectedResultBadge(options.projectedResult)}</strong>
         <span class="username">${escapeHtml(ownerIdentityName(roster, users))}</span>
       </div>
     </${tag}>
