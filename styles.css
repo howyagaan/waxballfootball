@@ -2839,6 +2839,10 @@ select {
     gap: 0.45rem 0.65rem;
   }
 
+  .matchup-team.away .team-copy strong {
+    justify-content: flex-end;
+  }
+
   .matchup-history-record,
   .matchup-history-score {
     display: contents;
