@@ -47,3 +47,9 @@ The current league is in `pre_draft` state, so matchups will appear after the
 draft and Sleeper schedule generation.
 
 No API token is required.
+
+## Article style
+
+On the first prose mention of each manager in an article, follow the manager's
+name with their current team name in parentheses. Later mentions may use the
+manager's name alone.

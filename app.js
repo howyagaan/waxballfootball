@@ -349,6 +349,14 @@ const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
 const ARTICLES_2026 = [
   {
+    week: 6,
+    headline: "COMEBACK KID KEEPS ON CUMMING",
+    url: "./articles/2026/week-6.html",
+    thumbnail: "./assets/articles/2026/week-6/week6articlecover.png?v=1",
+    published: true,
+    publishedAt: "2026-10-20",
+  },
+  {
     week: 5,
     headline: "MILES HIGH CLUB",
     url: "./articles/2026/week-5.html",
@@ -1525,7 +1533,9 @@ function standingMovement(roster, rosters, users) {
 function renderStandingsHeader(isDraftOrder) {
   const projection = standingsProjectionState(currentData?.week);
   if (!projection.active) showProjectedStandings = false;
-  if (els.standingsProjectionControl) els.standingsProjectionControl.hidden = isDraftOrder || PAGE !== "current";
+  if (els.standingsProjectionControl) {
+    els.standingsProjectionControl.hidden = isDraftOrder || PAGE !== "current" || !projection.active;
+  }
   if (els.standingsProjectionToggle) {
     els.standingsProjectionToggle.disabled = !projection.active;
     els.standingsProjectionToggle.checked = showProjectedStandings && projection.active;

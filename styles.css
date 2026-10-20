@@ -438,6 +438,24 @@ body[data-theme="midweek"] .hero {
 
 .article-manager-name {
   color: var(--article-manager-color);
+  font-weight: 700;
+}
+
+.article-rank-link {
+  font-weight: 700;
+}
+
+.article-rivalry-inline {
+  color: inherit;
+  font-weight: 700;
+}
+
+.article-split-jackob {
+  background: linear-gradient(90deg, rgb(34, 197, 94) 0 50%, rgb(142, 161, 255) 50% 100%);
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  -webkit-background-clip: text;
 }
 
 .article-manager-name.is-jakob {
@@ -5517,6 +5535,11 @@ body[data-page="archive-2024"] .season-notes-grid p {
 
 .wax-article-card > .wax-article-image + .wax-article-copy > :first-child {
   margin-top: 0;
+}
+
+.wax-article-card > .article-week6-cover + .wax-article-copy {
+  margin-top: 0;
+  padding-top: clamp(0.45rem, 1.5vw, 0.8rem);
 }
 
 .wax-article-copy:last-child h2,

@@ -142,7 +142,7 @@
       return streaks;
     });
     // The shared matchup feed currently ends at 2026 Week 3.
-    winningStreakRows.push({ manager: "Miles Elliot", value: 4, display: "4 wins - 2026 W2-W5" });
+    winningStreakRows.push({ manager: "Miles Elliot", value: 5, display: "5 wins - 2026 W2-W6" });
     const weekToWeekDrops = managers.flatMap((manager) => {
       const managerRows = rows
         .filter((row) => row.manager === manager && row.game.stage === "Regular season")
@@ -174,6 +174,41 @@
         topThreeCounts.set(row.manager, (topThreeCounts.get(row.manager) || 0) + 1);
       });
     });
+    const currentWeekSixRows = [
+      ["Miles Elliot", 119.16], ["Christian Engelhardt", 112.50], ["Sam Labovitz", 114.90],
+      ["Miles Blue", 109.30], ["Erik Ohno Dagoberg", 95.92], ["Nic Hamilton", 128.94],
+      ["Jakob Cooper", 108.30], ["Travis Roy Rogers", 130.64], ["Jacob Moskovitz", 111.68],
+      ["Milo Manheim", 75.38], ["Will Price", 118.58], ["Paul Legallet", 92.22],
+    ].map(([manager, value]) => ({ manager, value, display: `${fmt(value)}pts - 2026 W6` }));
+    const careerLowRows = managers.map((manager) => {
+      const managerScores = rows.filter((row) => row.manager === manager).map((row) => row.points);
+      currentWeekSixRows.filter((row) => row.manager === manager).forEach((row) => managerScores.push(row.value));
+      const value = Math.min(...managerScores);
+      const weekSix = currentWeekSixRows.find((row) => row.manager === manager && Math.abs(row.value - value) < EPSILON);
+      return { manager, value, display: weekSix ? weekSix.display : `${fmt(value)}pts` };
+    });
+    const weeklyHighScoreRows = [...byWeek.entries()].map(([key, weekRows]) => {
+      const highest = [...weekRows].sort((a, b) => b.points - a.points)[0];
+      const [season, week] = key.split("-");
+      return { manager: highest.manager, value: highest.points, display: `${fmt(highest.points)}pts - ${season} W${week}` };
+    });
+    weeklyHighScoreRows.push({ manager: "Travis Roy Rogers", value: 154.28, display: "154.28pts - 2026 W4" });
+    weeklyHighScoreRows.push({ manager: "Travis Roy Rogers", value: 149.34, display: "149.34pts - 2026 W5" });
+    weeklyHighScoreRows.push({ manager: "Travis Roy Rogers", value: 130.64, display: "130.64pts - 2026 W6" });
+    const regularSeasonWeeks = rows.filter((row) => row.game.stage === "Regular season").reduce((map, row) => {
+      const key = `${row.game.season}-${row.game.week}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(row.points);
+      return map;
+    }, new Map());
+    const weeklyAverageRows = [...regularSeasonWeeks.entries()].map(([key, scores]) => {
+      const [season, week] = key.split("-");
+      const value = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+      return { manager: "", label: `${season} Week ${week}`, value, display: `${fmt(value)}pts` };
+    });
+    weeklyAverageRows.push({ manager: "", label: "2026 Week 4", value: 119.135, display: "119.14pts" });
+    weeklyAverageRows.push({ manager: "", label: "2026 Week 5", value: 124.96, display: "124.96pts" });
+    weeklyAverageRows.push({ manager: "", label: "2026 Week 6", value: 109.7933333333, display: "109.79pts" });
     const weeklyLowCounts = new Map();
     byWeek.forEach((weekRows) => {
       const low = Math.min(...weekRows.map((row) => row.points));
@@ -277,6 +312,9 @@
       standingsPodiums: { title: "Weeks Ended on the Podium", rows: rankRows(managers.map((manager) => ({ manager, value: standingsPodiumCounts.get(manager) || 0, display: `${standingsPodiumCounts.get(manager) || 0} weeks` }))) },
       blowoutMargins: { title: "Largest Blowout Margins", rows: rankRows(blowoutRows) },
       winningStreaks: { title: "Longest Winning Streaks", rows: denseRankRows(winningStreakRows.filter((row) => row.value >= 4)) },
+      careerLows: { title: "Career Low Scores", rows: rankRows(careerLowRows, "asc") },
+      weeklyHighScores: { title: "Lowest Weekly High Scores", rows: rankRows(weeklyHighScoreRows, "asc") },
+      weeklyAverages: { title: "Lowest Weekly League Averages", rows: rankRows(weeklyAverageRows, "asc") },
     };
   }
 
@@ -297,15 +335,17 @@
         <p class="eyebrow">League Rank</p>
         <h3>${escapeHtml(board.title)}</h3>
         <ol class="manager-rank-list">
-          ${board.rows.map((row) => `
-            <li class="${row.manager === activeManager ? "is-active" : ""}" style="${managerStyle(row.manager)}" data-manager-profile="${escapeHtml(row.manager)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(row.manager)} database">
+          ${board.rows.map((row) => {
+            const isManager = managers.includes(row.manager);
+            return `
+            <li class="${row.manager === activeManager ? "is-active" : ""}" ${isManager ? `style="${managerStyle(row.manager)}" data-manager-profile="${escapeHtml(row.manager)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(row.manager)} database"` : ""}>
               <small class="rank-line-title" data-share-only>${escapeHtml(board.title)}</small>
               <span>#${row.rank}</span>
-              <strong>${escapeHtml(row.manager)}</strong>
+              <strong>${escapeHtml(row.label || row.manager)}</strong>
               <em>${escapeHtml(row.display)}</em>
               <button class="share-capture-button rank-line-share" type="button" data-share-capture data-share-title="${escapeHtml(row.manager)} - ${escapeHtml(board.title)}">Share</button>
             </li>
-          `).join("")}
+          `; }).join("")}
         </ol>
       </div>
     `;
