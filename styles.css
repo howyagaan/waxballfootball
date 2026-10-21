@@ -2562,6 +2562,13 @@ strong {
   white-space: nowrap;
 }
 
+@media (min-width: 821px) {
+  .fit-table th:nth-child(n + 3),
+  .fit-table td:nth-child(n + 3) {
+    text-align: center;
+  }
+}
+
 .rank {
   color: var(--teal);
   font-weight: 1000;
