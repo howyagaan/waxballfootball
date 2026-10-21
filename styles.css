@@ -2562,6 +2562,16 @@ strong {
   white-space: nowrap;
 }
 
+.fit-table td.all-play-winning {
+  color: #31d158;
+  font-weight: 900;
+}
+
+.fit-table td.all-play-losing {
+  color: var(--red);
+  font-weight: 900;
+}
+
 @media (min-width: 821px) {
   .fit-table th:nth-child(n + 3),
   .fit-table td:nth-child(n + 3) {
@@ -6809,6 +6819,19 @@ footer {
 
   .fit-table .all-play-column {
     display: none;
+  }
+
+  .fit-table:not(.archive-table) th:nth-child(3),
+  .fit-table:not(.archive-table) td:nth-child(3),
+  .fit-table:not(.archive-table) th:nth-child(4),
+  .fit-table:not(.archive-table) td:nth-child(4),
+  .fit-table:not(.archive-table) th:nth-child(5),
+  .fit-table:not(.archive-table) td:nth-child(5),
+  .archive-table th:nth-child(3),
+  .archive-table td:nth-child(3),
+  .archive-table th:nth-child(4),
+  .archive-table td:nth-child(4) {
+    text-align: center;
   }
 
   .team-cell {

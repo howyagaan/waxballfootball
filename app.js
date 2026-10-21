@@ -1452,7 +1452,7 @@ function renderStandings(rosters, users) {
           <td>${record}</td>
           <td>${points(roster, "fpts")}</td>
           <td>${points(roster, "fpts_against")}</td>
-          <td class="all-play-column">${formatAllPlayRecord(allPlay.get(Number(roster.roster_id)))}</td>
+          <td class="all-play-column ${allPlayRecordClass(allPlay.get(Number(roster.roster_id)))}">${formatAllPlayRecord(allPlay.get(Number(roster.roster_id)))}</td>
         </tr>
       `;
     })
@@ -1892,7 +1892,7 @@ function renderArchiveTable(data) {
         <td>${recordText(row)}</td>
         <td>${Math.round(Number(row.pointsFor))}</td>
         <td><span class="${finishMovementClass(row, data)}">${escapeHtml(finalFinishLabel(row, data))}</span></td>
-        <td class="all-play-column">${formatAllPlayRecord(allPlay.get(Number(row.roster?.roster_id)))}</td>
+        <td class="all-play-column ${allPlayRecordClass(allPlay.get(Number(row.roster?.roster_id)))}">${formatAllPlayRecord(allPlay.get(Number(row.roster?.roster_id)))}</td>
       </tr>
     `)
     .join("");
@@ -1931,6 +1931,11 @@ function allPlayRecords(matchupsByWeek, throughWeek) {
 function formatAllPlayRecord(record) {
   if (!record) return "--";
   return `${record.wins}-${record.losses}${record.ties ? `-${record.ties}` : ""}`;
+}
+
+function allPlayRecordClass(record) {
+  if (!record || record.wins === record.losses) return "";
+  return record.wins > record.losses ? "all-play-winning" : "all-play-losing";
 }
 
 function archiveRowsForTable(data) {
