@@ -2572,6 +2572,32 @@ strong {
   font-weight: 900;
 }
 
+.record-cell .standings-record,
+.record-cell .last-five {
+  display: block;
+  white-space: nowrap;
+}
+
+.record-cell .last-five {
+  margin-top: 0.14rem;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.last-five-w {
+  color: #31d158;
+}
+
+.last-five-l {
+  color: var(--red);
+}
+
+.last-five-t {
+  color: var(--muted);
+}
+
 @media (min-width: 821px) {
   .fit-table th:nth-child(n + 3),
   .fit-table td:nth-child(n + 3) {
@@ -6834,6 +6860,11 @@ footer {
   .archive-table th:nth-child(5),
   .archive-table td:nth-child(5) {
     text-align: center;
+  }
+
+  .record-cell .last-five {
+    font-size: 0.55rem;
+    letter-spacing: 0.02em;
   }
 
   .team-cell {

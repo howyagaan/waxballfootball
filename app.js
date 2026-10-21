@@ -1435,7 +1435,9 @@ function renderStandings(rosters, users) {
     ? standingsThroughWeek(rosters, currentData?.matchupsByWeek || {}, currentData?.week || currentWeek)
     : rosters;
   const projectedResults = useProjection ? projectedResultsByRoster() : new Map();
-  const allPlay = allPlayRecords(currentData?.matchupsByWeek || {}, useProjection ? currentData?.week || currentWeek : completedThroughCurrentSeasonWeek());
+  const displayedThroughWeek = useProjection ? currentData?.week || currentWeek : completedThroughCurrentSeasonWeek();
+  const allPlay = allPlayRecords(currentData?.matchupsByWeek || {}, displayedThroughWeek);
+  const recentResults = recentResultsByRoster(currentData?.matchupsByWeek || {}, displayedThroughWeek);
   const regularRanks = new Map(sortRosters(rosters, users).map((roster, index) => [Number(roster.roster_id), index + 1]));
   const rows = sortRosters(displayedRosters, users)
     .map((roster, index) => {
@@ -1449,7 +1451,10 @@ function renderStandings(rosters, users) {
         <tr class="${selected ? "selected-row" : ""} ${useProjection ? "projected-row" : ""}">
           <td class="rank">${index + 1}${movement}</td>
           <td>${teamCell(roster, users, { projectedResult: projectedResults.get(Number(roster.roster_id)) })}</td>
-          <td>${record}</td>
+          <td class="record-cell">
+            <span class="standings-record">${record}</span>
+            ${renderRecentResults(recentResults.get(Number(roster.roster_id)))}
+          </td>
           <td>${points(roster, "fpts")}</td>
           <td>${points(roster, "fpts_against")}</td>
           <td class="all-play-column ${allPlayRecordClass(allPlay.get(Number(roster.roster_id)))}">${formatAllPlayRecord(allPlay.get(Number(roster.roster_id)))}</td>
@@ -1480,6 +1485,35 @@ function projectedResultsByRoster() {
     results.set(Number(second.roster_id), firstScore === secondScore ? "T" : secondScore > firstScore ? "W" : "L");
   }
   return results;
+}
+
+function recentResultsByRoster(matchupsByWeek, throughWeek, limit = 5) {
+  const results = new Map();
+  for (let week = 1; week <= Number(throughWeek || 0); week += 1) {
+    const grouped = groupBy(matchupsByWeek[week] || [], (matchup) => matchup.matchup_id || matchup.roster_id);
+    for (const pair of grouped.values()) {
+      const [first, second] = pair;
+      if (!first || !second) continue;
+      const firstId = Number(first.roster_id);
+      const secondId = Number(second.roster_id);
+      const firstScore = scoreFor(first);
+      const secondScore = scoreFor(second);
+      const firstResult = firstScore === secondScore ? "T" : firstScore > secondScore ? "W" : "L";
+      const secondResult = firstScore === secondScore ? "T" : secondScore > firstScore ? "W" : "L";
+      results.set(firstId, [...(results.get(firstId) || []), firstResult].slice(-limit));
+      results.set(secondId, [...(results.get(secondId) || []), secondResult].slice(-limit));
+    }
+  }
+  return results;
+}
+
+function renderRecentResults(results = []) {
+  if (!results.length) return "";
+  return `
+    <span class="last-five" aria-label="Last five games: ${results.join(" ")}">
+      ${results.map((result) => `<span class="last-five-${result.toLowerCase()}">${result}</span>`).join("")}
+    </span>
+  `;
 }
 
 function standingsProjectionState(week) {
