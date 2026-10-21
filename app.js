@@ -897,7 +897,7 @@ async function loadAll() {
       loadSeason(ARCHIVE_2025_LEAGUE_ID, {
         includeTransactions: PAGE === "archive",
         includeDraft: PAGE === "archive",
-        matchupWeeks: PAGE === "current" ? WEEKS : null,
+        matchupWeeks: PAGE === "current" ? WEEKS : PAGE === "archive" ? WEEKS.filter((week) => week <= 14) : null,
       }),
       loadNflContext(),
     ]);
@@ -1435,6 +1435,7 @@ function renderStandings(rosters, users) {
     ? standingsThroughWeek(rosters, currentData?.matchupsByWeek || {}, currentData?.week || currentWeek)
     : rosters;
   const projectedResults = useProjection ? projectedResultsByRoster() : new Map();
+  const allPlay = allPlayRecords(currentData?.matchupsByWeek || {}, useProjection ? currentData?.week || currentWeek : completedThroughCurrentSeasonWeek());
   const regularRanks = new Map(sortRosters(rosters, users).map((roster, index) => [Number(roster.roster_id), index + 1]));
   const rows = sortRosters(displayedRosters, users)
     .map((roster, index) => {
@@ -1451,6 +1452,7 @@ function renderStandings(rosters, users) {
           <td>${record}</td>
           <td>${points(roster, "fpts")}</td>
           <td>${points(roster, "fpts_against")}</td>
+          <td class="all-play-column">${formatAllPlayRecord(allPlay.get(Number(roster.roster_id)))}</td>
         </tr>
       `;
     })
@@ -1565,6 +1567,7 @@ function renderStandingsHeader(isDraftOrder) {
         <th>Rec</th>
         <th>PF</th>
         <th>PA</th>
+        <th class="all-play-column">All-Play</th>
       </tr>
     `;
 }
@@ -1880,6 +1883,7 @@ async function renderArchiveSelectedTeam(roster) {
 }
 
 function renderArchiveTable(data) {
+  const allPlay = allPlayRecords(data.matchupsByWeek || {}, 14);
   els.archiveBody.innerHTML = archiveRowsForTable(data)
     .map((row) => `
       <tr>
@@ -1888,9 +1892,45 @@ function renderArchiveTable(data) {
         <td>${recordText(row)}</td>
         <td>${Math.round(Number(row.pointsFor))}</td>
         <td><span class="${finishMovementClass(row, data)}">${escapeHtml(finalFinishLabel(row, data))}</span></td>
+        <td class="all-play-column">${formatAllPlayRecord(allPlay.get(Number(row.roster?.roster_id)))}</td>
       </tr>
     `)
     .join("");
+}
+
+function allPlayRecords(matchupsByWeek, throughWeek) {
+  const records = new Map();
+  for (let week = 1; week <= Number(throughWeek || 0); week += 1) {
+    const scores = (matchupsByWeek[week] || [])
+      .map((matchup) => ({ rosterId: Number(matchup.roster_id), score: scoreFor(matchup) }))
+      .filter((entry) => Number.isFinite(entry.rosterId) && Number.isFinite(entry.score));
+    for (let firstIndex = 0; firstIndex < scores.length; firstIndex += 1) {
+      for (let secondIndex = firstIndex + 1; secondIndex < scores.length; secondIndex += 1) {
+        const first = scores[firstIndex];
+        const second = scores[secondIndex];
+        if (!records.has(first.rosterId)) records.set(first.rosterId, { wins: 0, losses: 0, ties: 0 });
+        if (!records.has(second.rosterId)) records.set(second.rosterId, { wins: 0, losses: 0, ties: 0 });
+        const firstRecord = records.get(first.rosterId);
+        const secondRecord = records.get(second.rosterId);
+        if (first.score > second.score) {
+          firstRecord.wins += 1;
+          secondRecord.losses += 1;
+        } else if (first.score < second.score) {
+          firstRecord.losses += 1;
+          secondRecord.wins += 1;
+        } else {
+          firstRecord.ties += 1;
+          secondRecord.ties += 1;
+        }
+      }
+    }
+  }
+  return records;
+}
+
+function formatAllPlayRecord(record) {
+  if (!record) return "--";
+  return `${record.wins}-${record.losses}${record.ties ? `-${record.ties}` : ""}`;
 }
 
 function archiveRowsForTable(data) {

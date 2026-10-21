@@ -2552,9 +2552,14 @@ strong {
   line-height: 1.15;
 }
 
-.archive-table th:nth-child(5),
-.archive-table td:nth-child(5) {
+.archive-table th:nth-child(6),
+.archive-table td:nth-child(6) {
   width: 5.5rem;
+}
+
+.fit-table .all-play-column {
+  width: 5.5rem;
+  white-space: nowrap;
 }
 
 .rank {
@@ -6790,9 +6795,13 @@ footer {
     width: 31%;
   }
 
-  .archive-table th:nth-child(5),
-  .archive-table td:nth-child(5) {
+  .archive-table th:nth-child(6),
+  .archive-table td:nth-child(6) {
     width: 4.4rem;
+  }
+
+  .fit-table .all-play-column {
+    display: none;
   }
 
   .team-cell {
