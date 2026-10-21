@@ -7150,6 +7150,14 @@ footer {
   }
 }
 
+@media (max-width: 820px) and (orientation: landscape) {
+  .fit-table .all-play-column {
+    display: table-cell;
+    width: 4.4rem;
+    text-align: center;
+  }
+}
+
 @media (max-width: 380px) {
   .fit-table th,
   .fit-table td {
