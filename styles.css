@@ -2562,14 +2562,16 @@ strong {
   white-space: nowrap;
 }
 
+.fit-table td.all-play-column {
+  font-weight: 900;
+}
+
 .fit-table td.all-play-winning {
   color: #31d158;
-  font-weight: 900;
 }
 
 .fit-table td.all-play-losing {
   color: var(--red);
-  font-weight: 900;
 }
 
 .record-cell .standings-record,
