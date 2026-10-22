@@ -726,6 +726,7 @@ let archiveData = null;
 let nflData = null;
 let currentWeek = 1;
 let selectedRosterId = null;
+let avatarLoadingRosterId = null;
 let playersById = null;
 let playersLoadedAt = 0;
 let previewedWeek = null;
@@ -1453,7 +1454,7 @@ function renderStandings(rosters, users) {
           <td>${teamCell(roster, users, { projectedResult: projectedResults.get(Number(roster.roster_id)) })}</td>
           <td class="record-cell">
             <span class="standings-record">${record}</span>
-            ${renderRecentResults(recentResults.get(Number(roster.roster_id)))}
+            ${renderRecentResults(recentResults.get(Number(roster.roster_id)), rosters, users)}
           </td>
           <td>${points(roster, "fpts")}</td>
           <td>${points(roster, "fpts_against")}</td>
@@ -1498,8 +1499,20 @@ function recentResultsByRoster(matchupsByWeek, throughWeek, limit = 5) {
       const secondId = Number(second.roster_id);
       const firstScore = scoreFor(first);
       const secondScore = scoreFor(second);
-      const firstResult = firstScore === secondScore ? "T" : firstScore > secondScore ? "W" : "L";
-      const secondResult = firstScore === secondScore ? "T" : secondScore > firstScore ? "W" : "L";
+      const firstResult = {
+        result: firstScore === secondScore ? "T" : firstScore > secondScore ? "W" : "L",
+        opponentId: secondId,
+        score: firstScore,
+        opponentScore: secondScore,
+        week,
+      };
+      const secondResult = {
+        result: firstScore === secondScore ? "T" : secondScore > firstScore ? "W" : "L",
+        opponentId: firstId,
+        score: secondScore,
+        opponentScore: firstScore,
+        week,
+      };
       results.set(firstId, [...(results.get(firstId) || []), firstResult].slice(-limit));
       results.set(secondId, [...(results.get(secondId) || []), secondResult].slice(-limit));
     }
@@ -1507,13 +1520,26 @@ function recentResultsByRoster(matchupsByWeek, throughWeek, limit = 5) {
   return results;
 }
 
-function renderRecentResults(results = []) {
+function renderRecentResults(results = [], rosters = [], users = []) {
   if (!results.length) return "";
   return `
-    <span class="last-five" aria-label="Last five games: ${results.join(" ")}">
-      ${results.map((result) => `<span class="last-five-${result.toLowerCase()}">${result}</span>`).join("")}
+    <span class="last-five" aria-label="Last five games: ${results.map((result) => result.result).join(" ")}">
+      ${results.map((result) => {
+        const opponent = standingsTooltipManagerName(result.opponentId, rosters, users);
+        const tooltip = `Week ${result.week} vs ${opponent} · ${formatScore(result.score)}-${formatScore(result.opponentScore)}`;
+        return `<span class="last-five-result last-five-${result.result.toLowerCase()}" data-tooltip="${escapeHtml(tooltip)}">${result.result}</span>`;
+      }).join("")}
     </span>
   `;
+}
+
+function standingsTooltipManagerName(rosterId, rosters, users) {
+  const manager = rosterManagerName(rosterId, rosters, users);
+  if (manager === "Miles Elliot") return "Miles E";
+  if (manager === "Miles Blue") return "Blue";
+  if (manager === "Jakob Cooper") return "Havi";
+  if (manager === "Jacob Moskovitz") return "Mosko";
+  return String(manager || "TBD").trim().split(/\s+/)[0] || "TBD";
 }
 
 function standingsProjectionState(week) {
@@ -1633,8 +1659,10 @@ function renderLeagueAvatarRail(rosters, users) {
       data-avatar-shortcut
       aria-label="Open ${escapeHtml(ownerIdentityName(roster, users))}"
       title="${escapeHtml(ownerIdentityName(roster, users))}"
+      aria-busy="${Number(avatarLoadingRosterId) === Number(roster.roster_id)}"
     >
       ${avatar(roster, users, { initialsSource: ownerIdentityName(roster, users) })}
+      ${Number(avatarLoadingRosterId) === Number(roster.roster_id) ? `<span class="avatar-loading-overlay" aria-hidden="true"><span></span></span>` : ""}
       <span>${escapeHtml(compactManagerName(ownerIdentityName(roster, users)))}</span>
     </button>
   `).join("");
@@ -1642,12 +1670,19 @@ function renderLeagueAvatarRail(rosters, users) {
 
 async function selectRosterFromShortcut(rosterId, options = {}) {
   selectedRosterId = Number(rosterId);
+  avatarLoadingRosterId = selectedRosterId;
   if (els.teamSelect) els.teamSelect.value = String(selectedRosterId);
-  await renderSelectedTeam();
-  if (PAGE === "current" && currentData) renderStandings(currentData.rosters, currentData.users);
-  if (PAGE === "current" && currentData) renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
   if (PAGE === "archive" && archiveData) renderLeagueAvatarRail(archiveData.rosters, archiveData.users);
   if (PAGE === "current" && currentData) renderLeagueAvatarRail(currentData.rosters, currentData.users);
+  try {
+    await renderSelectedTeam();
+    if (PAGE === "current" && currentData) renderStandings(currentData.rosters, currentData.users);
+    if (PAGE === "current" && currentData) renderMatchups(currentData.matchupsByWeek[currentWeek] || [], currentData.rosters, currentData.users, currentWeek);
+  } finally {
+    if (Number(avatarLoadingRosterId) === Number(rosterId)) avatarLoadingRosterId = null;
+    if (PAGE === "archive" && archiveData) renderLeagueAvatarRail(archiveData.rosters, archiveData.users);
+    if (PAGE === "current" && currentData) renderLeagueAvatarRail(currentData.rosters, currentData.users);
+  }
   if (options.scroll === "profile") {
     scrollToSelectedTeamPanel();
   } else {
@@ -4792,12 +4827,16 @@ function managerCell(roster, users, options = {}) {
 function avatar(roster, users, options = {}) {
   if (!roster) return `<span class="avatar">--</span>`;
   const user = userForRoster(roster, users);
-  const avatarUrl = user?.metadata?.avatar;
+  const avatarUrl = highResolutionAvatarUrl(user?.metadata?.avatar);
   const avatarId = user?.avatar;
   const initials = initialsFor(options.initialsSource || teamName(roster, users));
-  if (avatarUrl) return `<span class="avatar"><img alt="" src="${escapeHtml(avatarUrl)}" loading="lazy" /></span>`;
+  if (avatarUrl) return `<span class="avatar"><img alt="" src="${escapeHtml(avatarUrl)}" loading="lazy" decoding="async" /></span>`;
   if (!avatarId) return `<span class="avatar">${escapeHtml(initials)}</span>`;
-  return `<span class="avatar"><img alt="" src="https://sleepercdn.com/avatars/thumbs/${avatarId}" loading="lazy" /></span>`;
+  return `<span class="avatar"><img alt="" src="https://sleepercdn.com/avatars/${escapeHtml(avatarId)}" loading="lazy" decoding="async" /></span>`;
+}
+
+function highResolutionAvatarUrl(url) {
+  return String(url || "").replace("sleepercdn.com/avatars/thumbs/", "sleepercdn.com/avatars/");
 }
 
 function displayWeek(league, state = {}) {
