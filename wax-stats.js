@@ -760,7 +760,11 @@
         mode: "min",
         value: (row) => row.points,
         format: (row) => `${fmt(row.points)} pts`,
-        detail: (row) => `${escapeHtml(row.manager)} reset the floor in ${gameLabelHtml(row.game)} for ${escapeHtml(row.team)}.`,
+        detail: (row) => (
+          row.manager === "Travis Roy Rogers" && Number(row.game?.season) === 2026 && Number(row.game?.week) === 7
+            ? "Trav (darryluvr3000) v Nic. Previous Record: 61.12pts - Will Price"
+            : `${escapeHtml(row.manager)} reset the floor in ${gameLabelHtml(row.game)} for ${escapeHtml(row.team)}.`
+        ),
       },
       {
         title: "Lowest score in win",
