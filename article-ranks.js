@@ -21,6 +21,30 @@
     { id: "2026-w3-m4", season: 2026, week: 3, stage: "Regular season", managers: ["Miles Blue", "Jacob Moskovitz"], teams: ["blueballs", "poonfullofsugar"], scores: [115.98, 93.46] },
     { id: "2026-w3-m5", season: 2026, week: 3, stage: "Regular season", managers: ["Erik Ohno Dagoberg", "Travis Roy Rogers"], teams: ["Pamela Mari Ohno Dagoberg", "darryluvr3000"], scores: [156.24, 102.14] },
     { id: "2026-w3-m6", season: 2026, week: 3, stage: "Regular season", managers: ["Sam Labovitz", "Will Price"], teams: ["mistahbigdick", "poon messiah"], scores: [123.14, 102.28] },
+    { id: "2026-w4-m1", season: 2026, week: 4, stage: "Regular season", managers: ["Travis Roy Rogers", "Jacob Moskovitz"], scores: [84.78, 154.28] },
+    { id: "2026-w4-m2", season: 2026, week: 4, stage: "Regular season", managers: ["Miles Blue", "Paul Legallet"], scores: [130.32, 124.52] },
+    { id: "2026-w4-m3", season: 2026, week: 4, stage: "Regular season", managers: ["Jakob Cooper", "Erik Ohno Dagoberg"], scores: [116.52, 104.40] },
+    { id: "2026-w4-m4", season: 2026, week: 4, stage: "Regular season", managers: ["Miles Elliot", "Milo Manheim"], scores: [133.34, 123.28] },
+    { id: "2026-w4-m5", season: 2026, week: 4, stage: "Regular season", managers: ["Christian Engelhardt", "Will Price"], scores: [102.12, 138.92] },
+    { id: "2026-w4-m6", season: 2026, week: 4, stage: "Regular season", managers: ["Nic Hamilton", "Sam Labovitz"], scores: [106.58, 110.56] },
+    { id: "2026-w5-m1", season: 2026, week: 5, stage: "Regular season", managers: ["Jacob Moskovitz", "Paul Legallet"], scores: [111.94, 97.80] },
+    { id: "2026-w5-m2", season: 2026, week: 5, stage: "Regular season", managers: ["Jakob Cooper", "Travis Roy Rogers"], scores: [120.92, 149.34] },
+    { id: "2026-w5-m3", season: 2026, week: 5, stage: "Regular season", managers: ["Miles Elliot", "Miles Blue"], scores: [147.26, 133.96] },
+    { id: "2026-w5-m4", season: 2026, week: 5, stage: "Regular season", managers: ["Erik Ohno Dagoberg", "Will Price"], scores: [134.62, 81.90] },
+    { id: "2026-w5-m5", season: 2026, week: 5, stage: "Regular season", managers: ["Milo Manheim", "Sam Labovitz"], scores: [144.32, 133.48] },
+    { id: "2026-w5-m6", season: 2026, week: 5, stage: "Regular season", managers: ["Nic Hamilton", "Christian Engelhardt"], scores: [117.78, 126.20] },
+    { id: "2026-w6-m1", season: 2026, week: 6, stage: "Regular season", managers: ["Jakob Cooper", "Jacob Moskovitz"], scores: [108.30, 111.68] },
+    { id: "2026-w6-m2", season: 2026, week: 6, stage: "Regular season", managers: ["Miles Elliot", "Paul Legallet"], scores: [119.16, 92.22] },
+    { id: "2026-w6-m3", season: 2026, week: 6, stage: "Regular season", managers: ["Travis Roy Rogers", "Will Price"], scores: [130.64, 118.58] },
+    { id: "2026-w6-m4", season: 2026, week: 6, stage: "Regular season", managers: ["Miles Blue", "Sam Labovitz"], scores: [109.30, 114.90] },
+    { id: "2026-w6-m5", season: 2026, week: 6, stage: "Regular season", managers: ["Nic Hamilton", "Erik Ohno Dagoberg"], scores: [128.94, 95.92] },
+    { id: "2026-w6-m6", season: 2026, week: 6, stage: "Regular season", managers: ["Milo Manheim", "Christian Engelhardt"], scores: [75.38, 112.50] },
+    { id: "2026-w7-m1", season: 2026, week: 7, stage: "Regular season", managers: ["Miles Elliot", "Jacob Moskovitz"], scores: [113.22, 109.82] },
+    { id: "2026-w7-m2", season: 2026, week: 7, stage: "Regular season", managers: ["Jakob Cooper", "Will Price"], scores: [133.20, 93.62] },
+    { id: "2026-w7-m3", season: 2026, week: 7, stage: "Regular season", managers: ["Sam Labovitz", "Paul Legallet"], scores: [116.42, 126.38] },
+    { id: "2026-w7-m4", season: 2026, week: 7, stage: "Regular season", managers: ["Nic Hamilton", "Travis Roy Rogers"], scores: [112.56, 50.90] },
+    { id: "2026-w7-m5", season: 2026, week: 7, stage: "Regular season", managers: ["Miles Blue", "Christian Engelhardt"], scores: [149.04, 103.32] },
+    { id: "2026-w7-m6", season: 2026, week: 7, stage: "Regular season", managers: ["Milo Manheim", "Erik Ohno Dagoberg"], scores: [141.28, 121.28] },
   ];
   const MANAGER_COLORS = {
     "Christian Engelhardt": "255, 20, 147",
@@ -35,6 +59,11 @@
     "Sam Labovitz": "255, 138, 31",
     "Travis Roy Rogers": "168, 85, 247",
     "Will Price": "245, 248, 251",
+  };
+  const RANK_SHORT_NAMES = {
+    "Christian Engelhardt": "Christian", "Erik Ohno Dagoberg": "Erik", "Jacob Moskovitz": "Mosko",
+    "Jakob Cooper": "Havi", "Miles Blue": "Blue", "Miles Elliot": "Miles E", "Milo Manheim": "Milo",
+    "Nic Hamilton": "Nic", "Paul Legallet": "Paul", "Sam Labovitz": "Sam", "Travis Roy Rogers": "Trav", "Will Price": "Will",
   };
   const OWNER_REAL_NAMES = {
     helloimpaul: "Paul Legallet", bigboybluey: "Miles Blue", erikohno: "Erik Ohno Dagoberg",
@@ -81,6 +110,7 @@
     return matchups.flatMap((game) => [0, 1].map((index) => ({
       game,
       manager: game.managers[index],
+      opponent: game.managers[index === 0 ? 1 : 0],
       points: Number(game.scores[index] || 0),
       oppPoints: Number(game.scores[index === 0 ? 1 : 0] || 0),
     })));
@@ -141,8 +171,6 @@
       finishStreak();
       return streaks;
     });
-    // The shared matchup feed currently ends at 2026 Week 3.
-    winningStreakRows.push({ manager: "Miles Elliot", value: 5, display: "5 wins - 2026 W2-W6" });
     const weekToWeekDrops = managers.flatMap((manager) => {
       const managerRows = rows
         .filter((row) => row.manager === manager && row.game.stage === "Regular season")
@@ -153,6 +181,18 @@
         const drop = previous.points - row.points;
         if (drop <= 0) return [];
         return [{ manager, value: drop, display: `${fmt(drop)}pts · ${row.game.season} W${previous.game.week}-W${row.game.week}` }];
+      });
+    });
+    const weekToWeekRises = managers.flatMap((manager) => {
+      const managerRows = rows
+        .filter((row) => row.manager === manager && row.game.stage === "Regular season")
+        .sort((a, b) => Number(a.game.season) - Number(b.game.season) || Number(a.game.week) - Number(b.game.week));
+      return managerRows.slice(1).flatMap((row, index) => {
+        const previous = managerRows[index];
+        if (Number(previous.game.season) !== Number(row.game.season) || Number(row.game.week) !== Number(previous.game.week) + 1) return [];
+        const rise = row.points - previous.points;
+        if (rise <= 0) return [];
+        return [{ manager, value: rise, display: `${fmt(rise)}pts · ${row.game.season} W${previous.game.week}-W${row.game.week}` }];
       });
     });
     const profiles = managers.map((manager) => {
@@ -169,32 +209,46 @@
       map.get(key).push(row);
       return map;
     }, new Map());
+    const regularByWeek = rows.filter((row) => row.game.stage === "Regular season").reduce((map, row) => {
+      const key = `${row.game.season}-${row.game.week}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(row);
+      return map;
+    }, new Map());
     byWeek.forEach((weekRows) => {
       [...weekRows].sort((a, b) => b.points - a.points).slice(0, 3).forEach((row) => {
         topThreeCounts.set(row.manager, (topThreeCounts.get(row.manager) || 0) + 1);
       });
     });
-    const currentWeekSixRows = [
-      ["Miles Elliot", 119.16], ["Christian Engelhardt", 112.50], ["Sam Labovitz", 114.90],
-      ["Miles Blue", 109.30], ["Erik Ohno Dagoberg", 95.92], ["Nic Hamilton", 128.94],
-      ["Jakob Cooper", 108.30], ["Travis Roy Rogers", 130.64], ["Jacob Moskovitz", 111.68],
-      ["Milo Manheim", 75.38], ["Will Price", 118.58], ["Paul Legallet", 92.22],
-    ].map(([manager, value]) => ({ manager, value, display: `${fmt(value)}pts - 2026 W6` }));
     const careerLowRows = managers.map((manager) => {
-      const managerScores = rows.filter((row) => row.manager === manager).map((row) => row.points);
-      currentWeekSixRows.filter((row) => row.manager === manager).forEach((row) => managerScores.push(row.value));
-      const value = Math.min(...managerScores);
-      const weekSix = currentWeekSixRows.find((row) => row.manager === manager && Math.abs(row.value - value) < EPSILON);
-      return { manager, value, display: weekSix ? weekSix.display : `${fmt(value)}pts` };
+      const lowest = rows.filter((row) => row.manager === manager).sort((a, b) => a.points - b.points)[0];
+      return { manager, value: lowest.points, display: `${fmt(lowest.points)}pts - ${lowest.game.season} W${lowest.game.week}` };
     });
     const weeklyHighScoreRows = [...byWeek.entries()].map(([key, weekRows]) => {
       const highest = [...weekRows].sort((a, b) => b.points - a.points)[0];
       const [season, week] = key.split("-");
       return { manager: highest.manager, value: highest.points, display: `${fmt(highest.points)}pts - ${season} W${week}` };
     });
-    weeklyHighScoreRows.push({ manager: "Travis Roy Rogers", value: 154.28, display: "154.28pts - 2026 W4" });
-    weeklyHighScoreRows.push({ manager: "Travis Roy Rogers", value: 149.34, display: "149.34pts - 2026 W5" });
-    weeklyHighScoreRows.push({ manager: "Travis Roy Rogers", value: 130.64, display: "130.64pts - 2026 W6" });
+    const weeklyRangeRows = [...regularByWeek.entries()].map(([key, weekRows]) => {
+      const scores = weekRows.map((row) => row.points);
+      const [season, week] = key.split("-");
+      const value = Math.max(...scores) - Math.min(...scores);
+      const highManager = weekRows.find((row) => Math.abs(row.points - Math.max(...scores)) < EPSILON)?.manager;
+      const lowManager = weekRows.find((row) => Math.abs(row.points - Math.min(...scores)) < EPSILON)?.manager;
+      return { manager: "", label: `${season} Week ${week}`, value, display: `${fmt(value)}pts (between ${RANK_SHORT_NAMES[highManager] || highManager} and ${RANK_SHORT_NAMES[lowManager] || lowManager})` };
+    });
+    const highScorerOpponentCounts = new Map(managers.map((manager) => [manager, 0]));
+    const lowScorerOpponentCounts = new Map(managers.map((manager) => [manager, 0]));
+    regularByWeek.forEach((weekRows) => {
+      const high = Math.max(...weekRows.map((row) => row.points));
+      const low = Math.min(...weekRows.map((row) => row.points));
+      weekRows.filter((row) => Math.abs(row.points - high) < EPSILON).forEach((row) => {
+        highScorerOpponentCounts.set(row.opponent, (highScorerOpponentCounts.get(row.opponent) || 0) + 1);
+      });
+      weekRows.filter((row) => Math.abs(row.points - low) < EPSILON).forEach((row) => {
+        lowScorerOpponentCounts.set(row.opponent, (lowScorerOpponentCounts.get(row.opponent) || 0) + 1);
+      });
+    });
     const regularSeasonWeeks = rows.filter((row) => row.game.stage === "Regular season").reduce((map, row) => {
       const key = `${row.game.season}-${row.game.week}`;
       if (!map.has(key)) map.set(key, []);
@@ -206,9 +260,6 @@
       const value = scores.reduce((sum, score) => sum + score, 0) / scores.length;
       return { manager: "", label: `${season} Week ${week}`, value, display: `${fmt(value)}pts` };
     });
-    weeklyAverageRows.push({ manager: "", label: "2026 Week 4", value: 119.135, display: "119.14pts" });
-    weeklyAverageRows.push({ manager: "", label: "2026 Week 5", value: 124.96, display: "124.96pts" });
-    weeklyAverageRows.push({ manager: "", label: "2026 Week 6", value: 109.7933333333, display: "109.79pts" });
     const weeklyLowCounts = new Map();
     byWeek.forEach((weekRows) => {
       const low = Math.min(...weekRows.map((row) => row.points));
@@ -216,9 +267,6 @@
         weeklyLowCounts.set(row.manager, (weeklyLowCounts.get(row.manager) || 0) + 1);
       });
     });
-    // Week 4 and Week 5 are not in the shared 2026 feed yet.
-    weeklyLowCounts.set("Travis Roy Rogers", (weeklyLowCounts.get("Travis Roy Rogers") || 0) + 1);
-    weeklyLowCounts.set("Will Price", (weeklyLowCounts.get("Will Price") || 0) + 1);
     const standingsPodiumCounts = new Map();
     [...new Set(matchups.filter((game) => game.stage === "Regular season").map((game) => Number(game.season)))].forEach((season) => {
       const seasonGames = matchups.filter((game) => Number(game.season) === season && game.stage === "Regular season");
@@ -303,6 +351,7 @@
         return { manager: profile.manager, value, display: pts(value) };
       })) },
       weekToWeekDrop: { title: "Largest Week-to-Week Scoring Drops", rows: rankRows(weekToWeekDrops) },
+      weekToWeekRise: { title: "Largest Week-to-Week Scoring Rebounds", rows: rankRows(weekToWeekRises).slice(0, 10) },
       average: { title: "Average Score", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.average, display: pts(profile.average) }))) },
       pf: { title: "All-Time Points For", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pf, display: pts(profile.pf) }))) },
       pa: { title: "All-Time Points Against", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pa, display: pts(profile.pa) }))) },
@@ -315,6 +364,13 @@
       careerLows: { title: "Career Low Scores", rows: rankRows(careerLowRows, "asc") },
       weeklyHighScores: { title: "Lowest Weekly High Scores", rows: rankRows(weeklyHighScoreRows, "asc") },
       weeklyAverages: { title: "Lowest Weekly League Averages", rows: rankRows(weeklyAverageRows, "asc") },
+      weeklyRanges: { title: "Widest Weekly Scoring Ranges", rows: rankRows(weeklyRangeRows) },
+      highScorerOpponents: { title: "Most Weeks Facing the Weekly High Scorer", rows: rankRows(managers.map((manager) => { const value = highScorerOpponentCounts.get(manager) || 0; return { manager, value, display: `${value} week${value === 1 ? "" : "s"}` }; })) },
+      lowScorerOpponents: { title: "Most Weeks Facing the Weekly Low Scorer", rows: rankRows(managers.map((manager) => { const value = lowScorerOpponentCounts.get(manager) || 0; return { manager, value, display: `${value} week${value === 1 ? "" : "s"}` }; })) },
+      lastPlaceWeeks: { title: "Weeks Ended in Last Place", rows: rankRows([
+        ["Will Price", 14], ["Miles Elliot", 8], ["Travis Roy Rogers", 5], ["Jacob Moskovitz", 3],
+        ["Paul Legallet", 2], ["Miles Blue", 1], ["Jakob Cooper", 1], ["Erik Ohno Dagoberg", 1],
+      ].map(([manager, value]) => ({ manager, value, display: `${value} week${value === 1 ? "" : "s"}` }))) },
     };
   }
 
