@@ -2478,7 +2478,11 @@ async function previousWeekTopPprCopy(options = {}) {
     return options.fallback === false ? "" : nextScheduledGameCopy(nflData?.events || [], nflData?.mode) || "";
   }
   const leaders = topPlayers
-    .map((item, index) => `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) - ${ownerIdentityName(item.roster, currentData.users)}`)
+    .map((item, index) => {
+      if (!item.roster) return `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) [[UNROSTERED]]`;
+      const owner = ownerIdentityName(item.roster, currentData.users);
+      return `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) - ${owner}${lineupStatusMarker(item)}`;
+    })
     .join("\n");
   return `Previous week top PPR players:\n${leaders}`;
 }
@@ -2523,8 +2527,13 @@ function topPprLeaderCopy(label, leader) {
   const player = `${leader.player.name} (${leader.points.toFixed(2)})`;
   if (!leader.roster) return `${label}: ${player} [[UNROSTERED]].`;
   const owner = ownerIdentityName(leader.roster, currentData.users);
-  const status = leader.lineupStatus === "benched" ? " [[BENCHED]]" : "";
-  return `${label}: ${player} for ${owner}${status}.`;
+  return `${label}: ${player} for ${owner}${lineupStatusMarker(leader)}.`;
+}
+
+function lineupStatusMarker(player) {
+  if (player.lineupStatus === "benched") return " [[BENCHED]]";
+  if (player.lineupStatus === "unrostered") return " [[UNROSTERED]]";
+  return "";
 }
 
 function finalGameScore(event) {

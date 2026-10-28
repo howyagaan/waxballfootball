@@ -4353,7 +4353,7 @@ select {
 }
 
 .recent-stat-card {
-  min-height: 10rem;
+  min-height: 0;
   border: 1px solid rgba(255, 184, 77, 0.2);
   border-radius: 18px;
   background:
