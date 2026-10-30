@@ -6583,7 +6583,23 @@ footer {
   }
 
   .manager-profile-head {
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .manager-profile-head h2 {
+    font-size: clamp(1.65rem, 7vw, 2rem);
+    line-height: 0.98;
+  }
+
+  .manager-profile-share {
+    margin-left: 0;
+  }
+
+  .manager-rank-hint {
+    margin-top: 0;
   }
 
   .manager-stat-strip,
