@@ -349,6 +349,14 @@ const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
 const ARTICLES_2026 = [
   {
+    week: 8,
+    headline: "SEVENTH HEAVEN",
+    url: "./articles/2026/week-8.html",
+    thumbnail: "./assets/articles/2026/week-8/week8articlecover.png?v=1",
+    published: true,
+    publishedAt: "2026-11-03",
+  },
+  {
     week: 7,
     headline: "50.90 SHADES OF TRAV",
     url: "./articles/2026/week-7.html",

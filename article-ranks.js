@@ -45,6 +45,12 @@
     { id: "2026-w7-m4", season: 2026, week: 7, stage: "Regular season", managers: ["Nic Hamilton", "Travis Roy Rogers"], scores: [112.56, 50.90] },
     { id: "2026-w7-m5", season: 2026, week: 7, stage: "Regular season", managers: ["Miles Blue", "Christian Engelhardt"], scores: [149.04, 103.32] },
     { id: "2026-w7-m6", season: 2026, week: 7, stage: "Regular season", managers: ["Milo Manheim", "Erik Ohno Dagoberg"], scores: [141.28, 121.28] },
+    { id: "2026-w8-m1", season: 2026, week: 8, stage: "Regular season", managers: ["Miles Elliot", "Sam Labovitz"], scores: [122.26, 106.18] },
+    { id: "2026-w8-m2", season: 2026, week: 8, stage: "Regular season", managers: ["Miles Blue", "Erik Ohno Dagoberg"], scores: [145.06, 139.10] },
+    { id: "2026-w8-m3", season: 2026, week: 8, stage: "Regular season", managers: ["Will Price", "Jacob Moskovitz"], scores: [112.40, 63.14] },
+    { id: "2026-w8-m4", season: 2026, week: 8, stage: "Regular season", managers: ["Jakob Cooper", "Nic Hamilton"], scores: [125.48, 112.92] },
+    { id: "2026-w8-m5", season: 2026, week: 8, stage: "Regular season", managers: ["Milo Manheim", "Travis Roy Rogers"], scores: [130.50, 118.00] },
+    { id: "2026-w8-m6", season: 2026, week: 8, stage: "Regular season", managers: ["Paul Legallet", "Christian Engelhardt"], scores: [120.08, 85.16] },
   ];
   const MANAGER_COLORS = {
     "Christian Engelhardt": "255, 20, 147",
@@ -150,7 +156,7 @@
     const rows = sideRows();
     const winningStreakRows = managers.flatMap((manager) => {
       const managerRows = rows
-        .filter((row) => row.manager === manager)
+        .filter((row) => row.manager === manager && row.game.stage === "Regular season")
         .sort((a, b) => Number(a.game.season) - Number(b.game.season) || Number(a.game.week) - Number(b.game.week));
       const streaks = [];
       let current = [];
@@ -203,6 +209,7 @@
       return { manager, games: managerRows.length, wins, losses: managerRows.length - wins, pf, pa, average: managerRows.length ? pf / managerRows.length : 0 };
     }).filter((profile) => profile.games);
     const topThreeCounts = new Map();
+    const firstPlaceCounts = new Map();
     const byWeek = rows.reduce((map, row) => {
       const key = `${row.game.season}-${row.game.week}`;
       if (!map.has(key)) map.set(key, []);
@@ -288,14 +295,38 @@
             totals.get(first).losses += 1;
           }
         });
-        [...seasonManagers].sort((a, b) => {
+        const standings = [...seasonManagers].sort((a, b) => {
           const first = totals.get(a);
           const second = totals.get(b);
           return second.wins - first.wins || first.losses - second.losses || second.pf - first.pf;
-        }).slice(0, 3).forEach((manager) => {
+        });
+        firstPlaceCounts.set(standings[0], (firstPlaceCounts.get(standings[0]) || 0) + 1);
+        standings.slice(0, 3).forEach((manager) => {
           standingsPodiumCounts.set(manager, (standingsPodiumCounts.get(manager) || 0) + 1);
         });
       }
+    });
+    const highestLossRows = rows
+      .filter((row) => row.points < row.oppPoints)
+      .map((row) => ({ manager: row.manager, value: row.points, display: `${fmt(row.points)}pts - ${row.game.season} W${row.game.week} vs ${row.opponent}` }));
+    const lowestScoreRows = rows.map((row) => ({
+      manager: row.manager,
+      value: row.points,
+      display: `${fmt(row.points)}pts - ${row.game.season} W${row.game.week} vs ${row.opponent}`,
+    }));
+    const allPlay2026w8 = managers.map((manager) => {
+      let wins = 0;
+      let losses = 0;
+      for (let week = 1; week <= 8; week += 1) {
+        const weekRows = rows.filter((row) => Number(row.game.season) === 2026 && Number(row.game.week) === week);
+        const managerRow = weekRows.find((row) => row.manager === manager);
+        if (!managerRow) continue;
+        weekRows.filter((row) => row.manager !== manager).forEach((row) => {
+          if (managerRow.points > row.points) wins += 1;
+          else if (managerRow.points < row.points) losses += 1;
+        });
+      }
+      return { manager, value: wins, display: `${wins}-${losses}` };
     });
     const blowoutRows = matchups.map((game) => {
       const firstScore = Number(game.scores?.[0] || 0);
@@ -355,20 +386,29 @@
       average: { title: "Average Score", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.average, display: pts(profile.average) }))) },
       pf: { title: "All-Time Points For", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pf, display: pts(profile.pf) }))) },
       pa: { title: "All-Time Points Against", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pa, display: pts(profile.pa) }))) },
-      pointDiff: { title: "All-Time Point Difference", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pf - profile.pa, display: `${profile.pf >= profile.pa ? "+" : "-"}${fmt(Math.abs(profile.pf - profile.pa))}` }))) },
+      pointDiff: { title: "All-Time Point Difference", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pf - profile.pa, display: `${profile.pf >= profile.pa ? "+" : "-"}${fmt(Math.abs(profile.pf - profile.pa))}` })), "asc") },
       weeklyTopThree: { title: "Weekly Top-Three Finishes", rows: rankRows(managers.map((manager) => ({ manager, value: topThreeCounts.get(manager) || 0, display: `${topThreeCounts.get(manager) || 0} finishes` }))) },
       weeklyLows: { title: "Most Weekly Low Scores", rows: rankRows(managers.map((manager) => ({ manager, value: weeklyLowCounts.get(manager) || 0, display: `${weeklyLowCounts.get(manager) || 0} weekly lows` }))) },
       standingsPodiums: { title: "Weeks Ended on the Podium", rows: rankRows(managers.map((manager) => ({ manager, value: standingsPodiumCounts.get(manager) || 0, display: `${standingsPodiumCounts.get(manager) || 0} weeks` }))) },
+      weeksFirst: { title: "Weeks Ended in First Place", rows: rankRows(managers.map((manager) => ({ manager, value: firstPlaceCounts.get(manager) || 0, display: `${firstPlaceCounts.get(manager) || 0} week${firstPlaceCounts.get(manager) === 1 ? "" : "s"}` }))) },
+      allPlay2026w8: { title: "2026 All-Play Through Week 8", rows: rankRows(allPlay2026w8) },
+      highestLosses: { title: "Highest Scores in a Loss", rows: rankRows(highestLossRows).slice(0, 10) },
+      standingsSpreadWeek8: { title: "Closest Standings Through Week 8", rows: rankRows([
+        { manager: "", label: "2026", value: 2, display: "2 games between 2nd and last" },
+        { manager: "", label: "2025", value: 4, display: "4 games between 2nd and last" },
+        { manager: "", label: "2024", value: 6, display: "6 games between 2nd and last" },
+      ], "asc") },
       blowoutMargins: { title: "Largest Blowout Margins", rows: rankRows(blowoutRows).slice(0, 14) },
-      winningStreaks: { title: "Longest Winning Streaks", rows: denseRankRows(winningStreakRows.filter((row) => row.value >= 4)) },
+      winningStreaks: { title: "Longest Regular-Season Winning Streaks", rows: denseRankRows(winningStreakRows.filter((row) => row.value >= 4)) },
       careerLows: { title: "Career Low Scores", rows: rankRows(careerLowRows, "asc") },
+      lowestScores: { title: "Lowest Scores in Waxball History", rows: rankRows(lowestScoreRows, "asc").slice(0, 15) },
       weeklyHighScores: { title: "Lowest Weekly High Scores", rows: rankRows(weeklyHighScoreRows, "asc") },
       weeklyAverages: { title: "Lowest Weekly League Averages", rows: rankRows(weeklyAverageRows, "asc") },
       weeklyRanges: { title: "Widest Weekly Scoring Ranges", rows: rankRows(weeklyRangeRows).slice(0, 13) },
       highScorerOpponents: { title: "Most Weeks Facing the Weekly High Scorer", rows: rankRows(managers.map((manager) => { const value = highScorerOpponentCounts.get(manager) || 0; return { manager, value, display: `${value} week${value === 1 ? "" : "s"}` }; })) },
       lowScorerOpponents: { title: "Most Weeks Facing the Weekly Low Scorer", rows: rankRows(managers.map((manager) => { const value = lowScorerOpponentCounts.get(manager) || 0; return { manager, value, display: `${value} week${value === 1 ? "" : "s"}` }; })) },
       lastPlaceWeeks: { title: "Weeks Ended in Last Place", rows: rankRows([
-        ["Will Price", 14], ["Miles Elliot", 8], ["Travis Roy Rogers", 5], ["Jacob Moskovitz", 3],
+        ["Will Price", 14], ["Miles Elliot", 8], ["Travis Roy Rogers", 5], ["Jacob Moskovitz", 4],
         ["Paul Legallet", 2], ["Miles Blue", 1], ["Jakob Cooper", 1], ["Erik Ohno Dagoberg", 1],
       ].map(([manager, value]) => ({ manager, value, display: `${value} week${value === 1 ? "" : "s"}` }))) },
     };
