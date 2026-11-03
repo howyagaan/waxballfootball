@@ -753,6 +753,7 @@ let hiddenPermanentLeagueIds = loadRemovedLinkedLeagueIds();
 let pendingLeagueRemovalId = "";
 let expandedLeagueWatchIds = new Set();
 let showProjectedStandings = false;
+let standingsSort = { key: "standings", direction: "desc" };
 const permanentLinkedLeagueCache = new Map();
 
 init();
@@ -798,6 +799,17 @@ function init() {
     if (currentData) renderStandings(currentData.rosters, currentData.users);
   });
   document.addEventListener("click", (event) => {
+    const standingsSortTarget = event.target.closest("[data-standings-sort]");
+    if (standingsSortTarget) {
+      const key = standingsSortTarget.dataset.standingsSort;
+      standingsSort = key === "standings"
+        ? { key: "standings", direction: "desc" }
+        : standingsSort.key === key
+        ? { key, direction: standingsSort.direction === "desc" ? "asc" : "desc" }
+        : { key, direction: "desc" };
+      if (currentData) renderStandings(currentData.rosters, currentData.users);
+      return;
+    }
     const addLeague = event.target.closest("[data-other-league-start]");
     if (addLeague) {
       const addedCount = additionalLeagueCount(selectedRosterId);
@@ -1456,14 +1468,17 @@ function renderStandings(rosters, users) {
   const allPlay = allPlayRecords(currentData?.matchupsByWeek || {}, displayedThroughWeek);
   const recentResults = recentResultsByRoster(currentData?.matchupsByWeek || {}, displayedThroughWeek);
   const regularRanks = new Map(sortRosters(rosters, users).map((roster, index) => [Number(roster.roster_id), index + 1]));
-  const rows = sortRosters(displayedRosters, users)
+  const sortedRosters = sortStandingsRows(displayedRosters, users, allPlay);
+  const rows = sortedRosters
     .map((roster, index) => {
       const ties = stat(roster, "ties");
       const record = `${stat(roster, "wins")}-${stat(roster, "losses")}${ties ? `-${ties}` : ""}`;
       const selected = Number(selectedRosterId) === Number(roster.roster_id);
-      const movement = useProjection
-        ? projectedStandingMovement(roster, index + 1, regularRanks)
-        : standingMovement(roster, rosters, users);
+      const movement = standingsSort.key === "standings"
+        ? useProjection
+          ? projectedStandingMovement(roster, index + 1, regularRanks)
+          : standingMovement(roster, rosters, users)
+        : "";
       return `
         <tr class="${selected ? "selected-row" : ""} ${useProjection ? "projected-row" : ""}">
           <td class="rank">${index + 1}${movement}</td>
@@ -1480,6 +1495,26 @@ function renderStandings(rosters, users) {
     })
     .join("");
   els.standings.innerHTML = rows || `<tr><td colspan="5">No standings available.</td></tr>`;
+}
+
+function sortStandingsRows(rosters, users, allPlay) {
+  if (standingsSort.key === "standings") return sortRosters(rosters, users);
+  const direction = standingsSort.direction === "asc" ? 1 : -1;
+  const value = (roster) => {
+    if (standingsSort.key === "pf") return totalPoints(roster, "fpts");
+    if (standingsSort.key === "pa") return totalPoints(roster, "fpts_against");
+    if (standingsSort.key === "allPlay") {
+      const record = allPlay.get(Number(roster.roster_id));
+      return Number(record?.wins || 0) + (Number(record?.ties || 0) * 0.5);
+    }
+    return 0;
+  };
+  const defaultOrder = new Map(sortRosters(rosters, users).map((roster, index) => [Number(roster.roster_id), index]));
+  return [...rosters].sort((first, second) => {
+    const difference = (value(first) - value(second)) * direction;
+    if (difference) return difference;
+    return defaultOrder.get(Number(first.roster_id)) - defaultOrder.get(Number(second.roster_id));
+  });
 }
 
 function projectedStandingMovement(roster, projectedRank, regularRanks) {
@@ -1638,14 +1673,35 @@ function renderStandingsHeader(isDraftOrder) {
     `
     : `
       <tr>
-        <th>#</th>
+        ${standingsResetHeader("#")}
         <th>Team</th>
-        <th>Rec</th>
-        <th>PF</th>
-        <th>PA</th>
-        <th class="all-play-column">All-Play</th>
+        ${standingsResetHeader("Rec")}
+        ${standingsSortHeader("pf", "PF")}
+        ${standingsSortHeader("pa", "PA")}
+        ${standingsSortHeader("allPlay", "All-Play", "all-play-column")}
       </tr>
     `;
+}
+
+function standingsResetHeader(label) {
+  return `
+    <th>
+      <button class="standings-sort-button" type="button" data-standings-sort="standings" aria-label="Restore league standings order">${label}</button>
+    </th>
+  `;
+}
+
+function standingsSortHeader(key, label, className = "") {
+  const active = standingsSort.key === key;
+  const ariaSort = active ? (standingsSort.direction === "desc" ? "descending" : "ascending") : "none";
+  const arrow = active ? (standingsSort.direction === "desc" ? "↓" : "↑") : "";
+  return `
+    <th class="${className}" aria-sort="${ariaSort}">
+      <button class="standings-sort-button" type="button" data-standings-sort="${key}" aria-label="Sort standings by ${label}${active ? `, currently ${ariaSort}` : ""}">
+        <span>${label}</span><span class="standings-sort-arrow" aria-hidden="true">${arrow}</span>
+      </button>
+    </th>
+  `;
 }
 
 function renderDraftOrderMock(rosters, users) {
@@ -2271,13 +2327,17 @@ function setHeroCopy(copy) {
     if (/^(TNF|SNF|MNF) game:|^Next NFL game:/.test(line)) {
       lineElement.classList.add("hero-game-preview-line");
     }
-    const statusPattern = /\[\[(STARTED|BENCHED|UNROSTERED)\]\]/g;
+    const statusPattern = /\[\[(STARTED|BENCHED|UNROSTERED|WIN|LOSS|DRAW)\]\]/g;
     let cursor = 0;
     for (const match of line.matchAll(statusPattern)) {
       lineElement.append(document.createTextNode(line.slice(cursor, match.index)));
       const status = document.createElement("span");
-      status.className = `hero-lineup-status is-${match[1].toLowerCase()}`;
-      status.textContent = `(${match[1][0]}${match[1].slice(1).toLowerCase()})`;
+      const resultLabels = { WIN: "W", LOSS: "L", DRAW: "D" };
+      const isResult = Boolean(resultLabels[match[1]]);
+      status.className = `${isResult ? "hero-manager-result" : "hero-lineup-status"} is-${match[1].toLowerCase()}`;
+      status.textContent = isResult
+        ? resultLabels[match[1]]
+        : `(${match[1][0]}${match[1].slice(1).toLowerCase()})`;
       lineElement.append(status);
       cursor = match.index + match[0].length;
     }
@@ -2489,7 +2549,7 @@ async function previousWeekTopPprCopy(options = {}) {
     .map((item, index) => {
       if (!item.roster) return `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) [[UNROSTERED]]`;
       const owner = ownerIdentityName(item.roster, currentData.users);
-      return `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) - ${owner}${lineupStatusMarker(item)}`;
+      return `${index + 1}. ${item.player.name} (${item.points.toFixed(2)}) - ${owner}${weekResultMarker(week, item.roster)}${lineupStatusMarker(item)}`;
     })
     .join("\n");
   return `Previous week top PPR players:\n${leaders}`;
@@ -2542,6 +2602,22 @@ function lineupStatusMarker(player) {
   if (player.lineupStatus === "benched") return " [[BENCHED]]";
   if (player.lineupStatus === "unrostered") return " [[UNROSTERED]]";
   return "";
+}
+
+function weekResultMarker(week, roster) {
+  if (!roster) return "";
+  const matchups = currentData?.matchupsByWeek?.[week] || [];
+  const mine = matchups.find((matchup) => Number(matchup.roster_id) === Number(roster.roster_id));
+  if (!mine) return "";
+  const opponent = matchups.find((matchup) => (
+    Number(matchup.roster_id) !== Number(roster.roster_id)
+    && Number(matchup.matchup_id) === Number(mine.matchup_id)
+  ));
+  if (!opponent) return "";
+  const mineScore = scoreFor(mine);
+  const opponentScore = scoreFor(opponent);
+  if (mineScore === opponentScore) return " [[DRAW]]";
+  return mineScore > opponentScore ? " [[WIN]]" : " [[LOSS]]";
 }
 
 function finalGameScore(event) {

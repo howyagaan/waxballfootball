@@ -462,6 +462,23 @@ body[data-theme="midweek"] .hero {
   color: var(--muted);
 }
 
+.hero-manager-result {
+  margin-left: 0.3em;
+  font-weight: 950;
+}
+
+.hero-manager-result.is-win {
+  color: #27e47b;
+}
+
+.hero-manager-result.is-loss {
+  color: #ff5f78;
+}
+
+.hero-manager-result.is-draw {
+  color: #ffad42;
+}
+
 .hero-game-preview-line {
   color: var(--muted);
   font-weight: 400;
@@ -2552,6 +2569,34 @@ strong {
   font-weight: 950;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.standings-sort-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.standings-sort-button:hover,
+.standings-sort-button:focus-visible,
+th[aria-sort="ascending"] .standings-sort-button,
+th[aria-sort="descending"] .standings-sort-button {
+  color: var(--teal);
+}
+
+.standings-sort-arrow {
+  min-width: 0.7em;
+  font-size: 0.9em;
 }
 
 .fit-table tr:last-child td {
