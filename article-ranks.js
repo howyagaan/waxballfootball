@@ -51,6 +51,12 @@
     { id: "2026-w8-m4", season: 2026, week: 8, stage: "Regular season", managers: ["Jakob Cooper", "Nic Hamilton"], scores: [125.48, 112.92] },
     { id: "2026-w8-m5", season: 2026, week: 8, stage: "Regular season", managers: ["Milo Manheim", "Travis Roy Rogers"], scores: [130.50, 118.00] },
     { id: "2026-w8-m6", season: 2026, week: 8, stage: "Regular season", managers: ["Paul Legallet", "Christian Engelhardt"], scores: [120.08, 85.16] },
+    { id: "2026-w9-m1", season: 2026, week: 9, stage: "Regular season", managers: ["Miles Elliot", "Christian Engelhardt"], scores: [145.68, 92.66] },
+    { id: "2026-w9-m2", season: 2026, week: 9, stage: "Regular season", managers: ["Nic Hamilton", "Will Price"], scores: [147.88, 112.30] },
+    { id: "2026-w9-m3", season: 2026, week: 9, stage: "Regular season", managers: ["Jakob Cooper", "Milo Manheim"], scores: [131.56, 126.96] },
+    { id: "2026-w9-m4", season: 2026, week: 9, stage: "Regular season", managers: ["Erik Ohno Dagoberg", "Paul Legallet"], scores: [137.80, 125.84] },
+    { id: "2026-w9-m5", season: 2026, week: 9, stage: "Regular season", managers: ["Sam Labovitz", "Jacob Moskovitz"], scores: [107.96, 66.50] },
+    { id: "2026-w9-m6", season: 2026, week: 9, stage: "Regular season", managers: ["Travis Roy Rogers", "Miles Blue"], scores: [127.38, 75.36] },
   ];
   const MANAGER_COLORS = {
     "Christian Engelhardt": "255, 20, 147",
@@ -231,6 +237,10 @@
       const lowest = rows.filter((row) => row.manager === manager).sort((a, b) => a.points - b.points)[0];
       return { manager, value: lowest.points, display: `${fmt(lowest.points)}pts - ${lowest.game.season} W${lowest.game.week}` };
     });
+    const careerHighRows = managers.map((manager) => {
+      const highest = rows.filter((row) => row.manager === manager).sort((a, b) => b.points - a.points)[0];
+      return { manager, value: highest.points, display: `${fmt(highest.points)}pts - ${highest.game.season} W${highest.game.week}` };
+    });
     const weeklyHighScoreRows = [...byWeek.entries()].map(([key, weekRows]) => {
       const highest = [...weekRows].sort((a, b) => b.points - a.points)[0];
       const [season, week] = key.split("-");
@@ -328,6 +338,20 @@
       }
       return { manager, value: wins, display: `${wins}-${losses}` };
     });
+    const allPlay2026w9 = managers.map((manager) => {
+      let wins = 0;
+      let losses = 0;
+      for (let week = 1; week <= 9; week += 1) {
+        const weekRows = rows.filter((row) => Number(row.game.season) === 2026 && Number(row.game.week) === week);
+        const managerRow = weekRows.find((row) => row.manager === manager);
+        if (!managerRow) continue;
+        weekRows.filter((row) => row.manager !== manager).forEach((row) => {
+          if (managerRow.points > row.points) wins += 1;
+          else if (managerRow.points < row.points) losses += 1;
+        });
+      }
+      return { manager, value: wins, display: `${wins}-${losses}` };
+    });
     const blowoutRows = matchups.map((game) => {
       const firstScore = Number(game.scores?.[0] || 0);
       const secondScore = Number(game.scores?.[1] || 0);
@@ -376,7 +400,10 @@
         };
       }).filter((row) => row.display !== "0-0")) },
       standings2026w3: { title: "Week 3 Standings", rows: rankRows(standingsThroughWeek(3)) },
+      standings2026w9: { title: "Week 9 Standings", rows: rankRows(standingsThroughWeek(9)) },
       weekScore2026w2: { title: "Week 2 Scores", rows: rankRows(rows.filter((row) => Number(row.game.season) === 2026 && Number(row.game.week) === 2).map((row) => ({ manager: row.manager, value: row.points, display: pts(row.points) }))) },
+      weekScore2025w12: { title: "2025 Week 12 Scores", rows: rankRows(rows.filter((row) => Number(row.game.season) === 2025 && Number(row.game.week) === 12).map((row) => ({ manager: row.manager, value: row.points, display: pts(row.points) }))) },
+      weekScore2026w9: { title: "Week 9 Scores", rows: rankRows(rows.filter((row) => Number(row.game.season) === 2026 && Number(row.game.week) === 9).map((row) => ({ manager: row.manager, value: row.points, display: pts(row.points) }))) },
       pa2026w2: { title: "2026 Points Against Through Week 2", rows: rankRows(profiles.map((profile) => {
         const value = rows.filter((row) => row.manager === profile.manager && Number(row.game.season) === 2026 && Number(row.game.week) <= 2).reduce((sum, row) => sum + row.oppPoints, 0);
         return { manager: profile.manager, value, display: pts(value) };
@@ -392,6 +419,31 @@
       standingsPodiums: { title: "Weeks Ended on the Podium", rows: rankRows(managers.map((manager) => ({ manager, value: standingsPodiumCounts.get(manager) || 0, display: `${standingsPodiumCounts.get(manager) || 0} weeks` }))) },
       weeksFirst: { title: "Weeks Ended in First Place", rows: rankRows(managers.map((manager) => ({ manager, value: firstPlaceCounts.get(manager) || 0, display: `${firstPlaceCounts.get(manager) || 0} week${firstPlaceCounts.get(manager) === 1 ? "" : "s"}` }))) },
       allPlay2026w8: { title: "2026 All-Play Through Week 8", rows: rankRows(allPlay2026w8) },
+      allPlay2026w9: { title: "2026 All-Play Through Week 9", rows: rankRows(allPlay2026w9) },
+      pf2026w9: { title: "2026 Points For Through Week 9", rows: rankRows(managers.map((manager) => {
+        const value = rows.filter((row) => row.manager === manager && Number(row.game.season) === 2026 && Number(row.game.week) <= 9).reduce((sum, row) => sum + row.points, 0);
+        return { manager, value, display: pts(value) };
+      })) },
+      zeroOneWeek9: { title: "Best Week 9 Records After Starting 0-1", rows: rankRows([
+        { manager: "Miles Elliot", value: 8, display: "8-1 · 2026" },
+        { manager: "Erik Ohno Dagoberg", value: 6, display: "6-3 · 2024" },
+        { manager: "Jacob Moskovitz", value: 6, display: "6-3 · 2025" },
+        { manager: "Travis Roy Rogers", value: 5, display: "5-4 · 2024" },
+        { manager: "Miles Blue", value: 5, display: "5-4 · 2024" },
+        { manager: "Erik Ohno Dagoberg", value: 5, display: "5-4 · 2025" },
+        { manager: "Will Price", value: 5, display: "5-4 · 2025" },
+      ]) },
+      benchedWeeklyHigh: { title: "Weekly Top NFL Scorers Benched", rows: [
+        { manager: "Nic Hamilton", rank: 1, value: 36.50, display: "Tony Pollard · 36.50pts · 2026 W7 · Won" },
+        { manager: "Christian Engelhardt", rank: 2, value: 35.36, display: "C.J. Stroud · 35.36pts · 2026 W9 · Lost" },
+      ] },
+      playoffDecisionWeeks: { title: "First Playoff Decisions", rows: [
+        { manager: "", label: "2024", rank: 1, value: 11, display: "First elimination W11 · first berths W12" },
+        { manager: "", label: "2025", rank: 2, value: 12, display: "First elimination and berth W12" },
+        { manager: "", label: "2026", rank: 3, value: 14, display: "No decision through W9" },
+      ] },
+      highestScores: { title: "Highest Scores in Waxball History", rows: rankRows(rows.map((row) => ({ manager: row.manager, value: row.points, display: `${fmt(row.points)}pts - ${row.game.season} W${row.game.week}` }))).slice(0, 15) },
+      careerHighs: { title: "Career High Scores", rows: rankRows(careerHighRows) },
       highestLosses: { title: "Highest Scores in a Loss", rows: rankRows(highestLossRows).slice(0, 10) },
       standingsSpreadWeek8: { title: "Closest Standings Through Week 8", rows: rankRows([
         { manager: "", label: "2026", value: 2, display: "2 games between 2nd and last" },
@@ -414,7 +466,7 @@
     };
   }
 
-  function showLeaderboard(key, activeManager) {
+  function showLeaderboard(key, activeManager, activeValue) {
     const board = buildLeaderboards()[key];
     if (!board) return;
     let popover = document.querySelector("#manager-rank-popover");
@@ -433,8 +485,11 @@
         <ol class="manager-rank-list">
           ${board.rows.map((row) => {
             const isManager = managers.includes(row.manager);
+            const activeManagers = String(activeManager || "").split("|").filter(Boolean);
+            const valueMatches = activeValue === "" || activeValue === undefined || Math.abs(Number(row.value) - Number(activeValue)) < EPSILON;
+            const isActive = activeManagers.includes(row.manager) && valueMatches;
             return `
-            <li class="${row.manager === activeManager ? "is-active" : ""}" ${isManager ? `style="${managerStyle(row.manager)}" data-manager-profile="${escapeHtml(row.manager)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(row.manager)} database"` : ""}>
+            <li class="${isActive ? "is-active" : ""}" ${isManager ? `style="${managerStyle(row.manager)}" data-manager-profile="${escapeHtml(row.manager)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(row.manager)} database"` : ""}>
               <small class="rank-line-title" data-share-only>${escapeHtml(board.title)}</small>
               <span>#${row.rank}</span>
               <strong>${escapeHtml(row.label || row.manager)}</strong>
@@ -451,7 +506,7 @@
   document.addEventListener("click", (event) => {
     const rankButton = event.target.closest("[data-article-rank-key]");
     if (rankButton) {
-      showLeaderboard(rankButton.dataset.articleRankKey, rankButton.dataset.articleRankManager || "");
+      showLeaderboard(rankButton.dataset.articleRankKey, rankButton.dataset.articleRankManager || "", rankButton.dataset.articleRankValue);
       return;
     }
     const popover = document.querySelector("#manager-rank-popover");
@@ -470,7 +525,7 @@
     const rankButton = event.target.closest("[data-article-rank-key]");
     if (rankButton && ["Enter", " "].includes(event.key)) {
       event.preventDefault();
-      showLeaderboard(rankButton.dataset.articleRankKey, rankButton.dataset.articleRankManager || "");
+      showLeaderboard(rankButton.dataset.articleRankKey, rankButton.dataset.articleRankManager || "", rankButton.dataset.articleRankValue);
       return;
     }
     const popover = document.querySelector("#manager-rank-popover");
