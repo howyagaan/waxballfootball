@@ -1,15 +1,15 @@
 (() => {
   const managerAliases = {
-    "Christian Engelhardt": ["Christian Engelhardt", "Steeler Virginity", "Christian"],
+    "Christian Engelhardt": ["Christian Engelhardt", "Steeler Virginity", "Virginity", "Christian"],
     "Erik Ohno Dagoberg": ["Erik Ohno Dagoberg", "Pamela Mari Ohno Dagoberg", "Erik"],
     "Jacob Moskovitz": ["Jacob Moskovitz", "poonfullofsugar", "comeback kid", "Mosko"],
     "Jakob Cooper": ["Jakob Cooper", "Papi Coop", "Havi"],
     "Miles Blue": ["Miles Blue", "blueballs", "Miles B", "Blue"],
-    "Miles Elliot": ["Miles Elliot", "Daddy Campbell", "Miles E", "Miles"],
+    "Miles Elliot": ["Miles Elliot", "Daddy Campbell", "Daddy", "Miles E", "Commish", "Miles"],
     "Milo Manheim": ["Milo Manheim", "Nacua Matata", "Milo"],
     "Nic Hamilton": ["Nic Hamilton", "Stat Fag", "Nic"],
     "Paul Legallet": ["Paul Legallet", "helloimpaul", "Paul"],
-    "Sam Labovitz": ["Sam Labovitz", "mistahbigdick", "Sam"],
+    "Sam Labovitz": ["Sam Labovitz", "mistahbigdick", "Big Dick", "Sam"],
     "Travis Roy Rogers": ["Travis Roy Rogers", "darryluvr3000", "Travis", "Trav"],
     "Will Price": ["Will Price", "poon messiah", "Will"],
   };

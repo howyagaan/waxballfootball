@@ -349,6 +349,14 @@ const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
 const ARTICLES_2026 = [
   {
+    week: 10,
+    headline: "CHRISTIANITY FUCKS!",
+    url: "./articles/2026/week-10.html",
+    thumbnail: "./assets/articles/2026/week-10/week10articlecover.png?v=1",
+    published: true,
+    publishedAt: "2026-11-17",
+  },
+  {
     week: 9,
     headline: "EIGHT MILE(S)",
     url: "./articles/2026/week-9.html",
@@ -2226,7 +2234,7 @@ function renderArticleArchive() {
 function articleCardMarkup(article, options = {}) {
   const thumbnail = article.thumbnail
     ? `<img src="${escapeHtml(article.thumbnail)}" alt="" loading="lazy" />`
-    : `<span>Week ${escapeHtml(article.week)}</span>`;
+    : `<span class="article-cover-placeholder"><strong>Week ${escapeHtml(article.week)}</strong><small>Cover coming soon</small></span>`;
   return `
     <article class="article-card ${options.featured ? "featured-article-card" : ""}">
       <a href="${escapeHtml(article.url)}" target="_blank" rel="noreferrer">

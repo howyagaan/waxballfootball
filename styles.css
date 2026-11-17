@@ -871,6 +871,27 @@ body[data-theme="midweek"] .hero {
   object-fit: cover;
 }
 
+.home-article-cover-placeholder {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-content: center;
+  gap: 0.2rem;
+  border: 1px solid rgba(0, 206, 184, 0.4);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(0, 206, 184, 0.2), rgba(79, 140, 255, 0.12));
+  text-align: center;
+}
+
+.home-article-cover-placeholder strong,
+.home-article-cover-placeholder small {
+  color: var(--teal);
+  font-size: clamp(0.62rem, 1.8vw, 0.82rem);
+  font-weight: 1000;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
 .home-article-preview span {
   display: grid;
   gap: 0.25rem;
@@ -4551,6 +4572,15 @@ select {
   color: var(--ink);
 }
 
+.wax-manager-name {
+  color: var(--wax-manager-name-color, var(--ink));
+  font-weight: 1000;
+}
+
+.wax-stat-rank-list .wax-manager-name {
+  color: var(--wax-manager-name-color, var(--ink));
+}
+
 .wax-stat-details em {
   color: var(--teal);
   font-style: normal;
@@ -5440,6 +5470,25 @@ body[data-page="archive-2024"] .season-notes-grid p {
   object-fit: cover;
 }
 
+.article-cover-placeholder {
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.article-cover-placeholder strong {
+  color: var(--teal);
+  font-size: inherit;
+}
+
+.article-cover-placeholder small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
 .article-card-copy,
 .article-empty-card {
   padding: clamp(1rem, 3vw, 1.35rem);
@@ -5829,6 +5878,86 @@ body[data-page="archive-2024"] .season-notes-grid p {
 .article-heated-rivalry-text {
   color: var(--red);
   font-weight: 800;
+}
+
+.article-audio-player {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1.2rem clamp(1rem, 3vw, 1.6rem) 0;
+  padding: 1rem;
+  border: 1px solid rgba(0, 206, 184, 0.45);
+  border-radius: 8px;
+  background: rgba(0, 206, 184, 0.07);
+}
+
+.article-audio-player > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.article-audio-player .eyebrow {
+  margin: 0;
+  color: var(--teal);
+  font-size: 0.72rem;
+}
+
+.article-audio-player strong {
+  color: var(--white);
+  font-size: 0.95rem;
+}
+
+.article-audio-player audio {
+  display: block;
+  width: 100%;
+  height: 44px;
+}
+
+@media (max-width: 520px) {
+  .article-audio-player > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+}
+
+.article-preview-matchup {
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  margin: 1.4rem 0 0.45rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  letter-spacing: 0.08em;
+}
+
+.article-preview-matchup strong {
+  font-size: 0.82em;
+  text-transform: uppercase;
+}
+
+.article-preview-matchup strong > .article-preview-v {
+  color: var(--muted);
+  padding-inline: 0.35em;
+}
+
+.wax-article-copy .article-positive {
+  color: var(--green) !important;
+  font-weight: 800;
+}
+
+.article-preview-matchup a {
+  color: var(--teal);
+  font-size: 0.62em;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.article-preview-matchup + p {
+  margin-top: 0;
 }
 
 .article-week7 .article-matchup-panel + .wax-article-copy {

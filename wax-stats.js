@@ -188,6 +188,36 @@
     const textStroke = "0 transparent";
     return `--manager-color-rgb: ${color}; --manager-color: rgb(${color}); --manager-readable-color: rgb(${readable}); --manager-text-shadow: none; --manager-text-stroke: ${textStroke};`;
   };
+  const MANAGER_NAME_ALIASES = {
+    Christian: "Christian Engelhardt",
+    Erik: "Erik Ohno Dagoberg",
+    Mosko: "Jacob Moskovitz",
+    Havi: "Jakob Cooper",
+    Blue: "Miles Blue",
+    "Miles E": "Miles Elliot",
+    Milo: "Milo Manheim",
+    Nic: "Nic Hamilton",
+    Paul: "Paul Legallet",
+    Sam: "Sam Labovitz",
+    Trav: "Travis Roy Rogers",
+    Will: "Will Price",
+  };
+  const managerNameHtml = (manager, label = manager) => {
+    const color = MANAGER_COLORS[manager];
+    const style = color ? ` style="--wax-manager-name-color: rgb(${color})"` : "";
+    return `<span class="wax-manager-name"${style}>${escapeHtml(label)}</span>`;
+  };
+  const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const managerDisplayNames = [...new Set([...managers, ...Object.keys(MANAGER_NAME_ALIASES)])]
+    .sort((a, b) => b.length - a.length);
+  const managerNamePattern = new RegExp(
+    `(^|[^A-Za-z])(${managerDisplayNames.map(escapeRegExp).join("|")})(?=$|[^A-Za-z])`,
+    "g"
+  );
+  const colorizeManagerNames = (html) => String(html || "").replace(
+    managerNamePattern,
+    (_match, prefix, label) => `${prefix}${managerNameHtml(MANAGER_NAME_ALIASES[label] || label, label)}`
+  );
   const ordinal = (n) => {
     const suffix = n % 10 === 1 && n % 100 !== 11 ? "st" : n % 10 === 2 && n % 100 !== 12 ? "nd" : n % 10 === 3 && n % 100 !== 13 ? "rd" : "th";
     return `${n}${suffix}`;
@@ -489,8 +519,8 @@
       }, new Map());
   }
 
-  function scheduleRows(mode, includeAll = false) {
-    const regularGames = regularSeasonGameRows();
+  function scheduleRows(mode, includeAll = false, completedOnly = false) {
+    const regularGames = regularSeasonGameRows().filter((game) => !completedOnly || FINAL_FINISH[game.season]);
     const seasonFinishMaps = new Map([...new Set(regularGames.map((game) => game.season))].map((season) => [season, regularSeasonFinishMap(season)]));
     const rows = [];
     regularGames.forEach((game) => {
@@ -510,9 +540,11 @@
     return includeAll ? rows : tiedRows(rows, (row) => row.pointsAgainst, mode);
   }
 
-  function seasonPfRows(mode, includeAll = false) {
+  function seasonPfRows(mode, includeAll = false, completedOnly = false) {
     const rows = [];
-    regularSeasonRows(sideRows()).forEach((row) => {
+    regularSeasonRows(sideRows())
+      .filter((row) => !completedOnly || FINAL_FINISH[row.game.season])
+      .forEach((row) => {
       let record = rows.find((item) => item.manager === row.manager && item.season === row.game.season);
       if (!record) {
         record = { manager: row.manager, team: row.team, season: row.game.season, pointsFor: 0, games: 0 };
@@ -520,7 +552,7 @@
       }
       record.pointsFor += row.points;
       record.games += 1;
-    });
+      });
     return includeAll ? rows : tiedRows(rows, (row) => row.pointsFor, mode);
   }
 
@@ -665,7 +697,7 @@
         <span>${escapeHtml(title)}</span>
         <strong>${escapeHtml(value)}</strong>
         <div class="wax-stat-details">
-          ${detailItems.map((detail) => `<p>${detail}</p>`).join("")}
+          ${detailItems.map((detail) => `<p>${colorizeManagerNames(detail)}</p>`).join("")}
         </div>
       </article>
     `;
@@ -677,7 +709,7 @@
         <button class="share-capture-button wax-stat-share" type="button" data-share-capture data-share-title="Wax Stats - ${escapeHtml(adjustment.title)}">Share</button>
         <span>${escapeHtml(adjustment.title)}</span>
         <strong>${escapeHtml(adjustment.value)}</strong>
-        <p>${adjustment.detail}</p>
+        <p>${colorizeManagerNames(adjustment.detail)}</p>
       </article>
     `;
   }
@@ -954,9 +986,9 @@
     const bestAverage = tiedRows(averages, (row) => row.average, "max");
     const worstAverage = tiedRows(averages, (row) => row.average, "min");
     const mostSeasonPf = seasonPfRows("max");
-    const leastSeasonPf = seasonPfRows("min");
+    const leastSeasonPf = seasonPfRows("min", false, true);
     const mostBrutalSchedule = scheduleRows("max");
-    const easiestSchedule = scheduleRows("min");
+    const easiestSchedule = scheduleRows("min", false, true);
     const bestPlayoffPerformer = playoffPerformerRows();
     const topThreeFinishes = weeklyTopThreeRows();
     const bottomThreeFinishes = weeklyBottomThreeRows();
@@ -1218,9 +1250,9 @@
       ["Best average score", rankedLeaderboard(averages, (row) => row.average, "max", (row) => row.manager, (row) => `${fmt(row.average)} pts • ${row.games} games`)],
       ["Worst average score", rankedLeaderboard(averages, (row) => row.average, "min", (row) => row.manager, (row) => `${fmt(row.average)} pts • ${row.games} games`)],
       ["Most PF in a regular season", rankedLeaderboard(seasonPfRows("max", true), (row) => row.pointsFor, "max", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsFor)} PF • ${row.games} games`)],
-      ["Least PF in a regular season", rankedLeaderboard(seasonPfRows("min", true), (row) => row.pointsFor, "min", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsFor)} PF • ${row.games} games`)],
+      ["Least PF in a regular season", rankedLeaderboard(seasonPfRows("min", true, true), (row) => row.pointsFor, "min", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsFor)} PF • ${row.games} games`)],
       ["Most brutal schedule", rankedLeaderboard(scheduleRows("max", true), (row) => row.pointsAgainst, "max", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsAgainst)} PA • regular season ${row.regularFinish}`)],
-      ["Easiest schedule", rankedLeaderboard(scheduleRows("min", true), (row) => row.pointsAgainst, "min", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsAgainst)} PA • regular season ${row.regularFinish}`)],
+      ["Easiest schedule", rankedLeaderboard(scheduleRows("min", true, true), (row) => row.pointsAgainst, "min", (row) => `${row.manager} • ${row.season}`, (row) => `${fmt(row.pointsAgainst)} PA • regular season ${row.regularFinish}`)],
       ["Best playoff performer", rankedLeaderboard(playoffPerformerRows(true), (row) => row.average, "max", (row) => row.manager, (row) => `${fmt(row.average)} pts avg. • ${row.games} games`)],
       ["Most loyal manager", rankedLeaderboard(loyaltyRows, (row) => row.kept, "max", (row) => `${row.manager} • ${row.season}`, (row) => `${row.kept} of ${row.drafted} draft picks kept`)],
       ["Least loyal manager", rankedLeaderboard(loyaltyRows, (row) => row.kept, "min", (row) => `${row.manager} • ${row.season}`, (row) => `${row.kept} of ${row.drafted} draft picks kept`)],
@@ -1284,7 +1316,7 @@
             <li class="${selectedManager && row.managers.includes(selectedManager) ? "is-active" : ""}" style="${managerRowStyle(row.managers)}">
               <small class="rank-line-title" data-share-only>${escapeHtml(title)}</small>
               <span>${row.rank}</span>
-              <strong>${escapeHtml(row.label)}</strong>
+              <strong>${colorizeManagerNames(escapeHtml(row.label))}</strong>
               <em>${escapeHtml(row.detail)}</em>
               <button class="share-capture-button rank-line-share" type="button" data-share-capture data-share-title="${escapeHtml(row.label)} - ${escapeHtml(title)}">Share</button>
             </li>

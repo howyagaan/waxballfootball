@@ -57,6 +57,12 @@
     { id: "2026-w9-m4", season: 2026, week: 9, stage: "Regular season", managers: ["Erik Ohno Dagoberg", "Paul Legallet"], scores: [137.80, 125.84] },
     { id: "2026-w9-m5", season: 2026, week: 9, stage: "Regular season", managers: ["Sam Labovitz", "Jacob Moskovitz"], scores: [107.96, 66.50] },
     { id: "2026-w9-m6", season: 2026, week: 9, stage: "Regular season", managers: ["Travis Roy Rogers", "Miles Blue"], scores: [127.38, 75.36] },
+    { id: "2026-w10-m1", season: 2026, week: 10, stage: "Regular season", managers: ["Christian Engelhardt", "Sam Labovitz"], scores: [173.94, 89.12] },
+    { id: "2026-w10-m2", season: 2026, week: 10, stage: "Regular season", managers: ["Miles Elliot", "Erik Ohno Dagoberg"], scores: [167.76, 125.24] },
+    { id: "2026-w10-m3", season: 2026, week: 10, stage: "Regular season", managers: ["Jakob Cooper", "Miles Blue"], scores: [133.56, 85.22] },
+    { id: "2026-w10-m4", season: 2026, week: 10, stage: "Regular season", managers: ["Jacob Moskovitz", "Paul Legallet"], scores: [112.02, 91.90] },
+    { id: "2026-w10-m5", season: 2026, week: 10, stage: "Regular season", managers: ["Will Price", "Milo Manheim"], scores: [129.08, 103.02] },
+    { id: "2026-w10-m6", season: 2026, week: 10, stage: "Regular season", managers: ["Travis Roy Rogers", "Nic Hamilton"], scores: [134.72, 113.06] },
   ];
   const MANAGER_COLORS = {
     "Christian Engelhardt": "255, 20, 147",
@@ -352,6 +358,47 @@
       }
       return { manager, value: wins, display: `${wins}-${losses}` };
     });
+    const allPlay2026w10 = managers.map((manager) => {
+      let wins = 0;
+      let losses = 0;
+      for (let week = 1; week <= 10; week += 1) {
+        const weekRows = rows.filter((row) => Number(row.game.season) === 2026 && Number(row.game.week) === week);
+        const managerRow = weekRows.find((row) => row.manager === manager);
+        if (!managerRow) continue;
+        weekRows.filter((row) => row.manager !== manager).forEach((row) => {
+          if (managerRow.points > row.points) wins += 1;
+          else if (managerRow.points < row.points) losses += 1;
+        });
+      }
+      return { manager, value: wins, display: `${wins}-${losses}` };
+    });
+    const heaviestDefeatRows = managers.map((manager) => {
+      const defeat = rows
+        .filter((row) => row.manager === manager && row.points < row.oppPoints)
+        .sort((a, b) => (b.oppPoints - b.points) - (a.oppPoints - a.points))[0];
+      const value = defeat.oppPoints - defeat.points;
+      return { manager, value, display: `${fmt(value)}pts - ${defeat.game.season} W${defeat.game.week} vs ${defeat.opponent}` };
+    });
+    const activeWinningStreakRows = managers.map((manager) => {
+      const managerRows = rows
+        .filter((row) => row.manager === manager && Number(row.game.season) === 2026 && row.game.stage === "Regular season" && Number(row.game.week) <= 10)
+        .sort((a, b) => Number(b.game.week) - Number(a.game.week));
+      let value = 0;
+      for (const row of managerRows) {
+        if (row.points <= row.oppPoints) break;
+        value += 1;
+      }
+      return { manager, value, display: `${value} active win${value === 1 ? "" : "s"}` };
+    }).filter((row) => row.value > 0);
+    const pfThroughWeek10Rows = [];
+    [...new Set(rows.filter((row) => row.game.stage === "Regular season").map((row) => Number(row.game.season)))].forEach((season) => {
+      managers.forEach((manager) => {
+        const managerRows = rows.filter((row) => row.manager === manager && Number(row.game.season) === season && Number(row.game.week) <= 10 && row.game.stage === "Regular season");
+        if (!managerRows.length) return;
+        const value = managerRows.reduce((sum, row) => sum + row.points, 0);
+        pfThroughWeek10Rows.push({ manager, value, display: `${pts(value)} - ${season}` });
+      });
+    });
     const blowoutRows = matchups.map((game) => {
       const firstScore = Number(game.scores?.[0] || 0);
       const secondScore = Number(game.scores?.[1] || 0);
@@ -401,6 +448,7 @@
       }).filter((row) => row.display !== "0-0")) },
       standings2026w3: { title: "Week 3 Standings", rows: rankRows(standingsThroughWeek(3)) },
       standings2026w9: { title: "Week 9 Standings", rows: rankRows(standingsThroughWeek(9)) },
+      standings2026w10: { title: "Week 10 Standings", rows: rankRows(standingsThroughWeek(10)) },
       weekScore2026w2: { title: "Week 2 Scores", rows: rankRows(rows.filter((row) => Number(row.game.season) === 2026 && Number(row.game.week) === 2).map((row) => ({ manager: row.manager, value: row.points, display: pts(row.points) }))) },
       weekScore2025w12: { title: "2025 Week 12 Scores", rows: rankRows(rows.filter((row) => Number(row.game.season) === 2025 && Number(row.game.week) === 12).map((row) => ({ manager: row.manager, value: row.points, display: pts(row.points) }))) },
       weekScore2026w9: { title: "Week 9 Scores", rows: rankRows(rows.filter((row) => Number(row.game.season) === 2026 && Number(row.game.week) === 9).map((row) => ({ manager: row.manager, value: row.points, display: pts(row.points) }))) },
@@ -414,14 +462,23 @@
       pf: { title: "All-Time Points For", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pf, display: pts(profile.pf) }))) },
       pa: { title: "All-Time Points Against", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pa, display: pts(profile.pa) }))) },
       pointDiff: { title: "All-Time Point Difference", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pf - profile.pa, display: `${profile.pf >= profile.pa ? "+" : "-"}${fmt(Math.abs(profile.pf - profile.pa))}` })), "asc") },
+      pointDiffHigh: { title: "All-Time Point Difference", rows: rankRows(profiles.map((profile) => ({ manager: profile.manager, value: profile.pf - profile.pa, display: `${profile.pf >= profile.pa ? "+" : "-"}${fmt(Math.abs(profile.pf - profile.pa))}` }))) },
+      heaviestDefeats: { title: "Every Manager's Heaviest Defeat", rows: rankRows(heaviestDefeatRows) },
       weeklyTopThree: { title: "Weekly Top-Three Finishes", rows: rankRows(managers.map((manager) => ({ manager, value: topThreeCounts.get(manager) || 0, display: `${topThreeCounts.get(manager) || 0} finishes` }))) },
       weeklyLows: { title: "Most Weekly Low Scores", rows: rankRows(managers.map((manager) => ({ manager, value: weeklyLowCounts.get(manager) || 0, display: `${weeklyLowCounts.get(manager) || 0} weekly lows` }))) },
       standingsPodiums: { title: "Weeks Ended on the Podium", rows: rankRows(managers.map((manager) => ({ manager, value: standingsPodiumCounts.get(manager) || 0, display: `${standingsPodiumCounts.get(manager) || 0} weeks` }))) },
       weeksFirst: { title: "Weeks Ended in First Place", rows: rankRows(managers.map((manager) => ({ manager, value: firstPlaceCounts.get(manager) || 0, display: `${firstPlaceCounts.get(manager) || 0} week${firstPlaceCounts.get(manager) === 1 ? "" : "s"}` }))) },
       allPlay2026w8: { title: "2026 All-Play Through Week 8", rows: rankRows(allPlay2026w8) },
       allPlay2026w9: { title: "2026 All-Play Through Week 9", rows: rankRows(allPlay2026w9) },
+      allPlay2026w10: { title: "2026 All-Play Through Week 10", rows: rankRows(allPlay2026w10) },
+      activeWinningStreaks: { title: "Active Regular-Season Winning Streaks", rows: rankRows(activeWinningStreakRows) },
+      pfThroughWeek10: { title: "Most Points Through Week 10", rows: rankRows(pfThroughWeek10Rows) },
       pf2026w9: { title: "2026 Points For Through Week 9", rows: rankRows(managers.map((manager) => {
         const value = rows.filter((row) => row.manager === manager && Number(row.game.season) === 2026 && Number(row.game.week) <= 9).reduce((sum, row) => sum + row.points, 0);
+        return { manager, value, display: pts(value) };
+      })) },
+      pf2026w10: { title: "2026 Points For Through Week 10", rows: rankRows(managers.map((manager) => {
+        const value = rows.filter((row) => row.manager === manager && Number(row.game.season) === 2026 && Number(row.game.week) <= 10).reduce((sum, row) => sum + row.points, 0);
         return { manager, value, display: pts(value) };
       })) },
       zeroOneWeek9: { title: "Best Week 9 Records After Starting 0-1", rows: rankRows([
