@@ -942,7 +942,7 @@ async function loadAll() {
       loadSeason(ARCHIVE_2025_LEAGUE_ID, {
         includeTransactions: PAGE === "archive",
         includeDraft: PAGE === "archive",
-        matchupWeeks: PAGE === "current" ? WEEKS : PAGE === "archive" ? WEEKS.filter((week) => week <= 14) : null,
+        matchupWeeks: PAGE === "current" || PAGE === "archive" ? WEEKS : null,
       }),
       loadNflContext(),
     ]);
@@ -995,7 +995,10 @@ async function loadSeason(leagueId, options = {}) {
     ? availableMatchupWeeks(week)
     : options.matchupWeeks || (options.includeDraft ? [week, 15, 16, 17] : [week]);
   const matchupsByWeek = await loadMatchupsForWeeks(leagueId, matchupWeeks);
-  const history = buildHistory(league, rosters, users, winnersBracket, losersBracket);
+  const historyRosters = String(leagueId) === ARCHIVE_2025_LEAGUE_ID
+    ? standingsThroughWeek(rosters, matchupsByWeek, 14)
+    : rosters;
+  const history = buildHistory(league, historyRosters, users, winnersBracket, losersBracket);
 
   return { league, rosters, users, state, week, winnersBracket, losersBracket, transactions, draftPicks, matchupsByWeek, history };
 }
@@ -2047,7 +2050,7 @@ function renderArchiveTable(data) {
         <td class="rank">${row.rank}</td>
         <td>${teamCell(row.roster, data.users)}</td>
         <td>${recordText(row)}</td>
-        <td>${Math.round(Number(row.pointsFor))}</td>
+        <td>${Number(row.pointsFor).toFixed(2)}</td>
         <td><span class="${finishMovementClass(row, data)}">${escapeHtml(finalFinishLabel(row, data))}</span></td>
         <td class="all-play-column ${allPlayRecordClass(allPlay.get(Number(row.roster?.roster_id)))}">${formatAllPlayRecord(allPlay.get(Number(row.roster?.roster_id)))}</td>
       </tr>
