@@ -349,6 +349,14 @@ const DRAFT_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "post-draft";
 const WEEK_COMPLETE_PREVIEW = QUERY_PARAMS.get("preview") === "week-complete";
 const ARTICLES_2026 = [
   {
+    week: 11,
+    headline: "CERO PUNTO UNO",
+    url: "./articles/2026/week-11.html",
+    thumbnail: "./assets/articles/2026/week-11/week11articlecover.png",
+    published: true,
+    publishedAt: "2026-11-24",
+  },
+  {
     week: 10,
     headline: "CHRISTIANITY FUCKS!",
     url: "./articles/2026/week-10.html",
