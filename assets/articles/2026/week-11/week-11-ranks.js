@@ -220,6 +220,7 @@
       });
     });
     const standingsPodiumCounts = new Map();
+    const standingsPositionTotals = new Map();
     [...new Set(matchups.filter((game) => game.stage === "Regular season").map((game) => Number(game.season)))].forEach((season) => {
       const seasonGames = matchups.filter((game) => Number(game.season) === season && game.stage === "Regular season");
       const seasonManagers = [...new Set(seasonGames.flatMap((game) => game.managers || []))];
@@ -246,6 +247,12 @@
           return second.wins - first.wins || first.losses - second.losses || second.pf - first.pf;
         });
         firstPlaceCounts.set(standings[0], (firstPlaceCounts.get(standings[0]) || 0) + 1);
+        standings.forEach((manager, index) => {
+          const totals = standingsPositionTotals.get(manager) || { position: 0, weeks: 0 };
+          totals.position += index + 1;
+          totals.weeks += 1;
+          standingsPositionTotals.set(manager, totals);
+        });
         standings.slice(0, 3).forEach((manager) => {
           standingsPodiumCounts.set(manager, (standingsPodiumCounts.get(manager) || 0) + 1);
         });
@@ -447,6 +454,13 @@
       heaviestDefeats: { title: "Every Manager's Heaviest Defeat", rows: rankRows(heaviestDefeatRows) },
       weeklyTopThree: { title: "Weekly Top-Three Finishes", rows: rankRows(managers.map((manager) => ({ manager, value: topThreeCounts.get(manager) || 0, display: `${topThreeCounts.get(manager) || 0} finishes` }))) },
       weeklyLows: { title: "Most Weekly Low Scores", rows: rankRows(managers.map((manager) => ({ manager, value: weeklyLowCounts.get(manager) || 0, display: `${weeklyLowCounts.get(manager) || 0} weekly lows` }))) },
+      averageStandingsPosition: {
+        title: "Average Standings Position",
+        rows: rankRows([...standingsPositionTotals].map(([manager, totals]) => {
+          const value = totals.position / totals.weeks;
+          return { manager, value, display: fmt(value) };
+        }), "asc"),
+      },
       standingsPodiums: { title: "Weeks Ended on the Podium", rows: rankRows(managers.map((manager) => ({ manager, value: standingsPodiumCounts.get(manager) || 0, display: `${standingsPodiumCounts.get(manager) || 0} weeks` }))) },
       weeksFirst: { title: "Weeks Ended in First Place", rows: rankRows(managers.map((manager) => ({ manager, value: firstPlaceCounts.get(manager) || 0, display: `${firstPlaceCounts.get(manager) || 0} week${firstPlaceCounts.get(manager) === 1 ? "" : "s"}` }))) },
       allPlay2026w8: { title: "2026 All-Play Through Week 8", rows: rankRows(allPlay2026w8) },
