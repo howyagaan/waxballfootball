@@ -123,10 +123,84 @@ body[data-theme="mnf"] {
 }
 
 body[data-theme="thanksgiving"] {
-  --teal: #ffb84d;
-  --teal-2: #c26a1b;
-  --blue: #ef4444;
+  --bg: #160e11;
+  --panel: #24171a;
+  --panel-2: #311d20;
+  --panel-3: #402526;
+  --line: #624037;
+  --teal: #ffbd62;
+  --teal-2: #bb6c34;
+  --blue: #f5aaa0;
+  --muted: #ceb8ad;
+  background: radial-gradient(ellipse at 15% 0%, #542820, transparent 45rem), var(--bg);
 }
+
+.thanksgiving-leaves {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow: hidden;
+  pointer-events: none;
+}
+.thanksgiving-leaves span {
+  position: absolute;
+  top: -5rem;
+  left: var(--leaf-x);
+  font-size: calc(var(--leaf-size) * 3);
+  opacity: 0;
+  animation: thanksgiving-leaf-fall var(--leaf-time) var(--leaf-delay) linear both;
+}
+@keyframes thanksgiving-leaf-fall {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) rotate(-25deg); }
+  13% { opacity: .85; }
+  82% { opacity: .75; }
+  100% { opacity: 0; transform: translate3d(var(--leaf-drift), calc(100vh + 4rem), 0) rotate(250deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .thanksgiving-leaves { display: none; }
+}
+
+.holiday-weekend { margin-top: 1rem; }
+.holiday-feature {
+  padding: clamp(.95rem, 3vw, 1.45rem);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--teal);
+  border-radius: .85rem;
+  background: var(--panel);
+}
+body[data-theme="thanksgiving"] .holiday-feature {
+  background: linear-gradient(145deg, #512a22, #28191e 68%);
+}
+.holiday-feature h2 { margin: .25rem 0; font-size: clamp(1.75rem, 6vw, 3.25rem); line-height: 1; }
+.holiday-feature p:last-child { margin: .55rem 0 0; color: var(--muted); }
+.holiday-next-up {
+  margin-top: .55rem;
+  border: 1px solid var(--line);
+  border-radius: .85rem;
+  background: var(--panel);
+}
+.holiday-next-up summary { padding: .8rem 1rem; cursor: pointer; font-weight: 800; }
+.holiday-next-up summary span { float: right; color: var(--muted); font-weight: 600; }
+.holiday-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  align-items: start;
+  gap: .8rem;
+  padding: 0 .85rem .85rem;
+}
+.holiday-days section { padding: .75rem; border-radius: .65rem; background: var(--panel-2); }
+.holiday-days h3 { margin: 0 0 .4rem; color: var(--teal); font-size: .85rem; }
+.holiday-days ul { margin: 0; padding: 0; list-style: none; }
+.holiday-days li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .2rem .65rem;
+  padding: .4rem 0;
+  border-top: 1px solid var(--line);
+  font-size: .85rem;
+}
+.holiday-days li span { color: var(--muted); }
 
 body[data-theme="playoffs"] {
   --teal: #facc15;
@@ -1927,10 +2001,17 @@ body[data-theme="mnf"] .matchup-card {
   font-size: clamp(1.2rem, 4vw, 2rem);
 }
 
-.matchup-versus-team strong {
+.matchup-versus-team > .team-copy {
+  width: 100%;
+  text-align: center;
+}
+
+.matchup-versus-team > .team-copy > strong {
   display: block;
   font-size: clamp(1.05rem, 3vw, 1.45rem);
   line-height: 1.05;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .matchup-manager-score {
@@ -6938,11 +7019,6 @@ footer {
   .matchup-versus-team .avatar {
     width: clamp(4rem, 22vw, 5.25rem);
     height: clamp(4rem, 22vw, 5.25rem);
-  }
-
-  .matchup-versus-team .team-copy {
-    width: 100%;
-    text-align: center;
   }
 
   .matchup-versus-team .team-copy strong {

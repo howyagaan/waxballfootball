@@ -227,11 +227,11 @@ const SLEEPER_MATCHDAY_SCHEDULE = {
     ["2026-w12-20261129-nyj-mia", "2026-11-29T13:00:00-05:00", "NYJ", "MIA", "CBS"],
     ["2026-w12-20261129-atl-min", "2026-11-29T13:00:00-05:00", "ATL", "MIN", "FOX"],
     ["2026-w12-20261129-nyg-ind", "2026-11-29T13:00:00-05:00", "NYG", "IND", "FOX"],
-    ["2026-w12-20261129-lv-cle", "2026-11-29T13:00:00-05:00", "LV", "CLE", "FOX"],
-    ["2026-w12-20261129-ten-jax", "2026-11-29T16:05:00-05:00", "TEN", "JAX", "CBS"],
+    ["2026-w12-20261129-ten-jax", "2026-11-29T13:00:00-05:00", "TEN", "JAX", "FOX"],
+    ["2026-w12-20261129-ne-lac", "2026-11-29T16:05:00-05:00", "NE", "LAC", "CBS"],
     ["2026-w12-20261129-was-ari", "2026-11-29T16:25:00-05:00", "WAS", "ARI", "FOX"],
     ["2026-w12-20261129-sea-sf", "2026-11-29T16:25:00-05:00", "SEA", "SF", "FOX"],
-    ["2026-w12-20261129-ne-lac", "2026-11-29T20:20:00-05:00", "NE", "LAC", "NBC"],
+    ["2026-w12-20261129-lv-cle", "2026-11-29T20:20:00-05:00", "LV", "CLE", "NBC"],
     ["2026-w12-20261130-car-tb", "2026-11-30T20:15:00-05:00", "CAR", "TB", "ESPN"]
   ],
   "2026-13": [
@@ -933,6 +933,14 @@ function init() {
     return;
   }
 
+  playThanksgivingLeaves();
+  if (thanksgivingWeekendDate()) {
+    const events = sleeperMatchdayEvents(2026, 12);
+    const mode = detectFootballMode(events);
+    applyModeTheme(mode);
+    renderHeroMode(mode);
+    renderThanksgivingWeekend(events);
+  }
   loadAll();
   window.setInterval(loadAll, AUTO_REFRESH_MS);
 }
@@ -996,7 +1004,7 @@ async function loadSeason(leagueId, options = {}) {
     fetchOptionalJson(`/league/${leagueId}/losers_bracket`, []),
   ]);
 
-  const week = displayWeek(league, state);
+  const week = leagueId === CURRENT_LEAGUE_ID && thanksgivingWeekendDate() ? 12 : displayWeek(league, state);
   const transactions = options.includeTransactions ? await loadTransactions(leagueId) : [];
   const draftPicks = options.includeDraft ? await fetchOptionalJson(`/draft/${ARCHIVE_2025_DRAFT_ID}/picks`, []) : [];
   const matchupWeeks = options.matchupWeeks === "available"
@@ -1159,8 +1167,9 @@ async function loadNflContext() {
   }
 
   const state = await fetchJson("/state/nfl");
-  const seasonYear = Number(state.season) || new Date().getFullYear();
-  const weekNumber = clampWeek(state.display_week || state.week || 1);
+  const holiday = thanksgivingWeekendDate();
+  const seasonYear = holiday ? 2026 : Number(state.season) || new Date().getFullYear();
+  const weekNumber = holiday ? 12 : clampWeek(state.display_week || state.week || 1);
   const events = sleeperMatchdayEvents(seasonYear, weekNumber);
   return {
     season: { year: seasonYear },
@@ -1246,6 +1255,7 @@ function renderCurrentPage() {
 
   applyModeTheme(nflData.mode);
   renderHeroMode(nflData.mode);
+  renderThanksgivingWeekend(nflData.events);
   renderLeagueAvatar(league);
   if (els.heroTitle) els.heroTitle.textContent = `Waxball ${league.season || "2026"}`;
   if (els.sleeperLink) {
@@ -1622,17 +1632,19 @@ function standingsTooltipManagerName(rosterId, rosters, users) {
 
 function standingsProjectionState(week) {
   const games = SLEEPER_MATCHDAY_SCHEDULE[`2026-${Number(week)}`] || [];
-  const thursday = games
+  const holidayWeek = Number(week) === 12;
+  const openingGame = games
     .map((game) => new Date(game[1]))
-    .filter((date) => easternParts(date).weekday === 4)
+    .filter((date) => easternParts(date).weekday === (holidayWeek ? 3 : 4))
     .sort((a, b) => a - b)[0];
-  if (!thursday) return { active: false, reason: "Available during the live scoring window" };
+  if (!openingGame) return { active: false, reason: "Available during the live scoring window" };
 
-  const opensAt = new Date(thursday.getTime() + 90 * 60 * 1000);
-  const thursdayParts = easternParts(thursday);
-  const closesAt = easternDateTime({ ...thursdayParts, day: thursdayParts.day + 5, hour: 3 });
+  const openingParts = easternParts(openingGame);
+  const monday = openingParts.day + (8 - openingParts.weekday) % 7;
+  const opensAt = easternDateTime({ ...openingParts, day: monday });
+  const closesAt = easternDateTime({ ...openingParts, day: monday + 1 });
   const now = currentDate();
-  if (now < opensAt) return { active: false, reason: `Available after TNF halftime · ${formatCountdownTarget(opensAt)}` };
+  if (now < opensAt) return { active: false, reason: "Available Monday" };
   if (now >= closesAt) return { active: false, reason: "Week complete · final table shown" };
   return { active: true, reason: "Based off live/current Sleeper totals (not projections)" };
 }
@@ -2289,6 +2301,7 @@ function formatArticleDate(value) {
 }
 
 function heroLeagueCopy(league) {
+  if (thanksgivingWeekendDate()) return "";
   if (isDraftCompletePreview()) {
     return "Draft complete preview: the draft countdown is gone, standings are live, the team selector is back, and Week 1 matchups are ready for Sleeper data.";
   }
@@ -2319,6 +2332,7 @@ function heroLeagueCopy(league) {
 
 async function renderModeHeroCopy(league) {
   if (!els.heroCopy || PAGE !== "current" || isPreseasonMode() || isDraftCompletePreview() || isHistoricalCurrentPreview()) return;
+  if (thanksgivingWeekendDate()) return;
   const label = nflData?.mode?.label;
   if (!["Tuesday", "Wednesday", "Friday", "Saturday", "Sunday", "Monday"].includes(label)) return;
   setHeroCopyLoading();
@@ -3053,6 +3067,91 @@ function statRank(roster, rosters, key, direction) {
   return sorted.findIndex((item) => item.roster_id === roster.roster_id) + 1;
 }
 
+function playThanksgivingLeaves() {
+  const { year, month, day } = easternParts();
+  if (!thanksgivingWeekendDate() || year !== 2026 || month !== 11 || day < 25 || day > 30
+    || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const layer = document.createElement("div");
+  layer.className = "thanksgiving-leaves";
+  layer.setAttribute("aria-hidden", "true");
+  const leaves = ["🍁", "🍂"];
+  for (let index = 0; index < 16; index += 1) {
+    const leaf = document.createElement("span");
+    leaf.textContent = leaves[index % leaves.length];
+    leaf.style.setProperty("--leaf-x", `${(index + Math.random()) * 6.25}%`);
+    leaf.style.setProperty("--leaf-drift", `${Math.round(Math.random() * 100 - 50)}px`);
+    leaf.style.setProperty("--leaf-delay", `${(Math.random() * 1.2).toFixed(2)}s`);
+    leaf.style.setProperty("--leaf-time", `${(2.6 + Math.random() * 1.3).toFixed(2)}s`);
+    leaf.style.setProperty("--leaf-size", `${(0.85 + Math.random() * 0.65).toFixed(2)}rem`);
+    layer.appendChild(leaf);
+  }
+  document.body.appendChild(layer);
+  window.setTimeout(() => layer.remove(), 5300);
+}
+
+function thanksgivingWeekendDate() {
+  if (PAGE !== "current" || PRESENTATION_PREVIEW || isHistoricalCurrentPreview() || isPreseasonMode()) return "";
+  const { year, month, day } = easternParts(modeRolloverDate());
+  return year === 2026 && month === 11 && day >= 25 && day <= 30 ? day : 0;
+}
+
+function thanksgivingWeekendGames(events, day) {
+  return events.filter((event) => {
+    const kickoff = easternParts(event.date);
+    return kickoff.year === 2026 && kickoff.month === 11 && kickoff.day >= day && kickoff.day <= 30;
+  }).sort((a, b) => new Date(a.date) - new Date(b.date));
+}
+
+function renderThanksgivingWeekend(events) {
+  const panel = document.querySelector("#thanksgiving-weekend");
+  if (!panel) return;
+  const day = thanksgivingWeekendDate();
+  panel.hidden = !day;
+  if (!day) return;
+  setHeroCopy("");
+  const games = thanksgivingWeekendGames(events, day);
+  const features = {
+    25: ["Wednesday Night Football", "GB @ LAR"],
+    26: ["Thanksgiving Night Football", "KC @ BUF"],
+    27: ["Black Friday Football", "DEN @ PIT"],
+    28: ["Sunday Night Football Preview", "LV @ CLE"],
+    29: ["Sunday Night Football", "LV @ CLE"],
+    30: ["Monday Night Football", "CAR @ TB"],
+  };
+  const [label, matchup] = features[day];
+  const featured = games.find((event) => event.shortName === matchup);
+  if (!featured) return;
+  const game = parseGame(featured);
+  const kickoff = new Intl.DateTimeFormat(undefined, {
+    timeZone: displayTimeZone(), hour: "numeric", minute: "2-digit",
+  });
+  const days = groupBy(games, (event) => easternParts(event.date).day);
+  const dayNames = {
+    25: "Wednesday, Nov 25", 26: "Thanksgiving, Nov 26", 27: "Black Friday, Nov 27",
+    29: "Sunday, Nov 29", 30: "Monday, Nov 30",
+  };
+  panel.innerHTML = `
+    <div class="holiday-feature">
+      <p class="eyebrow">${label}</p>
+      <h2>${escapeHtml(game.shortName)}</h2>
+      <p>${escapeHtml([game.kickoff, game.broadcast, featured.status.type.state === "pre" ? "" : game.status].filter(Boolean).join(" · "))}</p>
+    </div>
+    <details class="holiday-next-up">
+      <summary>Next Up <span>${games.length} games</span></summary>
+      <div class="holiday-days">${[...days].map(([date, slate]) => `
+        <section>
+          <h3>${dayNames[date]}</h3>
+          <ul>${slate.map((event) => {
+            const item = parseGame(event);
+            const state = event.status.type.state;
+            const timing = `${kickoff.format(new Date(event.date))} ${localTimezoneLabel()}`;
+            return `<li><strong>${escapeHtml(item.shortName)}</strong><span>${escapeHtml([timing, item.broadcast, state === "pre" ? "" : item.status].filter(Boolean).join(" · "))}</span></li>`;
+          }).join("")}</ul>
+        </section>`).join("")}</div>
+    </details>`;
+}
+
 function detectFootballMode(events) {
   const preview = previewModeDefinition();
   if (preview) return preview;
@@ -3060,7 +3159,8 @@ function detectFootballMode(events) {
   const today = modeRolloverParts();
   const month = today.month - 1;
   const day = today.weekday;
-  const isThanksgiving = month === 10 && day === 4 && today.day >= 22 && today.day <= 28;
+  const holiday = thanksgivingWeekendDate();
+  const isThanksgiving = holiday ? holiday === 26 : month === 10 && day === 4 && today.day >= 22 && today.day <= 28;
   const liveOrToday = events.filter((event) => isToday(event.date) || event.status?.type?.state === "in");
   const isPlayoffs = liveOrToday.some((event) => event.season?.type === 3);
 
@@ -3269,7 +3369,8 @@ function applyModeTheme(mode) {
 
 function renderHeroMode(mode) {
   if (els.heroModeLabel && mode?.label) {
-    els.heroModeLabel.textContent = PAGE === "current" && !isPreseasonMode() ? weekdayName() : mode.label;
+    els.heroModeLabel.textContent = thanksgivingWeekendDate() === 26 ? "Thanksgiving Football"
+      : PAGE === "current" && !isPreseasonMode() ? weekdayName() : mode.label;
   }
 }
 
@@ -3305,7 +3406,19 @@ function hasCompletedWeek(rosters, league) {
   return rosters.some((roster) => stat(roster, "wins") || stat(roster, "losses") || totalPoints(roster, "fpts"));
 }
 
+function thanksgivingWatchDate(date, day) {
+  const kickoff = easternParts(date);
+  const firstDay = day === 28 ? 29 : day;
+  const lastDay = day === 28 || day === 29 ? 30 : day;
+  return kickoff.year === 2026 && kickoff.month === 11
+    && kickoff.day >= firstDay && kickoff.day <= lastDay;
+}
+
 function nextMatchdayGames(events) {
+  const holiday = thanksgivingWeekendDate();
+  if (holiday) {
+    return thanksgivingWeekendGames(events, holiday).filter((event) => thanksgivingWatchDate(event.date, holiday));
+  }
   const targetEvents = targetGameWindowEvents(events);
   if (targetEvents.length) {
     return targetEvents;
@@ -3477,7 +3590,7 @@ function shouldShowMatchupScores() {
 
 function hasCompletedGameInCurrentWeekWindow() {
   const day = easternParts().weekday;
-  if (day === 2 || day === 3) return false;
+  if (!thanksgivingWeekendDate() && (day === 2 || day === 3)) return false;
   return (nflData?.events || []).some((event) => {
     if (event.status?.type?.state !== "post") return false;
     const date = new Date(event.date);
@@ -4572,7 +4685,8 @@ function playerGameWindow(player) {
   }
   if (!event) return { label: "No game found", isTarget: false, complete: false };
   const state = event.status?.type?.state;
-  const isTarget = state === "in" || nextMatchdayGames(events).includes(event);
+  const holiday = thanksgivingWeekendDate();
+  const isTarget = holiday ? thanksgivingWatchDate(event.date, holiday) : state === "in" || nextMatchdayGames(events).includes(event);
   return {
     label: state === "post" ? "Final" : state === "in" ? "Live" : formatKickoff(event.date),
     isTarget,
@@ -4583,6 +4697,8 @@ function playerGameWindow(player) {
 
 function isSleeperPlayerInTargetWindow(player) {
   if (!player?.gameStart) return false;
+  const holiday = thanksgivingWeekendDate();
+  if (holiday) return thanksgivingWatchDate(player.gameStart, holiday);
   if (localGameState(player.gameStart) === "post" && displayDateKey(player.gameStart) !== modeDateKey()) return false;
   const targetWeekdays = targetMatchdayWeekdays(nflData?.events || []);
   if (!targetWeekdays.length) return false;
